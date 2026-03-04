@@ -1,0 +1,156 @@
+# SSOT — Single Source of Truth: Parámetros Físicos del Gemelo Digital
+# Archivo: config/params.yaml
+#
+# REGLA BÉLICA: Este archivo es el ÚNICO lugar donde se definen los parámetros físicos.
+# Nunca edites directamente header.h ni params.py.
+# Ejecuta: python tools/generate_params.py para regenerar los archivos derivados.
+
+metadata:
+  project: "belico-stack"
+  version: "1.0.0"
+  last_updated: "2026-03-04"
+  author: ""
+  config_hash: ""  # Generado automáticamente por tools/generate_params.py
+
+# ─────────────────────────────────────────────────
+# PROPIEDADES DEL MATERIAL
+# ─────────────────────────────────────────────────
+material:
+  name: "Acero A36"
+  elastic_modulus_E:
+    value: 200e9       # Pa (200 GPa)
+    units: "Pa"
+    symbol: "E"
+  yield_strength_fy:
+    value: 250e6       # Pa (250 MPa)
+    units: "Pa"
+    symbol: "fy"
+  poisson_ratio:
+    value: 0.3
+    units: "dimensionless"
+    symbol: "nu"
+
+# ─────────────────────────────────────────────────
+# PARÁMETROS ESTRUCTURALES
+# ─────────────────────────────────────────────────
+structure:
+  # Rigidez lateral de la estructura (OpenSeesPy: uniaxialMaterial)
+  stiffness_k:
+    value: 5000.0      # N/m
+    units: "N/m"
+    symbol: "k"
+    firmware_var: "STIFFNESS_K"   # nombre de la constante en header.h
+    simulation_var: "k"           # nombre de la variable en params.py
+
+  # Masa total de la estructura (OpenSeesPy: node mass)
+  mass_m:
+    value: 1000.0      # kg
+    units: "kg"
+    symbol: "m"
+    firmware_var: "MASS_M"
+    simulation_var: "mass"
+
+  # Frecuencia natural (calculada, no editar directamente)
+  natural_frequency_fn:
+    value: null        # Hz — calculada como sqrt(k/m) / (2*pi)
+    units: "Hz"
+    symbol: "fn"
+    computed: true
+
+# ─────────────────────────────────────────────────
+# AMORTIGUAMIENTO (Rayleigh Damping en OpenSeesPy)
+# ─────────────────────────────────────────────────
+damping:
+  method: "rayleigh"
+  ratio_xi:
+    value: 0.05        # 5% amortiguamiento crítico (típico para estructuras de acero)
+    units: "dimensionless"
+    symbol: "xi"
+    firmware_var: "DAMPING_RATIO"
+    simulation_var: "xi"
+  alpha_mass:
+    value: null        # calculado: 2*xi*omega_1 (primer modo)
+    computed: true
+  beta_stiff:
+    value: null        # calculado: 2*xi/omega_1
+    computed: true
+
+# ─────────────────────────────────────────────────
+# ADQUISICIÓN DE DATOS — Arduino / Sensores
+# ─────────────────────────────────────────────────
+acquisition:
+  sample_rate_hz:
+    value: 100         # Hz — frecuencia de muestreo del sensor
+    units: "Hz"
+    firmware_var: "SAMPLE_RATE_HZ"
+    simulation_var: "dt"           # dt = 1/sample_rate_hz
+  sensor_pin:
+    value: "A0"
+    firmware_var: "SENSOR_PIN"
+  serial_baud:
+    value: 115200
+    firmware_var: "SERIAL_BAUD"
+
+# ─────────────────────────────────────────────────
+# INTEGRIDAD TEMPORAL — Sincronizador Bélico
+# ─────────────────────────────────────────────────
+temporal:
+  dt_simulation:
+    value: 0.01        # s — debe coincidir con 1/acquisition.sample_rate_hz
+    units: "s"
+    note: "Si no coincide con dt del sensor, el Verifier bloquea el pipeline."
+  max_jitter_ms:
+    value: 5           # ms — variación máxima de latencia serial aceptada
+    units: "ms"
+    note: "Si el promedio de jitter excede este valor, los resultados son nulos."
+  buffer_depth:
+    value: 10          # número de paquetes en espera para suavizado
+    units: "packets"
+    note: "Compromiso entre latencia y estabilidad. No bajar de 5."
+  handshake_token:
+    value: "BELICO_SYNC_2026"
+    note: "Token que Arduino y bridge.py intercambian al inicio para verificar SSOT."
+  clock_drift_warning_ms:
+    value: 2           # ms — alerta temprana antes de llegar a max_jitter_ms
+    units: "ms"
+  prediction_mode:
+    enabled: false     # true: activa simulación de peor escenario en paralelo
+    trigger_threshold_g:
+      value: 0.3       # g — aceleración que dispara el modo predicción
+      units: "g"
+
+# ─────────────────────────────────────────────────
+# SHADOW PLAY — Filtro de Kalman (Procesamiento de Señal)
+# ─────────────────────────────────────────────────
+signal_processing:
+  kalman:
+    enabled: true
+    process_noise_q:
+      value: 1.0e-5    # Varianza del proceso (confianza en el modelo físico)
+      description: "Si es muy bajo, el filtro ignora el sensor y sigue su propia inercia."
+    measurement_noise_r:
+      value: 0.01      # Varianza de la medición (ruido esperado del Arduino MPU6050)
+      description: "Si es muy alto, el filtro suaviza en exceso ocultando picos reales."
+
+# ─────────────────────────────────────────────────
+# GUARDRAILS DE VALENTÍA — Límites del Verifier
+# ─────────────────────────────────────────────────
+guardrails:
+  max_stress_ratio:
+    value: 0.6         # σ_max ≤ 0.6·fy (Verifier Gate 3)
+    description: "Fracción de fy que activa la alerta de fallo inminente"
+  convergence_tolerance:
+    value: 1.0e-6      # Residual de equilibrio máximo aceptado
+    description: "Tolerancia numérica de OpenSeesPy (Verifier Gate 1)"
+  max_slenderness:
+    value: 120         # λ = L/r — Physical Critic Gate (pandeo)
+    description: "Relación de esbeltez máxima para acero"
+  eccentricity_ratio:
+    value: 0.10        # e/b — Physical Critic Gate (torsión)
+    description: "Excentricidad máxima relativa al ancho del edificio"
+  mass_participation_min:
+    value: 0.90        # 90% mínimo en los primeros 3 modos
+    description: "Participación mínima de masa modal"
+  max_sensor_outlier_sigma:
+    value: 3.0         # Outliers > 3σ → datos inválidos
+    description: "Límite estadístico para detección de ruido en sensores"
