@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 420" width="700" height="420">
+  <rect width="700" height="420" fill="white" rx="8"/>
+
+  <!-- Título -->
+  <text x="350" y="22" text-anchor="middle" font-size="13" font-weight="bold" fill="#2c3e50">
+    Pseudo-Acceleration Spectrum Sa(T, ζ=5%) — PISCO 2007 vs Guardian Angel Filter
+  </text>
+
+  <!-- Área del gráfico -->
+  <rect x="70" y="40" width="590" height="310"
+        fill="#fafafa" stroke="#ccc" stroke-width="1"/>
+
+  <!-- Grid -->
+  <line x1="70" y1="350.0" x2="660" y2="350.0" stroke="#eee" stroke-width="1"/><line x1="70" y1="297.9" x2="660" y2="297.9" stroke="#eee" stroke-width="1"/><line x1="70" y1="247.2" x2="660" y2="247.2" stroke="#eee" stroke-width="1"/><line x1="70" y1="195.1" x2="660" y2="195.1" stroke="#eee" stroke-width="1"/><line x1="70" y1="142.9" x2="660" y2="142.9" stroke="#eee" stroke-width="1"/><line x1="70" y1="92.2" x2="660" y2="92.2" stroke="#eee" stroke-width="1"/><line x1="70" y1="40.1" x2="660" y2="40.1" stroke="#eee" stroke-width="1"/>
+
+  <!-- Ejes -->
+  <line x1="70" y1="350" x2="660" y2="350"
+        stroke="#555" stroke-width="1.5"/>
+  <line x1="70" y1="40" x2="70" y2="350"
+        stroke="#555" stroke-width="1.5"/>
+
+  <!-- Ticks -->
+  <line x1="70.0" y1="350" x2="70.0" y2="355" stroke="#aaa" stroke-width="1"/><text x="70.0" y="368" text-anchor="middle" font-size="11" fill="#555">0.0</text><line x1="168.3" y1="350" x2="168.3" y2="355" stroke="#aaa" stroke-width="1"/><text x="168.3" y="368" text-anchor="middle" font-size="11" fill="#555">0.5</text><line x1="266.7" y1="350" x2="266.7" y2="355" stroke="#aaa" stroke-width="1"/><text x="266.7" y="368" text-anchor="middle" font-size="11" fill="#555">1.0</text><line x1="365.0" y1="350" x2="365.0" y2="355" stroke="#aaa" stroke-width="1"/><text x="365.0" y="368" text-anchor="middle" font-size="11" fill="#555">1.5</text><line x1="463.3" y1="350" x2="463.3" y2="355" stroke="#aaa" stroke-width="1"/><text x="463.3" y="368" text-anchor="middle" font-size="11" fill="#555">2.0</text><line x1="561.7" y1="350" x2="561.7" y2="355" stroke="#aaa" stroke-width="1"/><text x="561.7" y="368" text-anchor="middle" font-size="11" fill="#555">2.5</text><line x1="660.0" y1="350" x2="660.0" y2="355" stroke="#aaa" stroke-width="1"/><text x="660.0" y="368" text-anchor="middle" font-size="11" fill="#555">3.0</text>
+  <line x1="65" y1="350.0" x2="70" y2="350.0" stroke="#aaa" stroke-width="1"/><text x="62" y="354.0" text-anchor="end" font-size="11" fill="#555">0.00</text><line x1="65" y1="297.9" x2="70" y2="297.9" stroke="#aaa" stroke-width="1"/><text x="62" y="301.9" text-anchor="end" font-size="11" fill="#555">0.37</text><line x1="65" y1="247.2" x2="70" y2="247.2" stroke="#aaa" stroke-width="1"/><text x="62" y="251.2" text-anchor="end" font-size="11" fill="#555">0.73</text><line x1="65" y1="195.1" x2="70" y2="195.1" stroke="#aaa" stroke-width="1"/><text x="62" y="199.1" text-anchor="end" font-size="11" fill="#555">1.10</text><line x1="65" y1="142.9" x2="70" y2="142.9" stroke="#aaa" stroke-width="1"/><text x="62" y="146.9" text-anchor="end" font-size="11" fill="#555">1.47</text><line x1="65" y1="92.2" x2="70" y2="92.2" stroke="#aaa" stroke-width="1"/><text x="62" y="96.2" text-anchor="end" font-size="11" fill="#555">1.83</text><line x1="65" y1="40.1" x2="70" y2="40.1" stroke="#aaa" stroke-width="1"/><text x="62" y="44.1" text-anchor="end" font-size="11" fill="#555">2.20</text>
+
+  <!-- Etiquetas de ejes -->
+  <text x="365" y="410" text-anchor="middle" font-size="12" fill="#333">
+    Period T (s)
+  </text>
+  <text transform="rotate(-90 18 195)"
+        x="18" y="195" text-anchor="middle" font-size="12" fill="#333">
+    Sa (g)
+  </text>
+
+  <!-- Línea T* peligro -->
+  
+    <line x1="125.4" y1="40" x2="125.4" y2="350"
+          stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="6,3"/>
+    <text x="130.4" y="55" font-size="10" fill="#e74c3c">
+      T*=0.28s
+    </text>
+
+  <!-- Espectro Crudo (azul) -->
+  <polyline points="72.0,268.7 77.9,260.1 83.8,272.9 89.8,280.9 95.7,288.7 101.7,284.9 107.6,291.5 113.5,290.7 119.5,242.1 125.4,152.3 131.4,243.7 137.3,289.3 143.2,305.4 149.2,313.1 155.1,315.6 161.1,317.1 167.0,321.9 172.9,321.9 178.9,319.1 184.8,320.0 190.8,322.1 196.7,322.2 202.6,327.0 208.6,329.3 214.5,329.1 220.5,329.5 226.4,330.1 232.3,330.9 238.3,331.6 244.2,330.3 250.2,332.1 256.1,333.2 262.0,333.6 268.0,333.4 273.9,329.7 279.9,329.5 285.8,330.4 291.7,331.1 297.7,330.9 303.6,331.5 309.6,332.4 315.5,333.3 321.4,334.0 327.4,334.8 333.3,336.1 339.3,336.9 345.2,335.9 351.1,335.5 357.1,336.0 363.0,335.5 369.0,335.0 374.9,334.8 380.8,335.0 386.8,335.6 392.7,334.9 398.7,334.0 404.6,333.7 410.5,333.7 416.5,334.5 422.4,335.6 428.4,336.8 434.3,337.0 440.2,336.9 446.2,337.4 452.1,338.4 458.0,339.6 464.0,339.3 469.9,339.4 475.9,339.7 481.8,339.9 487.7,340.1 493.7,340.3 499.6,339.8 505.6,339.4 511.5,338.7 517.4,338.2 523.4,337.9 529.3,337.8 535.3,337.8 541.2,337.8 547.1,337.9 553.1,338.0 559.0,338.0 565.0,338.1 570.9,338.3 576.8,338.6 582.8,339.2 588.7,340.0 594.7,340.9 600.6,341.1 606.5,341.0 612.5,341.1 618.4,341.3 624.4,341.4 630.3,341.6 636.2,341.8 642.2,342.1 648.1,342.0 654.1,341.8 660.0,341.7"
+            fill="none" stroke="#2980b9" stroke-width="2" opacity="0.85"/>
+
+  <!-- Espectro Filtrado por Guardian Angel (verde) -->
+  <polyline points="72.0,239.1 77.9,227.4 83.8,244.8 89.8,255.8 95.7,266.4 101.7,261.2 107.6,270.2 113.5,269.1 119.5,202.9 125.4,80.4 131.4,205.0 137.3,267.2 143.2,289.2 149.2,299.7 155.1,303.1 161.1,305.1 167.0,311.6 172.9,311.6 178.9,307.9 184.8,309.1 190.8,312.0 196.7,312.1 202.6,318.6 208.6,321.7 214.5,321.5 220.5,322.0 226.4,322.9 232.3,323.9 238.3,324.9 244.2,323.2 250.2,325.5 256.1,327.0 262.0,327.7 268.0,327.4 273.9,322.3 279.9,322.0 285.8,323.3 291.7,324.2 297.7,324.0 303.6,324.8 309.6,326.0 315.5,327.2 321.4,328.2 327.4,329.3 333.3,331.1 339.3,332.1 345.2,330.8 351.1,330.3 357.1,330.8 363.0,330.3 369.0,329.6 374.9,329.3 380.8,329.6 386.8,330.4 392.7,329.4 398.7,328.2 404.6,327.8 410.5,327.8 416.5,328.9 422.4,330.4 428.4,332.0 434.3,332.3 440.2,332.1 446.2,332.8 452.1,334.2 458.0,335.8 464.0,335.4 469.9,335.6 475.9,335.9 481.8,336.2 487.7,336.5 493.7,336.8 499.6,336.1 505.6,335.5 511.5,334.6 517.4,333.9 523.4,333.5 529.3,333.3 535.3,333.3 541.2,333.4 547.1,333.5 553.1,333.6 559.0,333.7 565.0,333.8 570.9,334.0 576.8,334.5 582.8,335.3 588.7,336.4 594.7,337.5 600.6,337.9 606.5,337.7 612.5,337.8 618.4,338.1 624.4,338.3 630.3,338.5 636.2,338.8 642.2,339.2 648.1,339.1 654.1,338.9 660.0,338.6"
+            fill="none" stroke="#27ae60" stroke-width="2" stroke-dasharray="8,3" opacity="0.85"/>
+
+  <!-- Marcador pico -->
+  
+    <circle cx="125.4" cy="152.3" r="5" fill="#e74c3c" opacity="0.9"/>
+    <text x="133.4" y="147.3" font-size="10" fill="#e74c3c">
+      Sa=1.403g
+    </text>
+
+  <!-- Leyenda -->
+  <rect x="80" y="50" width="220" height="52" fill="white"
+        stroke="#ddd" stroke-width="1" rx="4"/>
+  <line x1="90" y1="62" x2="115" y2="62"
+        stroke="#2980b9" stroke-width="2"/>
+  <text x="120" y="66" font-size="10" fill="#333">
+    PEER Raw (PGA=0.330g)
+  </text>
+  <line x1="90" y1="80" x2="115" y2="80"
+        stroke="#27ae60" stroke-width="2" stroke-dasharray="6,2"/>
+  <text x="120" y="84" font-size="10" fill="#333">
+    Guardian Angel Filtered (PGA=0.450g)
+  </text>
+  <line x1="90" y1="98" x2="115" y2="98"
+        stroke="#e74c3c" stroke-width="1.5" stroke-dasharray="4,2"/>
+  <text x="120" y="102" font-size="10" fill="#e74c3c">
+    Dominant Period T*
+  </text>
+</svg>

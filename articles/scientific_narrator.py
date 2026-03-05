@@ -156,11 +156,15 @@ A control simulation was run alongside the experimental stack under {res_A.get("
         T_dom = spectral.get("T_dominant", "N/A")
         Sa_max = spectral.get("Sa_max", "N/A")
         pga    = spectral.get("pga", "N/A")
+        # Incrustar figura SVG en el borrador GFM
+        svg_path = spectral.get("svg_path", "")
+        if svg_path and Path(svg_path).exists():
+            informe += f"\n![**Figure 1** — Response Spectrum Sa(T, \u03b6=5%): PEER Raw vs. Guardian Angel Filtered (Pisco 2007 M8.0)]({svg_path})\n"
         informe += spectral.get("sa_raw_report", "")
         informe += (
             f"\n> **Key Finding**: The PISCO-2007 record (PGA={pga:.3f}g) shows maximum spectral demand of "
             f"$S_a = {Sa_max:.3f}g$ at $T^* = {T_dom:.2f}s$. This dominant period "
-            "falls within the rigid response range of C\u0026DW composite elements, "
+            "falls within the rigid response range of C&DW composite elements, "
             "confirming that high-frequency subduction records are the critical design input for the Presa del Norte.\n"
         )
 

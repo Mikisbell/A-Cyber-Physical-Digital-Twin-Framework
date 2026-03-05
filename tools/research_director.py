@@ -92,6 +92,17 @@ def run_research(quartile: str, topic: str, cycles: int):
             }
             with open(cv_out, "w") as f:
                 json.dump(results, f, default=lambda x: x.tolist() if hasattr(x, 'tolist') else x)
+            
+            # Generar figura SVG para el paper
+            try:
+                from tools.plot_spectrum import generate_svg_spectrum
+                svg_out = ROOT / "articles" / "figures" / "spectrum_pisco2007.svg"
+                generate_svg_spectrum(sa_raw, sa_filt, svg_out)
+                results["spectral"]["svg_path"] = str(svg_out)
+                with open(cv_out, "w") as f:
+                    json.dump(results, f, default=lambda x: x.tolist() if hasattr(x, 'tolist') else x)
+            except Exception as svg_err:
+                print(f"   ⚠️ SVG no generado (no crítico): {svg_err}")
         else:
             print(f"   ⚠️ Sismo PEER no encontrado en {pisco_at2}. Ejecuta: python3 tools/fetch_benchmark.py")
     except Exception as spec_err:

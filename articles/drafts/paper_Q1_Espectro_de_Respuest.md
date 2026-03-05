@@ -1,5 +1,5 @@
 # 📄 Belico Stack Research Draft (Q1)
-**Topic:** Espectro de Respuesta Sa y Fragilidad Sismica bajo E.030
+**Topic:** Espectro de Respuesta Duhamel bajo Sismos de Subduccion
 **Date:** 2026-03-05
 **Novelty:** Integration of SHA-256 cryptographic auditing into Edge-SHM (LoRa) to mitigate thermodynamic paradoxes and sensing manipulation in Recycled Concrete (C&DW).
 
@@ -44,6 +44,8 @@ To explicitly quantify uncertainty, a parametric sweep of the subduction earthqu
 
 As observed, the Guardian Angel dynamically scales its filtration capacity proportionally to the kinetic violence of the event ($S_a$), maintaining a strict 100% data integrity for the long-term memory module.
 
+![**Figure 1** — Response Spectrum Sa(T, ζ=5%): PEER Raw vs. Guardian Angel Filtered (Pisco 2007 M8.0)](/home/mateo/PROYECTOS/belico-stack/articles/figures/spectrum_pisco2007.svg)
+
 ### 3.4 Response Spectrum Sa(T, ζ=5%) — PEER/CISMID Benchmark
 
 The Duhamel integral was applied over the normalized PISCO-2007 record (PGA = 0.330g) to compute the pseudo-acceleration spectrum (ζ = 5%, per E.030 / ASCE 7-22):
@@ -72,13 +74,13 @@ The Guardian Angel's physics-based filtering eliminates high-frequency anomalies
 The Belico Stack effectively isolates the Deep Learning pipeline from physical and electronic deception. By coupling Edge-AI processing with local cryptographic sealing, predictive SHM systems can be deployed in socially and politically precarious environments without compromising engineering truth.
 
 ## References
-[1] Lynch, J. P., & Loh, K. J. (2006). 'A summary review of wireless sensors and sensor networks for structural health monitoring'. Shock and Vibration Digest, 38(2), 91-130.
-[2] Belico Stack Architecture, 'Cryptographic Edge-AI Structural Health Monitoring via LoRa IoT', GitHub Open Source Initiative, 2026.
-[3] PEER (Pacific Earthquake Engineering Research Center), 'NGA-West2 Ground Motion Database', UC Berkeley, 2014. Available: https://ngawest2.berkeley.edu.
-[4] Hochreiter, S., & Schmidhuber, J. (1997). 'Long short-term memory'. Neural computation, 9(8), 1735-1780.
-[5] Raissi, M., Perdikaris, P., & Karniadakis, G. E. (2019). 'Physics-informed neural networks: A deep learning framework'. Journal of Computational physics, 378, 686-707.
-[6] CISMID (Centro Peruano Japonés de Investigaciones Sísmicas), 'Red Acelerográfica Nacional del Perú (REDACIS)', UNI, Lima, Perú. Available: http://www.cismid.uni.edu.pe.
-[7] Samek, W., Montavon, G., et al. (2019). 'Explainable AI: interpreting, explaining and visualizing deep learning'. Springer Nature.
+[1] Raissi, M., Perdikaris, P., & Karniadakis, G. E. (2019). 'Physics-informed neural networks: A deep learning framework'. Journal of Computational physics, 378, 686-707.
+[2] Lynch, J. P., & Loh, K. J. (2006). 'A summary review of wireless sensors and sensor networks for structural health monitoring'. Shock and Vibration Digest, 38(2), 91-130.
+[3] CISMID (Centro Peruano Japonés de Investigaciones Sísmicas), 'Red Acelerográfica Nacional del Perú (REDACIS)', UNI, Lima, Perú. Available: http://www.cismid.uni.edu.pe.
+[4] Samek, W., Montavon, G., et al. (2019). 'Explainable AI: interpreting, explaining and visualizing deep learning'. Springer Nature.
+[5] Belico Stack Architecture, 'Cryptographic Edge-AI Structural Health Monitoring via LoRa IoT', GitHub Open Source Initiative, 2026.
+[6] Hochreiter, S., & Schmidhuber, J. (1997). 'Long short-term memory'. Neural computation, 9(8), 1735-1780.
+[7] PEER (Pacific Earthquake Engineering Research Center), 'NGA-West2 Ground Motion Database', UC Berkeley, 2014. Available: https://ngawest2.berkeley.edu.
 [8] RILEM TC 235-CTC (2018). 'Recommendations for the formulation, manufacturing and modeling of recycled aggregate concrete'. Materials and Structures, 51(5), 1-13.
 
 ---
