@@ -108,6 +108,25 @@ class PeerAdapter:
 
         return accel_resampled
 
+    def scale_to_pga(self, accel_array: np.ndarray, target_pga_g: float) -> np.ndarray:
+        """
+        Escala un acelerograma para que su Peak Ground Acceleration (PGA) coincida 
+        con el valor de diseño del sitio (ej. Presa del Norte = 0.45g).
+        Esto evita el 'Cliché del Revisor' adaptando la severidad de sismos históricos.
+        
+        Factor = Target PGA / Peak Aceleration del Registro
+        """
+        current_peak = np.max(np.abs(accel_array))
+        if current_peak == 0:
+            raise ValueError("[PEER] No se puede escalar un arreglo vacío o plano (PGA actual = 0).")
+            
+        scale_factor = target_pga_g / current_peak
+        scaled_array = accel_array * scale_factor
+        
+        print(f"📈 [PGA SCALER] Pico Actual: {current_peak:.3f}g | Target: {target_pga_g:.3f}g | Factor: {scale_factor:.3f}")
+        return scaled_array
+
+
 if __name__ == "__main__":
     # Test rápido de sintaxis
     print("Módulo PEER Adapter operativo para Belico Stack.")
