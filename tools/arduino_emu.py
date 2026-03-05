@@ -96,6 +96,11 @@ def run_emulator(chaos_mode="resonance"):
                 os.write(master, packet.encode())
                 packet_count += 1
                 
+                # Desastre simulado (USB desconectado)
+                if chaos_mode == "dropout" and packet_count >= 15:
+                    print(f"\n🔥 [EMULADOR] 🔌 [SIMULACRO] Cable desconectado abruptamente. Muriendo...")
+                    break
+                
                 # Escuchar comandos abort (SHUTDOWN)
                 import select
                 r, _, _ = select.select([master], [], [], 0)

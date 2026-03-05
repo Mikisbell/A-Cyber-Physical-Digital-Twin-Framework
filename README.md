@@ -99,6 +99,17 @@ Este stack está diseñado como un **estándar de obra pública** bajo el paradi
 
 ---
 
+## ⚖️ Disclaimers de Auditoría y Responsabilidad
+
+El Stack Bélico está diseñado para operar en entornos hostiles (físicos y digitales), pero **establece reglas claras sobre la Verdad**:
+
+1. **Protocolo de Resurrección (Hardware Failure):** 
+   Si durante una demostración en vivo el sensor físico falla o se desconecta (cable arrancado, corte de puerto COM/USB), OpenSeesPy no asume datos. El _Guardian Angel_ intercepta la caída del puerto serial, declara un **Desastre de Datos**, y sella el último instante vivo en Engram con su firma SHA-256. El Dashboard se apaga como medida de protección, pero la base de datos queda inmortalizada. 
+2. **Independencia Humana (Narrativa de IA):**
+   Las actas generadas por el *Scientific Narrator* (AITMPL) en `articles/drafts/` son **traducciones interpretativas** diseñadas para la democratización de la ciencia al ciudadano. **En caso de litigio o auditoría de una obra pública, la única "Verdad Legal y Física" certificada por este repositorio reside de forma exclusiva en la base criptográfica SQLite (`.agent/memory/engram.db`)**.
+
+---
+
 ## 📂 Estructura del Repositorio
 
 ```

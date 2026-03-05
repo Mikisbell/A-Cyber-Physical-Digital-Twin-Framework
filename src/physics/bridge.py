@@ -279,7 +279,10 @@ def run_bridge(port: str = "/dev/ttyUSB0"):
 
     def send_shutdown(ser: serial.Serial, reason: str):
         """Envía la señal SHUTDOWN al Arduino y registra el motivo."""
-        ser.write(b"SHUTDOWN\n")
+        try:
+            ser.write(b"SHUTDOWN\n")
+        except Exception as e:
+            print(f"[BRIDGE] Nota: No se pudo enviar SHUTDOWN al puerto físico (posible desconexión): {e}")
         print(f"\n[BRIDGE] 🛑 SHUTDOWN ENVIADO AL ARDUINO")
         print(f"[BRIDGE]    Motivo: {reason}")
         
@@ -331,9 +334,18 @@ def run_bridge(port: str = "/dev/ttyUSB0"):
         try:
             while True:
                 t_linux_ns = time.time_ns()
-                raw = ser.readline().decode().strip()
-                if not raw:
-                    continue
+                
+                try:
+                    raw = ser.readline().decode().strip()
+                    if not raw:
+                        print("\n[BRIDGE] ⚠️ ALERTA: Tiempo de espera (Timeout) alcanzado.")
+                        send_shutdown(ser, "Fallo de Hardware Crítico: Pérdida de Comunicación (Señal Inexistente)")
+                        break
+                except Exception as e:
+                    # Captura OSError / SerialException (Cable Arrancado / Emulador Muerto)
+                    print(f"\n[BRIDGE] ⚠️ ERROR CRÍTICO DE ENLACE FÍSICO: {e}")
+                    send_shutdown(ser, "DESASTRE DE DATOS: Enlace Serial destruido (Cable desconectado/Sensor apagado)")
+                    break
 
                 pkt = parse_packet(raw)
                 if pkt is None:
