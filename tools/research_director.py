@@ -63,6 +63,7 @@ def run_research(quartile: str, topic: str, cycles: int):
     env = os.environ.copy()
     env["PAPER_TOPIC"] = topic
     env["PAPER_QUARTILE"] = quartile
+    env["EXTERNAL_SOURCES"] = "['peer_berkeley', 'cismid_peru']"
     
     narrator_path = str(ROOT / "articles" / "scientific_narrator.py")
     subprocess.run([sys.executable, narrator_path], cwd=str(ROOT), env=env)

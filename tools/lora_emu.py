@@ -20,9 +20,20 @@ import random
 TX_INTERVAL_SEC = 5.0   # Cada cuánto "habla" el sensor (Duty cycle)
 FN_NOMINAL      = 8.0   # Hz (Estructura Sana)
 
-def run_lora_emulator(mode: str = "sano"):
+def run_lora_emulator(mode: str = "sano", peer_file: str = ""):
     master, slave = pty.openpty()
     tty_name = os.ttyname(slave)
+    
+    peer_data = None
+    if mode == "peer_benchmark" and peer_file:
+        from src.physics.peer_adapter import PeerAdapter
+        from pathlib import Path
+        adapter = PeerAdapter(target_frequency_hz=100.0)
+        raw_dict = adapter.read_at2_file(Path(peer_file))
+        resampled = adapter.normalize_and_resample(raw_dict)
+        # Escalando a Peligro Sísmico Z4 (Ej. Perú Costa PGA=0.45g)
+        peer_data = adapter.scale_to_pga(resampled, target_pga_g=0.45)
+        print(f"🌍 Cofre de Conocimiento Enlazado: {len(peer_data)} muestras PEER listas (PGA 0.45g).")
     
     print("═" * 50)
     print("📡 [LORA MOCK] Enlace Telemétrico Activo")
@@ -91,21 +102,38 @@ def run_lora_emulator(mode: str = "sano"):
                 stat  = "ALARM_RL2"
                 t_unix = int(current_time)
             elif mode == "paradoja_fisica":
-                # ≈ PARADOJA TERMODINÁMICA ≈
-                # S-1: La estructura gana rigidez mágicamente (fn SUBE)
-                # S-2: Temperatura de 500°C (violación termica extrema)
-                # Paquete 1: normal (establece baseline del Guardian Angel)
-                # Paquetes 2+: corruptos
                 fn    = FN_NOMINAL + (packet_count * 0.8) # Cada pkt: +0.8Hz (creciente =IMPOSIBLE)
                 max_g = 0.05
                 stat  = "OK"  # Mentira: el sensor dice "sano"
                 t_unix = int(current_time)
                 tmp   = 500.0 if packet_count > 0 else 22.0  # Primer pkt normal, luego 500°C
-                hum   = 55.0
+            elif mode == "peer_benchmark" and peer_data is not None:
+                import numpy as np
+                SAMPLES_PER_TX = int(TX_INTERVAL_SEC * 100.0) # 100 Hz
+                start_idx = packet_count * SAMPLES_PER_TX
+                end_idx = start_idx + SAMPLES_PER_TX
+                if start_idx >= len(peer_data):
+                    print("🏁 [LORA] Fin del benchmark sísmico PEER.")
+                    break
+                
+                chunk = peer_data[start_idx:min(end_idx, len(peer_data))]
+                max_g = float(np.max(np.abs(chunk)))
+                
+                # Zero-crossing rápido para estimar Frecuencia Predominante del sismo
+                zero_crossings = np.where(np.diff(np.sign(chunk)))[0]
+                if len(zero_crossings) > 0:
+                    fn = (len(zero_crossings) / 2.0) / (len(chunk)/100.0)
+                else:
+                    fn = FN_NOMINAL
+                
+                stat = "ALARM_EQ" if max_g > 0.05 else "OK"
+                t_unix = int(current_time)
             else:
                 fn    = 0.0; max_g = 0.0; stat = "ERR"; t_unix = int(current_time)
             
-            tmp = 22.0 + random.normalvariate(0, 0.5)
+            # Temperatura ambiente estable, Humedad estable
+            if mode != "paradoja_fisica":
+                tmp = 22.0 + random.normalvariate(0, 0.5)
             hum = 55.0 + random.normalvariate(0, 1.0)
             
             # Formato Payload Edge AI con Timestamp (RTC/Epoch)
@@ -123,7 +151,12 @@ def run_lora_emulator(mode: str = "sano"):
         print("\n🛑 [LORA MOCK] Apagado manual.")
 
 if __name__ == "__main__":
-    _mode = "sano"
-    if len(sys.argv) > 1:
-         _mode = sys.argv[1].lower()
-    run_lora_emulator(_mode)
+    import argparse
+    parser = argparse.ArgumentParser(description="Emulador de Enlace LoRa")
+    parser.add_argument("tty_dummy", nargs="?", default="", help="Ignorado, para pseudo-compatibilidad")
+    parser.add_argument("--mode", default="sano", help="Modo de inyección")
+    parser.add_argument("--cycles", type=int, default=500, help="Ignorado (corre indefinidamente hasta CTL+C o fin de PEER)")
+    parser.add_argument("--peer-file", default="", help="Ruta al sismo de validación cruzada (.AT2)")
+    args = parser.parse_args()
+    
+    run_lora_emulator(args.mode, args.peer_file)

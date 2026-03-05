@@ -75,11 +75,13 @@ class CrossValidationEngine:
         # (Modificamos temporalmente bridge.py para que pueda abortarse tras N ciclos si fuera necesario,
         # o usamos el emulador en modo integrado)
         
-        print(f"   🛡️ Inyectando paradojas físicas y ruido térmico...")
+        print(f"   🛡️ Inyectando Sismo de Subducción (PISCO/CISMID) escalado desde PEER...")
         
         cmd_emu = [
             sys.executable, "tools/lora_emu.py", 
-            "/tmp/ttyVIRT_B", "--mode", "paradoja_fisica", "--cycles", str(self.cycles)
+            "/tmp/ttyVIRT_B", "--mode", "peer_benchmark", 
+            "--peer-file", "data/external/peer_berkeley/PISCO_2007_ICA_EW.AT2",
+            "--cycles", str(self.cycles)
         ]
         emu_proc = subprocess.Popen(cmd_emu, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         
