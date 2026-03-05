@@ -47,6 +47,8 @@ def run_research(quartile: str, topic: str, cycles: int):
     print("\n[2/3] 🔬 Ejecutando Motor de Validación Cruzada (A/B Test)...")
     cv_engine = CrossValidationEngine(cycles=cycles)
     results = cv_engine.execute_validation_suite()
+    si_results = cv_engine.execute_sensitivity_report()
+    results["sensitivity_index"] = si_results
     
     # Guardar temporalmente los resultados de la validación cruzada para el narrador
     import json

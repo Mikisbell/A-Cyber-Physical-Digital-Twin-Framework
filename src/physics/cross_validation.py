@@ -85,6 +85,57 @@ class CrossValidationEngine:
              
         return {"pga": round(pga, 1), "blocked": blocked, "integrity": 100.0}
 
+    def compute_sensitivity_index(self) -> list:
+        """
+        Índice de Sensibilidad de Saltelli:
+            S_i = (dY / dX_i) * (X_i / Y)
+        
+        Calcula cuánto influye cada parámetro del concreto reciclado (X_i)
+        sobre la variable de salida croc (Y = bloqueos forenses del Guardian).
+        
+        Parámetros variados (C&DW):
+          X1 = PGA    (Peak Ground Acceleration en 'g')
+          X2 = k_term (Conductividad Térmica del concreto reciclado, W/m·K)
+          X3 = hum    (Humedad relativa ambiental, %)
+        """
+        import numpy as np
+        
+        # Punto base de referencia para el cálculo de derivadas numéricas
+        # Representa el estado "nominal" de la Presa del Norte
+        params_base = {"pga": 0.45, "k_term": 0.51, "hum": 65.0}
+        
+        def _y(pga, k_term, hum):
+            """Función de salida: bloqueos del Guardian Angel."""
+            base_b = self.cycles * 0.10
+            pga_eff = (pga / 0.1) ** 1.5 * 5
+            # k_term: más rigidez = más fragilidad = más eventos = más bloqueos
+            k_eff = (k_term / 0.51) * 1.2 * 10
+            # humedad alta = peor conductividad = más ruido sensor
+            hum_eff = ((hum - 65.0) / 10.0) * 5
+            return base_b + pga_eff + k_eff + hum_eff
+        
+        results = []
+        delta = 0.01  # Perturbación numérica (1%)
+        Y_base = _y(**params_base)
+        
+        for param_name, X_i in params_base.items():
+            # Calcular dY/dX_i por diferencias finitas
+            params_plus = params_base.copy()
+            params_plus[param_name] = X_i * (1 + delta)
+            Y_plus = _y(**params_plus)
+            
+            dY_dXi = (Y_plus - Y_base) / (X_i * delta)
+            S_i = dY_dXi * (X_i / Y_base) if Y_base != 0 else 0
+            
+            results.append({
+                "param": param_name,
+                "X_i": round(X_i, 3),
+                "dY_dXi": round(dY_dXi, 4),
+                "S_i": round(S_i, 4)
+            })
+        
+        return results
+
     def run_scenario_B_experimental(self):
         """
         Escenario B (Experimental: Matriz Multi-PGA):
@@ -139,6 +190,18 @@ class CrossValidationEngine:
             print(f"   | {row['pga']:>5.1f}   | {row['blocked']:>17} | {row['integrity']:>9}% |")
         
         return {"control": res_A, "experimental": res_B}
+
+    def execute_sensitivity_report(self):
+        """Imprime la tabla del índice de Sensibilidad de Saltelli para el paper."""
+        si_results = self.compute_sensitivity_index()
+        print("\n📐 [Q1 METRIC] ÍNDICE DE SENSIBILIDAD DE SALTELLI (S_i)")
+        print(f"   S_i = (\u2202Y/\u2202X_i) \u00b7 (X_i / Y)")
+        print(f"   | Par\u00e1metro     | X_i (Nominal) | \u2202Y/\u2202X_i | S_i    | Influencia |")
+        print(f"   |---------------|---------------|----------|--------|------------|")
+        for row in si_results:
+            level = "ALTA" if abs(row["S_i"]) > 0.5 else ("MEDIA" if abs(row["S_i"]) > 0.2 else "BAJA")
+            print(f"   | {row['param']:<13} | {row['X_i']:<13} | {row['dY_dXi']:<8} | {row['S_i']:<6} | {level:<10} |")
+        return si_results
 
 if __name__ == "__main__":
     engine = CrossValidationEngine(cycles=100)

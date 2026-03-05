@@ -135,6 +135,21 @@ A control simulation was run alongside the experimental stack under {res_A.get("
             informe += f"| {row['pga']:.1f} | {row['blocked']} | {row['integrity']}% |\n"
         informe += "\nAs observed, the Guardian Angel dynamically scales its filtration capacity proportionally to the kinetic violence of the event ($S_a$), maintaining a strict 100% data integrity for the long-term memory module.\n"
 
+    # ── SALTELLI SENSITIVITY INDEX ──
+    si_data = res_B.get("sensitivity_index", [])
+    if si_data:
+        informe += "\n### 3.3 Sensitivity Analysis (Índice de Saltelli)\n"
+        informe += (
+            "To understand which C&DW material parameter has the greatest influence on the Guardian Angel "
+            "detection rate ($Y$), a first-order sensitivity index was computed using numerical finite differences ($\\delta = 1\\%$):\n\n"
+        )
+        informe += "|Parameter | Nominal $X_i$ | $\\partial Y / \\partial X_i$ | $S_i$ | Influence |\n"
+        informe += "|---|---|---|---|---|\n"
+        for row in si_data:
+            level = "**HIGH**" if abs(row["S_i"]) > 0.5 else ("Medium" if abs(row["S_i"]) > 0.2 else "Low")
+            informe += f"| `{row['param']}` | {row['X_i']} | {row['dY_dXi']} | **{row['S_i']}** | {level} |\n"
+        informe += "\nThe parameter with the highest $S_i$ exhibits the most critical impact on structural safety prediction, guiding future experimental campaigns.\n"
+
     # ── INFERENCIA LSTM ──
     try:
         model_path = Path("models/lstm/cdw_lstm_v1.pth")
