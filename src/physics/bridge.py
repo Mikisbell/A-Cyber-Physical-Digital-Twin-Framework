@@ -82,18 +82,33 @@ def handshake(ser: serial.Serial, cfg: dict, config_hash: str) -> bool:
 # ─────────────────────────────────────────────────────────
 def parse_packet(raw: str) -> dict | None:
     """
-    Formato esperado del Arduino:
+    Formato Clásico (100Hz):
       T:<millis>,A:<accel_g>,D:<disp_mm>
-    Ejemplo:
-      T:12345,A:0.12,D:0.003
-    Devuelve dict o None si el paquete es inválido.
+    Formato LoRa Edge AI (Asíncrono):
+      LORA:TMP:<temp>,HUM:<hum>,FN:<fn>,MAX_G:<max_g>,STAT:<stat>
     """
     try:
+        # ─ PAQUETE LORA EDGE AI ─
+        if raw.startswith("LORA:"):
+            # LORA:TMP:28.1,HUM:55.2,FN:5.20,MAX_G:1.15,STAT:OK
+            body = raw[5:] # Remover prefijo LORA:
+            parts = dict(p.split(":") for p in body.strip().split(","))
+            return {
+                "is_lora": True,
+                "tmp": float(parts.get("TMP", 0.0)),
+                "hum": float(parts.get("HUM", 0.0)),
+                "fn": float(parts.get("FN", 0.0)),
+                "max_g": float(parts.get("MAX_G", 0.0)),
+                "stat": parts.get("STAT", "ERR")
+            }
+
+        # ─ PAQUETE RAW CLÁSICO ─
         parts = dict(p.split(":") for p in raw.strip().split(","))
         return {
+            "is_lora": False,
             "t_arduino_ms": int(parts["T"]),
             "accel_g":      float(parts["A"]),
-            "disp_mm":      float(parts["D"]),
+            "disp_mm":      float(parts.get("D", 0.0)),
         }
     except (ValueError, KeyError):
         return None
@@ -360,7 +375,28 @@ def run_bridge(port: str = "/dev/ttyUSB0"):
                     print(f"[BRIDGE] ⚠️  Paquete inválido descartado: '{raw}'")
                     continue
 
-                # ─ Calcular jitter
+                # ─ FLUJO LORA EDGE AI (ASÍNCRONO / EVENTOS) ─
+                if pkt.get("is_lora"):
+                    status_col = "✅" if pkt["stat"] == "OK" else ("⚠️ " if pkt["stat"] == "WARN" else "🛑")
+                    print(f"[LORA Rx] {status_col} Fn: {pkt['fn']:.2f} Hz | Max_G: {pkt['max_g']:.3f} | Tmp: {pkt['tmp']:.1f}°C | Estado: {pkt['stat']}")
+                    packet_count += 1
+                    
+                    if pkt["stat"].startswith("ALARM"):
+                        print(f"\n[BRIDGE] 🛑 ALERTA ESTRUCTURAL LORA: {pkt['stat']} detectada en sensor Edge.")
+                        # Guarda el evento inmediatamente en Engram
+                        import inspect
+                        current_script_hash = compute_config_hash(Path(inspect.getfile(inspect.currentframe())))
+                        EngramClient.record(
+                            hash_code=current_script_hash,
+                            payload={"reason": pkt["stat"], "f_n": pkt["fn"], "max_g": pkt["max_g"], "tmp": pkt["tmp"]},
+                            tags=["lora_telemetry", "alarm", pkt["stat"].lower()]
+                        )
+                        print(f"[BRIDGE] 📝 Evento crítico reportado a Engram para evaluación del Scientific Narrator.")
+                        break # Terminar bucle para iniciar reporte automático
+                    continue # LoRa no entra al loop de OpenSeesPy a 100Hz
+
+                # ─ FLUJO CLÁSICO USB RAW (SÍNCRONO A 100HZ) ─
+                # Calcular jitter
                 jitter = compute_jitter_ms(pkt["t_arduino_ms"], t_linux_ns, baseline_offset_ms)
                 watch_status = watchdog.record(jitter)
 
