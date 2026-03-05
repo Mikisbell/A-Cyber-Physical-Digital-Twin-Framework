@@ -398,6 +398,15 @@ def run_bridge(port: str = "/dev/ttyUSB0"):
                     print(f"[LORA Rx] {status_col} Fn: {pkt['fn']:.2f} Hz | Max_G: {pkt['max_g']:.3f} | Latencia: {latency_s:.1f}s | Estado: {pkt['stat']}")
                     packet_count += 1
                     
+                    if packet_count == 1 and not pkt["stat"].startswith("ALARM"):
+                        print(f"[BRIDGE] 📝 Línea Base (BASELINE) registrada en Engram.")
+                        current_script_hash = compute_config_hash(Path(inspect.getfile(inspect.currentframe())))
+                        EngramClient.record(
+                            hash_code=current_script_hash,
+                            payload={"reason": "BASELINE", "f_n": pkt["fn"], "max_g": pkt["max_g"], "tmp": pkt["tmp"], "lag_s": latency_s},
+                            tags=["lora_telemetry", "baseline", pkt["stat"].lower()]
+                        )
+                        
                     if pkt["stat"].startswith("ALARM"):
                         print(f"\n[BRIDGE] 🛑 ALERTA ESTRUCTURAL LORA: {pkt['stat']} detectada en sensor Edge.")
                         current_script_hash = compute_config_hash(Path(inspect.getfile(inspect.currentframe())))

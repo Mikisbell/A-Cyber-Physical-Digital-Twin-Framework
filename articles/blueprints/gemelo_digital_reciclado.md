@@ -20,37 +20,3 @@ Se espera que la integración del Gemelo Digital permita una precisión superior
 * **Del Monitoreo a la Predicción:** Detecta anomalías pero, sobre todo, predice la vida remanente del módulo antes del mantenimiento crítico.
 * **Integración Edge IoT Asíncrona:** Rompe la dependencia del streaming síncrono frágil introduciendo Watchdogs Telemétricos defensivos de grado industrial.
 * **Aplicabilidad Pública "Autovigilante":** Solución de infraestructura barata (reciclada) y resiliente capaz de auto-auditarse (Campaña 2026).
-
-
----
-
-## Resultados Físicos: Auditoría de Telemetría LoRa (Edge IoT)
-*Reporte autogenerado por el Scientific Narrator (Belico Stack)*
-
-Este estudio ha superado la dependencia del monitoreo pasivo mediante streaming cableado, implementando una red de **Edge Computing (Nicla Sense ME)**. El algoritmo de Inteligencia Artificial (Filtro de Kalman y FFT) opera directamente en el silicio del sensor, emitiendo únicamente inferencias asíncronas de bajísimo peso a través del protocolo LoRa.
-
-A continuación, la confrontación del Gemelo Digital contra la evidencia criptográfica almacenada en la base Inmutable (Engram).
-
-### 1. Estado Sano (Baseline Telemétrico)
-Se determinó la firma de vibración inicial de la estructura utilizando la algoritmia FFT On-Board.
-- **Timestamp de Sellado**: 2026-03-05 15:18:38
-- **Hash de Evidencia**: `986ca927f8eb97ff69754b36a03560a0611ba7bb80c94aadcbdf45ddbbb3ddca`
-- **Engram ID**: `[Ref: 18]`
-- **Frecuencia Dominante (Fn)**: 7.99 Hz
-- **Temperatura Interna (C&DW)**: 21.9 °C
-- *(Confirmando integridad estructural inicial bajo parámetros nominales).*
-
-### 2. Detección Predictiva de Anomalía (Fallo Crítico)
-El gemelo digital interactuó con la anomalía reportada asíncronamente por el Watchdog Telemétrico del Búnker, demostrando la capacidad del sistema de aislar información vital.
-- **Timestamp de Alarma**: 2026-03-05 15:18:55
-- **Hash de Evidencia**: `986ca927f8eb97ff69754b36a03560a0611ba7bb80c94aadcbdf45ddbbb3ddca`
-- **Engram ID**: `[Ref: 20]`
-- **Razón Categórica de Fallo**: `ALARM_RL2`
-- **Frecuencia Caída (Fn)**: 4.89 Hz *(Alarma de Fatiga)*
-- **Aceleración Pico Estructural**: 0.450 g
-- **Latencia de Red (Airtime LoRa)**: 0.2 s *(Rechazando paquetes > 15s)*
-
-### 3. Conclusión Científica sobre Resiliencia Nacional
-El sistema **Belico Stack** ha demostrado que los módulos habitacionales de concreto reciclado pueden ser transformados en agentes activos de su propio mantenimiento. La caída de la frecuencia natural detectada (_4.89 Hz_) fue procesada de extremo a extremo sin saturar el ancho de banda, permitiéndole a la capa de predicción (LSTM) calcular la vida remanente mucho antes del colapso estructural.
-
-En el marco de la infraestructura para la *Presa del Norte* y futuras obras, la validación temporal asíncrona (con apenas 0.2 segundos de Lag) previene el ataque de falsas alarmas y garantiza una toma de decisiones blindada y auditable.

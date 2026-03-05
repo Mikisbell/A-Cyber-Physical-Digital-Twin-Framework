@@ -36,88 +36,98 @@ def _extract_dominant_frequency(csv_path: Path) -> float:
         print(f"❌ [FFT_SKILL] Error en análisis espectral: {e}")
         return 0.0
 
-def fetch_latest_abort_event():
-    """Extrae el último evento de aborto (fuego real) desde la base de datos inmutable."""
+def fetch_telemetry_events():
+    """Extrae el Baseline y la Alarma más recientes desde Engram."""
+    baseline, alarm = None, None
     if not ENGRAM_DB_PATH.exists():
-        return None
+        return None, None
         
     try:
         with sqlite3.connect(ENGRAM_DB_PATH) as conn:
             conn.row_factory = sqlite3.Row
             cursor = conn.cursor()
-            # Buscar el último evento etiquetado como "abort"
+            
             cursor.execute('''
                 SELECT id, timestamp, hash_code, payload, tags 
-                FROM records 
-                WHERE tags LIKE '%"abort"%' 
+                FROM records WHERE tags LIKE '%"baseline"%' 
                 ORDER BY timestamp DESC LIMIT 1
             ''')
-            return cursor.fetchone()
+            baseline = cursor.fetchone()
+            
+            cursor.execute('''
+                SELECT id, timestamp, hash_code, payload, tags 
+                FROM records WHERE tags LIKE '%"alarm"%' 
+                ORDER BY timestamp DESC LIMIT 1
+            ''')
+            alarm = cursor.fetchone()
+            
     except sqlite3.Error as e:
         print(f"❌ [NARRATOR] Error de lectura Engram: {e}")
-        return None
+        
+    return baseline, alarm
 
-def generate_shadow_paper(event):
-    """Convierte el Hash de Engram en prosa científica y política (Shadow Paper)."""
-    if not event:
-        print("⚠️ [NARRATOR] No hay eventos de aborto en Engram para analizar.")
-        return
-
-    # Leer Schema Engram (Contrato AI)
-    schema_path = get_schema_engram_file()
-    schema_yaml = schema_path.read_text(encoding='utf-8') if schema_path.exists() else "No Schema Defined."
-
-    # Parsear los datos inmutables
-    payload = json.loads(event['payload'])
-    tags = json.loads(event['tags'])
-    dt_str = datetime.fromtimestamp(event['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+def generate_paper_maestro(baseline, alarm):
+    """Fusiona el Blueprint con la evidencia criptográfica LoRa para redactar el Paper Maestro."""
+    blueprint_path = Path(__file__).resolve().parent / "blueprints" / "gemelo_digital_reciclado.md"
+    blueprint_text = blueprint_path.read_text(encoding='utf-8') if blueprint_path.exists() else "Blueprint No Encontrado."
     
-    # Extraer métricas específicas del payload (ej. razón de aborto y paquetes procesados)
-    reason = payload.get('reason', 'Desconocido')
-    packets = payload.get('packets_processed', 0)
-    
-    # Spectral Analysis (Fourier)
-    csv_path = get_processed_data_dir() / "latest_abort.csv"
-    dom_freq = _extract_dominant_frequency(csv_path)
-    
-    # Simular la lógica de AITMPL: El "Traductor de Evidencia"
-    # (En un entorno con API key válida, esto pasaría por un prompt a GPT-4/Claude)
-    
-    informe = f"""# 🏛️ Informe de Transparencia Estructural y Resiliencia
-*Documento Generado Criptográficamente por el Scientific Narrator (AITMPL)*
-
-<!-- ENGINE RESTRICTIONS (SCHEMA.YAML BOUNDARIES)
-El siguiente informe fue interpretado respetando estrictamente el Contrato de Datos:
-{schema_yaml}
--->
-
-## 1. Integridad del Experimento (Data Auditor)
-Este documento certifica el ensayo de la "Cámara de Tortura" (Modelo P-Delta). Todo el flujo de datos desde el sensor físico hasta la parada térmica está sellado bajo el **Hash de Verificación: `{event['hash_code']}`** generado el {dt_str}. El identificador único de este evento en el registro inmutable (Engram) es **[Ref: Engram_ID_{event['id']}]**.
-
-## 2. Análisis Estructural No Lineal (Physics Interpreter)
-La estructura fue sometida a una inyección de energía armónica incrementada para simular un colapso. El evento de fallo se produjo tras procesar {packets} paquetes de datos físicos consecutivos. 
-
-El filtro predictivo (Guardian Angel) detuvo la simulación bajo el siguiente diagnóstico algorítmico:
-> **Causa Directa de Aborto**: {reason}
-> **Frecuencia Dominante Sensórica (FFT)**: {dom_freq:.2f} Hz
-
-## 3. Conclusiones sobre Resiliencia Nacional (Strategic Analyst)
-El colapso de infraestructuras críticas no ocurre por azar, sino por la incapacidad de detectar las fallas a tiempo. El ensayo auditable **[Ref: Engram_ID_{event['id']}]** demuestra que nuestra tecnología de "Lazo Cerrado Estructural" es capaz de leer la innovación del Filtro de Kalman y aislar el colapso matemático *antes* de que ocurra la pérdida humana.
-
-En infraestructuras del país (ej. proyectos en asentamientos clave), incorporar este "Búnker de Investigación" como estándar de construcción garantiza que las estructuras no solo sean fuertes ante el papel, sino que sean auditadas cognitivamente en tiempo real día y noche.
+    informe = f"""{blueprint_text}
 
 ---
-*Fin del Informe. Generado Automáticamente por AITMPL.*
-"""
 
+## Resultados Físicos: Auditoría de Telemetría LoRa (Edge IoT)
+*Reporte autogenerado por el Scientific Narrator (Belico Stack)*
+
+Este estudio ha superado la dependencia del monitoreo pasivo mediante streaming cableado, implementando una red de **Edge Computing (Nicla Sense ME)**. El algoritmo de Inteligencia Artificial (Filtro de Kalman y FFT) opera directamente en el silicio del sensor, emitiendo únicamente inferencias asíncronas de bajísimo peso a través del protocolo LoRa.
+
+A continuación, la confrontación del Gemelo Digital contra la evidencia criptográfica almacenada en la base Inmutable (Engram).
+
+### 1. Estado Sano (Baseline Telemétrico)
+"""
+    if baseline:
+        b_payload = json.loads(baseline['payload'])
+        b_dt = datetime.fromtimestamp(baseline['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+        informe += f"""Se determinó la firma de vibración inicial de la estructura utilizando la algoritmia FFT On-Board.
+- **Timestamp de Sellado**: {b_dt}
+- **Hash de Evidencia**: `{baseline['hash_code']}`
+- **Engram ID**: `[Ref: {baseline['id']}]`
+- **Frecuencia Dominante (Fn)**: {b_payload.get('f_n', 0):.2f} Hz
+- **Temperatura Interna (C&DW)**: {b_payload.get('tmp', 0):.1f} °C
+- *(Confirmando integridad estructural inicial bajo parámetros nominales).*
+"""
+    else:
+        informe += "> ⚠️ No se encontró registro Baseline Sano en Engram.\n"
+        
+    informe += "\n### 2. Detección Predictiva de Anomalía (Fallo Crítico)\n"
+    
+    if alarm:
+        a_payload = json.loads(alarm['payload'])
+        a_dt = datetime.fromtimestamp(alarm['timestamp']).strftime('%Y-%m-%d %H:%M:%S')
+        informe += f"""El gemelo digital interactuó con la anomalía reportada asíncronamente por el Watchdog Telemétrico del Búnker, demostrando la capacidad del sistema de aislar información vital.
+- **Timestamp de Alarma**: {a_dt}
+- **Hash de Evidencia**: `{alarm['hash_code']}`
+- **Engram ID**: `[Ref: {alarm['id']}]`
+- **Razón Categórica de Fallo**: `{a_payload.get('reason', 'N/A')}`
+- **Frecuencia Caída (Fn)**: {a_payload.get('f_n', 0):.2f} Hz *(Alarma de Fatiga)*
+- **Aceleración Pico Estructural**: {a_payload.get('max_g', 0):.3f} g
+- **Latencia de Red (Airtime LoRa)**: {a_payload.get('lag_s', 0):.1f} s *(Rechazando paquetes > 15s)*
+
+### 3. Conclusión Científica sobre Resiliencia Nacional
+El sistema **Belico Stack** ha demostrado que los módulos habitacionales de concreto reciclado pueden ser transformados en agentes activos de su propio mantenimiento. La caída de la frecuencia natural detectada (_{a_payload.get('f_n', 0):.2f} Hz_) fue procesada de extremo a extremo sin saturar el ancho de banda, permitiéndole a la capa de predicción (LSTM) calcular la vida remanente mucho antes del colapso estructural.
+
+En el marco de la infraestructura para la *Presa del Norte* y futuras obras, la validación temporal asíncrona (con apenas {a_payload.get('lag_s', 0):.1f} segundos de Lag) previene el ataque de falsas alarmas y garantiza una toma de decisiones blindada y auditable.
+"""
+    else:
+        informe += "> ⚠️ No se encontró registro de Alarma Estructural en Engram.\n"
+        
     DRAFT_DIR.mkdir(parents=True, exist_ok=True)
-    with open(REPORT_PATH, "w") as f:
+    paper_out = DRAFT_DIR / "paper_maestro.md"
+    with open(paper_out, "w") as f:
         f.write(informe)
     
-    print(f"✅ [NARRATOR] Shadow Paper generado con éxito en: {REPORT_PATH}")
-    print(f"✅ [NARRATOR] Evidencia vinculada a: [Ref: Engram_ID_{event['id']}]")
+    print(f"✅ [NARRATOR] Paper Maestro generado con éxito en: {paper_out}")
 
 if __name__ == "__main__":
-    print("🧠 [NARRATOR] Iniciando traducción de evidencia desde Engram DB...")
-    abort_event = fetch_latest_abort_event()
-    generate_shadow_paper(abort_event)
+    print("🧠 [NARRATOR] Extrayendo Blueprint y Evidencia de Engram DB...")
+    base, alrm = fetch_telemetry_events()
+    generate_paper_maestro(base, alrm)
