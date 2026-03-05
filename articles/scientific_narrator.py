@@ -177,7 +177,24 @@ El sistema **Belico Stack** ha demostrado que los módulos habitacionales de con
 
 > 🔮 **Predicción de Mantenimiento Crítico:** La estructura requerirá intervención en exactamente **{ttf_months:.1f} meses** (±12 días de desviación). 
 
-Esta asimilación Deep Learning valida que infraestructuras de bajo coste en la *Presa del Norte* cuentan con una garantía temporal asíncrona (Aduana LoRa: Lag de {a_payload.get('lag_s', 0) if a_payload else 0:.1f} segundos), previendo fallos catastróficos antes de que sean inevitables y convirtiendo a cada módulo en una inversión de resiliencia nacional viva."""
+Esta asimilación Deep Learning valida que infraestructuras de bajo coste en la *Presa del Norte* cuentan con una garantía temporal asíncrona (Aduana LoRa: Lag de {a_payload.get('lag_s', 0) if a_payload else 0:.1f} segundos), previendo fallos catastróficos antes de que sean inevitables y convirtiendo a cada módulo en una inversión de resiliencia nacional viva.
+
+> 🏢 **Gemelo Digital Visual Activo:** El reporte estructural (TTF, Frecuencia, Latencia) se ha exportado como un objeto IoT metadata BIM-compatible (JSON). Los esquemas de mantenimiento tricolor para gestión ciudadana ya están sincronizados.
+"""
+            
+            try:
+                import tools.bim_exporter as bim_exp
+                bim_meta = bim_exp.generate_bim_metadata(
+                    module_id="A-12-LA-ESPERANZA",
+                    ttf_months=float(ttf_months),
+                    fn_current=float(current_fn),
+                    k_term=0.51,
+                    latencia_lora=float(a_payload.get('lag_s', 0)) if a_payload else 0.0
+                )
+                exported_path = bim_exp.export_to_json(bim_meta)
+                print(f"✅ [NARRATOR] Entregable BIM Ciudadano sellado en: {exported_path}")
+            except Exception as bim_e:
+                print(f"⚠️ [NARRATOR] Aviso: Falló exportación BIM - {bim_e}")
             
     except Exception as e:
         informe += f"> ⚠️ El predictor AI Core no pudo ser cargado. {e}\n"

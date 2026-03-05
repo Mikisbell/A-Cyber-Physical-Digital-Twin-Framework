@@ -1,0 +1,25 @@
+{
+    "id": "BIM-ELEM-A-12-LA-ESPERANZA",
+    "type": "ModularHousingUnit",
+    "material": "Recycled Concrete (C&DW 75%)",
+    "properties": {
+        "Structural_Health": {
+            "LSTM_Prediction_TTF_Months": 0.86,
+            "Risk_Classification": "CRITICAL",
+            "Current_Natural_Frequency_Hz": 4.89,
+            "Thermal_Conductivity_WmK": 0.51
+        },
+        "IoT_Network_Layer": {
+            "Last_Audit_Timestamp": "2026-03-05T15:43:14.034347",
+            "LoRa_Network_Latency_Secs": 0.17,
+            "Engram_Chain_Status": "VERIFIED_SECURE"
+        },
+        "Render_Material": {
+            "Override_Color_Hex": "#e74c3c",
+            "Opacity": 0.85
+        },
+        "Maintenance_Logistics": {
+            "Recommended_Action": "Evacuaci\u00f3n Inmediata y Refuerzo Estructural (Mantenimiento Clase A)"
+        }
+    }
+}
