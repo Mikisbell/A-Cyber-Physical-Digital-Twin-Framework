@@ -21,7 +21,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; CYAN='\033[0;36m'; NC
 COMPONENTS=(
   "engram|gentleman-programming/tap/engram|Gentleman-Programming/engram|required"
   "gentle-ai|gentleman-programming/tap/gentle-ai|Gentleman-Programming/gentle-ai|required"
-  "gga|gentleman-programming/tap/gga|Gentleman-Programming/gentleman-guardian-angel|optional"
+  "gga|gentleman-programming/tap/gga|Gentleman-Programming/gentleman-guardian-angel|required"
   "agent-teams-lite|-|Gentleman-Programming/agent-teams-lite|required"
   "Gentleman-Skills|-|Gentleman-Programming/Gentleman-Skills|optional"
 )

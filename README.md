@@ -54,7 +54,7 @@ This installs (via Homebrew or binary download):
 | [Engram](https://github.com/Gentleman-Programming/engram) | Persistent memory across sessions | `brew install gentleman-programming/tap/engram` |
 | [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai) | Ecosystem configurator (SDD + Skills + MCP) | `brew install gentleman-programming/tap/gentle-ai` |
 | [Agent Teams Lite](https://github.com/Gentleman-Programming/agent-teams-lite) | SDD orchestration with sub-agents | Cloned to `.agents/agent-teams-lite/` |
-| [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | AI code review on commits (optional) | `brew install gentleman-programming/tap/gga` |
+| [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | Pre-commit AI code review (Python/Arduino/Shell) | `gga init && gga install` |
 | [Gentleman Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | Skill library reference (optional) | Cloned to `.agents/Gentleman-Skills/` |
 
 ### Keeping dependencies updated
@@ -100,6 +100,8 @@ belico-stack/
 ├── CLAUDE.md                  # Agent router (boot sequence, onboarding)
 ├── Belico.md                  # Project constitution (guardrails, Red Lines)
 ├── PRD.md                     # Product requirements (what to build)
+├── AGENTS.md                  # GGA code review rules (11 rules, Python/Arduino/Shell)
+├── .gga                       # GGA config (provider=claude, file patterns)
 ├── config/
 │   └── params.yaml            # SSOT — Single Source of Truth for all parameters
 ├── src/
@@ -115,7 +117,8 @@ belico-stack/
 │   ├── figures/               # Publication-quality figures (PDF + PNG)
 │   └── scientific_narrator.py # IMRaD draft generator (multi-domain)
 ├── tools/
-│   ├── setup_dependencies.sh  # Ecosystem installer
+│   ├── setup_dependencies.sh  # Ecosystem installer (--check, --update, --lock)
+│   ├── boot_engram.sh         # SessionStart hook (active memory retrieval)
 │   ├── validate_submission.py # Pre-submission validator (9 checks + --diagnose)
 │   ├── compile_paper.sh       # Pandoc PDF compiler (IEEE/Elsevier/Conference)
 │   ├── bibliography_engine.py # Citation engine (53 refs, 12 categories)
@@ -186,7 +189,7 @@ This stack is built on top of the Gentleman Programming open-source ecosystem:
 | [Engram](https://github.com/Gentleman-Programming/engram) | Persistent memory — stores decisions, patterns, errors across sessions |
 | [Agent Teams Lite](https://github.com/Gentleman-Programming/agent-teams-lite) | SDD orchestration — 9 phases with delegate-only coordinator |
 | [Gentle AI](https://github.com/Gentleman-Programming/gentle-ai) | One-command ecosystem setup for any AI agent |
-| [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | Pre-commit AI code review against engineering rules |
+| [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | Pre-commit AI code review — 11 rules for Python/Arduino/Shell (AGENTS.md) |
 | [Gentleman Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | Skill format reference (our scientific skills follow this structure) |
 | [veil.nvim](https://github.com/Gentleman-Programming/veil.nvim) | Hide secrets in Neovim (optional, for streamers) |
 | [Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots) | Complete dev environment dotfiles (optional) |

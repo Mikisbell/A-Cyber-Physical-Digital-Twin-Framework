@@ -36,7 +36,7 @@ Ejecuta `bash tools/setup_dependencies.sh --check` para verificar que estan inst
 | **Engram** | `engram version` | SI | Memoria persistente entre sesiones |
 | **Gentle AI** | `gentle-ai version` | SI | Configurador del ecosistema (SDD + Skills + MCP) |
 | **Agent Teams Lite** | `.agents/agent-teams-lite/` existe | SI | Orquestacion SDD con sub-agentes |
-| **GGA** | `gga version` | NO | Pre-commit code review con IA |
+| **GGA** | `gga version` | SI | Pre-commit code review con IA (AGENTS.md, 11 reglas) |
 | **Gentleman Skills** | `.agents/Gentleman-Skills/` existe | NO | Referencia de estructura de skills |
 
 Si faltan dependencias requeridas, indica al usuario:
@@ -72,7 +72,7 @@ Ecosistema Gentleman:
   - Engram:                   [OK vX.X | FALTA — brew install gentleman-programming/tap/engram]
   - Gentle AI:                [OK vX.X | FALTA — brew install gentleman-programming/tap/gentle-ai]
   - Agent Teams Lite:         [OK | FALTA — git clone ...]
-  - GGA:                      [OK vX.X | no instalado (opcional)]
+  - GGA:                      [OK vX.X | FALTA — gga init && gga install]
   - Gentleman Skills:         [OK | no instalado (opcional)]
 Constitucion (Belico.md):     [CARGADA | ERROR]
 SSOT (params.yaml):           [CARGADA | NO ENCONTRADA]
@@ -311,6 +311,8 @@ Cada paper draft en `articles/drafts/` debe:
 - `.agent/skills/` — Skills lazy-loaded (signal_processing, paper_production, cfd, wind, norms)
 - `.agent/specs/` — Quality gates por journal/quartil (journal_specs.yaml)
 - `.agents/` — Repos externos (engram, agent-teams-lite)
+- `AGENTS.md` — Reglas de code review para GGA (11 reglas Python/Arduino/Shell)
+- `.gga` — Configuracion de GGA (provider, patterns, timeout)
 - `tools/` — Scripts de generacion, validacion y exportacion
 
 ## Guardrails (Reglas de Oro)

@@ -45,7 +45,7 @@ El EIU se construye sobre el ecosistema open-source de Gentleman Programming. Es
 | **Engram** | [Gentleman-Programming/engram](https://github.com/Gentleman-Programming/engram) | SI | Memoria persistente (SQLite + FTS5, 14 MCP tools) | `brew install gentleman-programming/tap/engram` |
 | **Gentle AI** | [Gentleman-Programming/gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) | SI | Configurador ecosistema (SDD + Skills + MCP) | `brew install gentleman-programming/tap/gentle-ai` |
 | **Agent Teams Lite** | [Gentleman-Programming/agent-teams-lite](https://github.com/Gentleman-Programming/agent-teams-lite) | SI | Orquestacion SDD (9 fases, sub-agentes delegados) | Clonado en `.agents/agent-teams-lite/` |
-| **GGA** | [Gentleman-Programming/gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | NO | Pre-commit code review con IA | `brew install gentleman-programming/tap/gga` |
+| **GGA** | [Gentleman-Programming/gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | SI | Pre-commit code review (Python/Arduino/Shell, AGENTS.md) | `gga init && gga install` |
 | **Gentleman Skills** | [Gentleman-Programming/Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | NO | Referencia de formato SKILL.md | Clonado en `.agents/Gentleman-Skills/` |
 | **veil.nvim** | [Gentleman-Programming/veil.nvim](https://github.com/Gentleman-Programming/veil.nvim) | NO | Ocultar secretos en Neovim | Plugin Neovim |
 | **Gentleman.Dots** | [Gentleman-Programming/Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots) | NO | Dotfiles de entorno de desarrollo | `brew install gentleman-programming/tap/gentleman-dots` |

@@ -21,7 +21,7 @@ El stack se construye sobre el ecosistema open-source de [Gentleman Programming]
 | **Engram** | [engram](https://github.com/Gentleman-Programming/engram) | SI | Memoria persistente (SQLite + FTS5 + 14 MCP tools) |
 | **Gentle AI** | [gentle-ai](https://github.com/Gentleman-Programming/gentle-ai) | SI | Configurador del ecosistema (SDD + Skills + MCP + Persona) |
 | **Agent Teams Lite** | [agent-teams-lite](https://github.com/Gentleman-Programming/agent-teams-lite) | SI | Orquestacion SDD: 9 fases con orquestador delegador |
-| **GGA** | [gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | NO | Pre-commit code review con IA contra reglas de ingenieria |
+| **GGA** | [gentleman-guardian-angel](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | SI | Pre-commit code review con IA (Python/Arduino/Shell, 11 reglas en AGENTS.md) |
 | **Gentleman Skills** | [Gentleman-Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | NO | Referencia de formato SKILL.md (skills web, no cientificos) |
 | **veil.nvim** | [veil.nvim](https://github.com/Gentleman-Programming/veil.nvim) | NO | Ocultar secretos en Neovim (solo para streamers) |
 | **Gentleman.Dots** | [Gentleman.Dots](https://github.com/Gentleman-Programming/Gentleman.Dots) | NO | Dotfiles de entorno de desarrollo (preferencia personal) |
