@@ -214,6 +214,12 @@ logs_*.txt
 # Base de datos local
 data/engram.db
 
-# Datasets sintéticos gigantes
+# Datasets sinteticos gigantes
 data/synthetic/*.csv
 archive/
+
+# Gentleman ecosystem (repos clonados externos)
+.agents/
+
+# Claude Code (configuracion local)
+.claude/

@@ -121,15 +121,19 @@ belico-stack/
 
 ## Paper Production Pipeline (SDD)
 
-Every paper follows a Spec-Driven Development flow as a DAG (not waterfall). If verification fails, the system diagnoses and loops back to the correct step:
+Every paper follows a Spec-Driven Development flow as a DAG (not waterfall). SPEC and DESIGN run in parallel. IMPLEMENT executes in batches with incremental verification. ARCHIVE closes each cycle.
 
 ```
-EXPLORE --> SPEC --> DESIGN --> TASKS --> IMPLEMENT --> VERIFY ---> PUBLISH
-  ^                                         |           |
-  |                                         |      [diagnose]
-  +-------------------------------------+----------+
-                                     (loop back)
+                    +-> SPEC --+
+EXPLORE --> PROPOSE -|          |-> TASKS --> IMPLEMENT --> VERIFY --> ARCHIVE --> PUBLISH
+  ^                  +-> DESIGN +       |         |                       |
+  |                                     |    [diagnose]              [merge specs]
+  +-------------------------------------+---------+
+                                   (loop back)
 ```
+
+The orchestrator (CLAUDE.md) never generates content directly — it delegates to sub-agents.
+IMPLEMENT runs in 4 sequential batches (Methodology → Results → Discussion → Abstract+Intro), each verified before advancing.
 
 ### Sub-agents
 
