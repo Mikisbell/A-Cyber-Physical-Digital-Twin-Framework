@@ -23,21 +23,22 @@
  */
 
 #include "Arduino.h"
-#include "Arduino_BHY2.h"    // Librería sensor fusion BHI260AP
-#include "Nicla_System.h"    // Gestión de energía Nicla
+#include "Arduino_BHY2.h"    // Libreria sensor fusion BHI260AP
+#include "Nicla_System.h"    // Gestion de energia Nicla
+#include "params.h"          // SSOT — auto-generated from config/params.yaml
 #include <ArduinoLowPower.h>
 #include <math.h>
 
 // ─── Pines de Control del E32 ────────────────────────────────────────────────
 #define E32_M0_PIN   D2
 #define E32_M1_PIN   D3
-#define E32_AUX_PIN  D4      // HIGH = Módulo listo, LOW = ocupado transmitiendo
+#define E32_AUX_PIN  D4      // HIGH = Modulo listo, LOW = ocupado transmitiendo
 
-// ─── Parámetros del Sistema ──────────────────────────────────────────────────
-#define WINDOW_SIZE       256     // Muestras para FFT (2.56s @ 100Hz)
-#define SAMPLE_RATE_HZ    100
-#define ACCEL_THRESHOLD_G 0.05f   // Umbral para despertar (vibración estructural)
-#define SLEEP_INTERVAL_MS 5000    // Ciclo base de sueño entre bursts (5s duty cycle)
+// ─── Parametros del Sistema (SSOT + locales) ─────────────────────────────────
+#define WINDOW_SIZE       256     // Muestras para FFT (2.56s @ SAMPLE_RATE_HZ)
+// SAMPLE_RATE_HZ comes from params.h (SSOT)
+#define ACCEL_THRESHOLD_G 0.05f   // Umbral para despertar (vibracion estructural)
+#define SLEEP_INTERVAL_MS 5000    // Ciclo base de sueno entre bursts (5s duty cycle)
 
 // Umbral de Alarma RL2 (rigidez perdida > 30%)
 #define FN_ALARM_HZ       5.6f
@@ -57,9 +58,9 @@ float  fn_hz       = 0.0f;
 float  max_g       = 0.0f;
 float  tmp_c       = 0.0f;
 
-// Kalman 1D embebido
+// Kalman 1D embebido (Q and R from SSOT params.h)
 float kf_x = 0.0f, kf_p = 1.0f;
-const float KF_Q = 0.001f, KF_R = 0.1f;
+const float kf_q = KF_Q, kf_r = KF_R;
 
 // ─── Modo del E32 ────────────────────────────────────────────────────────────
 void setE32Mode(bool sleeping) {
@@ -86,8 +87,8 @@ bool waitE32Ready(uint32_t timeoutMs = 500) {
 
 // ─── Filtro de Kalman 1D ─────────────────────────────────────────────────────
 float kalmanStep(float measurement) {
-    kf_p += KF_Q;
-    float K = kf_p / (kf_p + KF_R);
+    kf_p += kf_q;
+    float K = kf_p / (kf_p + kf_r);
     kf_x += K * (measurement - kf_x);
     kf_p *= (1.0f - K);
     return kf_x;
@@ -165,7 +166,7 @@ void setup() {
     nicla::leds.begin();
     nicla::leds.setColor(red);   // LED rojo = inicializando
 
-    Serial.begin(115200);  // Debug (se puede desactivar en campo)
+    Serial.begin(SERIAL_BAUD);  // Debug (se puede desactivar en campo)
     Serial1.begin(9600);   // UART hacia E32
 
     // Pines de control E32

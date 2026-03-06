@@ -133,18 +133,24 @@ def run_research(quartile: str, topic: str, cycles: int):
     except Exception as spec_err:
         print(f"   ⚠️ Error en cálculo espectral (no crítico): {spec_err}")
         
-    # 3. Redacción del Paper (Scientific Narrator)
-    print("\n[3/3] 📝 Invocando al Scientific Narrator para redacción IMRaD...")
-    
-    # Pasamos las variables de entorno para que el Narrator sepa sobre qué escribir
-    import os
-    env = os.environ.copy()
-    env["PAPER_TOPIC"] = topic
-    env["PAPER_QUARTILE"] = quartile
-    env["EXTERNAL_SOURCES"] = "['peer_berkeley', 'cismid_peru']"
-    
+    # 3. Redacción del Paper (Scientific Narrator — multi-dominio)
+    print("\n[3/3] Invocando al Scientific Narrator para redaccion IMRaD...")
+
+    import yaml
+    cfg_path = ROOT / "config" / "params.yaml"
+    domain = "structural"
+    if cfg_path.exists():
+        with open(cfg_path) as _f:
+            _cfg = yaml.safe_load(_f)
+            domain = _cfg.get("project", {}).get("domain", "structural")
+
     narrator_path = str(ROOT / "articles" / "scientific_narrator.py")
-    subprocess.run([sys.executable, narrator_path], cwd=str(ROOT), env=env)
+    subprocess.run([
+        sys.executable, narrator_path,
+        "--domain", domain,
+        "--quartile", quartile,
+        "--topic", topic,
+    ], cwd=str(ROOT))
     
     print("\n" + "="*70)
     print(f" 🎉 INVESTIGACIÓN COMPLETADA. Borrador Q-Ranked generado.")

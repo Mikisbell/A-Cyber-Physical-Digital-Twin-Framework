@@ -1,0 +1,164 @@
+# .agent/specs/journal_specs.yaml — Quality Gates per Quartile/Venue
+# ====================================================================
+# TDD for papers: these specs define PASS/FAIL criteria BEFORE writing.
+# validate_submission.py reads this file to enforce quartile-specific gates.
+# A paper that doesn't meet its spec is BLOCKED from compilation.
+
+Q1:
+  description: "Top-tier journal (Engineering Structures, EESD, SDEE)"
+  word_count:
+    min: 6000
+    max: 10000
+  references:
+    min: 50
+    max: 120
+  figures:
+    min: 8
+    max: 15
+  tables:
+    min: 3
+    max: 10
+  required_sections:
+    - Abstract
+    - Introduction
+    - Literature Review
+    - Methodology
+    - Results
+    - Discussion
+    - Conclusion
+    - Data Availability
+  data_requirements:
+    - "field_data OR lab_data (real measurements mandatory)"
+    - "min 2 structures or test specimens"
+    - "statistical significance (p < 0.05 or CI reported)"
+  novelty_gate: true  # Must have explicit novelty statement
+  comparison_methods: 2  # Min methods compared (e.g., proposed vs baseline)
+  review_rounds_expected: 2-3
+  typical_journals:
+    - "Engineering Structures"
+    - "Earthquake Engineering & Structural Dynamics"
+    - "Soil Dynamics and Earthquake Engineering"
+    - "Structural Safety"
+
+Q2:
+  description: "Strong journal (SCHM, JSCE, Structures)"
+  word_count:
+    min: 5000
+    max: 8000
+  references:
+    min: 35
+    max: 80
+  figures:
+    min: 6
+    max: 12
+  tables:
+    min: 2
+    max: 8
+  required_sections:
+    - Abstract
+    - Introduction
+    - Methodology
+    - Results
+    - Discussion
+    - Conclusion
+  data_requirements:
+    - "field_data OR lab_data OR validated_synthetic"
+    - "min 1 structure or test specimen"
+  novelty_gate: true
+  comparison_methods: 1
+  review_rounds_expected: 1-2
+  typical_journals:
+    - "Structural Control and Health Monitoring"
+    - "Journal of Structural Engineering (ASCE)"
+    - "Structures"
+
+Q3:
+  description: "Solid journal (JCSHM, Buildings, Applied Sciences)"
+  word_count:
+    min: 4000
+    max: 7000
+  references:
+    min: 25
+    max: 60
+  figures:
+    min: 5
+    max: 10
+  tables:
+    min: 2
+    max: 6
+  required_sections:
+    - Abstract
+    - Introduction
+    - Methodology
+    - Results
+    - Conclusion
+  data_requirements:
+    - "field_data OR validated_synthetic"
+  novelty_gate: false  # Incremental contributions accepted
+  comparison_methods: 1
+  review_rounds_expected: 1-2
+  typical_journals:
+    - "Journal of Civil Structural Health Monitoring"
+    - "Buildings"
+    - "Applied Sciences"
+
+Q4:
+  description: "Entry-level journal (Infrastructures, Sensors, Vibration)"
+  word_count:
+    min: 3000
+    max: 6000
+  references:
+    min: 15
+    max: 40
+  figures:
+    min: 4
+    max: 8
+  tables:
+    min: 1
+    max: 5
+  required_sections:
+    - Abstract
+    - Introduction
+    - Methodology
+    - Results
+    - Conclusion
+  data_requirements:
+    - "synthetic_data acceptable with validation"
+  novelty_gate: false
+  comparison_methods: 0
+  review_rounds_expected: 1
+  typical_journals:
+    - "Infrastructures"
+    - "Sensors"
+    - "Vibration"
+
+conference:
+  description: "Conference paper (EWSHM, IMAC, ASCE SHM)"
+  word_count:
+    min: 2500
+    max: 5000
+  references:
+    min: 10
+    max: 30
+  figures:
+    min: 3
+    max: 6
+  tables:
+    min: 1
+    max: 4
+  required_sections:
+    - Abstract
+    - Introduction
+    - Methodology
+    - Results
+    - Conclusion
+  data_requirements:
+    - "synthetic_data with physics-based justification"
+  novelty_gate: false
+  comparison_methods: 0
+  review_rounds_expected: 1
+  typical_journals:
+    - "EWSHM"
+    - "IMAC"
+    - "ASCE Structures Congress"
+    - "WCEE"

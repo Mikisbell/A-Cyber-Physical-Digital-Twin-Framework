@@ -39,12 +39,10 @@
 #include <Arduino_BME68x.h>
 #include <Arduino_HS300x.h>
 #include <PDM.h>
+#include "params.h"  // SSOT — auto-generated from config/params.yaml
 
-// ─── Configuración ────────────────────────────────────────────────
-#define BAUD_RATE       115200
-#define SAMPLE_RATE_HZ  100         // Hz — debe coincidir con params.yaml
+// ─── Configuracion derivada de SSOT ──────────────────────────────
 #define DT_MS           (1000 / SAMPLE_RATE_HZ)
-#define HANDSHAKE_TOKEN "BELICO_V1"  // Debe coincidir con params.yaml
 
 // Buffer PDM (micrófono)
 #define PDM_BUFFER_SIZE 256
@@ -73,7 +71,7 @@ float calcRMS() {
 
 // ─── Setup ────────────────────────────────────────────────────────
 void setup() {
-  Serial.begin(BAUD_RATE);
+  Serial.begin(SERIAL_BAUD);
   while (!Serial);
 
   // IMU BMI270

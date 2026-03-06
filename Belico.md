@@ -24,7 +24,7 @@ Analiza los supuestos del investigador. Si se propone una carga estructural que 
 
 | Fase       | Acción                                                                 |
 |------------|------------------------------------------------------------------------|
-| **Explorar** | Analizar archivos de `firmware/` y `simulation/` antes de cualquier cambio |
+| **Explorar** | Analizar archivos de `src/firmware/` y `src/physics/` antes de cualquier cambio |
 | **Spec**     | Redactar la justificación técnica; no se codifica sin spec aprobada   |
 | **Apply**    | Implementar cambios atómicos, un dominio a la vez                     |
 | **Verify**   | El sub-agente **Verifier** ejecuta validación numérica obligatoria    |
@@ -33,20 +33,37 @@ Analiza los supuestos del investigador. Si se propone una carga estructural que 
 
 ## 🧱 Dominios de Ingeniería
 
-### Hardware — `firmware/`
+La fábrica soporta **tres dominios** de gemelos digitales. El dominio activo se define en `config/params.yaml` → `project.domain`:
+
+| Dominio | Solver | Descripción |
+|---------|--------|-------------|
+| `structural` | OpenSeesPy | Sísmica, SHM, P-Delta, C&DW |
+| `water` | FEniCSx | Navier-Stokes, hidráulica, presas, tuberías |
+| `air` | FEniCSx/SU2 | Carga de viento, aerodinámica, ventilación |
+
+### Hardware — `src/firmware/`
 - Prioridad: **integridad de la señal** y frecuencia de muestreo.
 - Toda constante física (rigidez, masa, amortiguamiento) declarada aquí es la fuente de verdad.
-- El agente debe verificar que los valores coincidan con los parámetros del modelo en `simulation/`.
+- El agente debe verificar que los valores coincidan con los parámetros del modelo en `src/physics/`.
 
-### Simulación — `simulation/`
+### Simulación — `src/physics/`
 - Prioridad: **convergencia del modelo** y precisión de elementos finitos.
 - Los modelos heredan parámetros del hardware; nunca los duplican.
-- Se prohíbe hardcodear valores que ya existen en `firmware/`.
+- Se prohíbe hardcodear valores que ya existen en `src/firmware/`.
+- Arquitectura multi-dominio: `solver_backend.py` (interfaz abstracta) → backends por dominio.
+- Al crear un proyecto nuevo, `scaffold_investigation.py` valida los parámetros requeridos del dominio.
 
 ### Bridge — `data/`
 - Los datos de `data/raw/` alimentan el Gemelo Digital **sin intermediarios humanos**.
-- El pipeline es: `firmware/ → data/raw/ → data/processed/ → simulation/`.
+- El pipeline es: `src/firmware/ → data/raw/ → data/processed/ → src/physics/`.
 - Todo procesamiento intermedio queda documentado en `data/processed/README.md`.
+
+### La Voz — `articles/` + `tools/`
+- Capa de producción científica: genera papers IMRaD multi-dominio.
+- Pipeline completo: `narrator → figures → bibtex → validator → compiler → cover letter`.
+- Cada draft tiene YAML frontmatter con status tracking (`draft` → `review` → `submitted` → `accepted`).
+- Validación pre-submission obligatoria: `tools/validate_submission.py`.
+- Engram registra cada paper generado y cada decisión editorial.
 
 ---
 
@@ -56,7 +73,7 @@ Analiza los supuestos del investigador. Si se propone una carga estructural que 
 Contexto cognitivo (Git): UNIFICADO ──────────────────────┐
                                                           │
 Dominio de ejecución Arduino:  [ PlatformIO env ]         │
-Dominio de ejecución Python:   [ venv / simulation/ ]     │
+Dominio de ejecución Python:   [ venv / src/physics/ ]     │
 Dominio de ejecución IA:       [ .agent/ skills ]         │
                                                           │
 Todo vive aquí: belico-stack/ ────────────────────────────┘
@@ -68,8 +85,8 @@ Todo vive aquí: belico-stack/ ────────────────�
 | `.agent/`      | Memoria y Conocimiento             | Skills de AITMPL (Scientific, Architect) y base de Engram  |
 | `config/`      | **SSOT — Fuente Única de Verdad**  | `params.yaml` define TODO parámetro físico del sistema     |
 | `tools/`       | Parser Bélico                      | Genera `params.h` (C++) y `params.py` (Python) desde YAML  |
-| `firmware/`    | Dominio Físico (Arduino)           | Consume `params.h`; nunca define constantes propias        |
-| `simulation/`  | Dominio Digital (OpenSeesPy)       | Consume `params.py`; nunca define constantes propias       |
+| `src/firmware/`| Dominio Físico (Arduino)           | Consume `params.h`; nunca define constantes propias        |
+| `src/physics/` | Dominio Digital (OpenSeesPy)       | Consume `params.py`; nunca define constantes propias       |
 | `data/`        | El Puente de Datos                 | Logs de sensores y resultados procesados para el paper     |
 | `articles/`    | Producción Científica              | Drafts en LaTeX/Markdown, versionados con el modelo        |
 | `setup.sh`     | El Script de Despliegue            | Único punto de entrada para humanos y agentes              |
@@ -91,7 +108,7 @@ Todo vive aquí: belico-stack/ ────────────────�
 
 ### `Verifier`
 - **Rol:** Validación numérica independiente de modelos estructurales.
-- **Activa cuando:** Se modifica cualquier parámetro en `simulation/models/`.
+- **Activa cuando:** Se modifica cualquier parámetro en `src/physics/models/`.
 - **Output esperado:** Reporte de convergencia + comparación con datos de `data/processed/`.
 
 ### `Physical Critic`
@@ -99,12 +116,27 @@ Todo vive aquí: belico-stack/ ────────────────�
 - **Activa cuando:** Se propone una nueva carga o condición de borde.
 - **Output esperado:** ¿Pasa los criterios de la norma? ¿Hay modos problemáticos?
 
+### `Bibliography Agent`
+- **Rol:** Gestión y validación de referencias bibliográficas por dominio y quartil.
+- **Activa cuando:** Se prepara un draft nuevo o se cambia de dominio.
+- **Output esperado:** Reporte de cobertura de categorías + refs faltantes.
+
+### `Figure Agent`
+- **Rol:** Generación y validación de figuras publication-quality.
+- **Activa cuando:** Un draft necesita figuras o validate_submission reporta figuras faltantes.
+- **Output esperado:** Figuras PDF+PNG numeradas + reporte de calidad.
+
+### `Reviewer Simulator`
+- **Rol:** Simulación hostil de peer review ANTES de submission.
+- **Activa cuando:** Un draft pasa a status `review`.
+- **Output esperado:** 3-5 comentarios simulados + decisión predicha + acciones recomendadas.
+
 ---
 
 ## 📡 Flujo SDD Completo (Publicación)
 
 ```
-Sensor (firmware/) ──► data/raw/ ──► data/processed/ ──► simulation/ ──► articles/
+Sensor (src/firmware/) ──► data/raw/ ──► data/processed/ ──► src/physics/ ──► articles/
         │                                    │                  │              │
         └──────────────────────── git commit ─┴──────────────────┴──────────────┘
                               (estado atómico de la misión — Engram registra)
@@ -145,7 +177,7 @@ Si se cumple **CUALQUIERA** de estas condiciones, el `bridge.py` envía la seña
 
 1. **Atribución de IA:** Cualquier párrafo generado por la Skill `Scientific-Research` debe estar marcado con un comentario oculto `<!-- AI_Assist -->`.
 2. **Validación Humana (HV):** Antes de pasar de `draft` a `final`, el Investigador (Mikisbell) debe marcar cada sección como `<!-- HV: [Iniciales] -->`.
-3. **Inmutabilidad de Resultados:** Los datos en `simulation/results` no pueden ser editados manualmente. Solo el script `tools/export_signals.py` puede inyectarlos en el borrador.
+3. **Inmutabilidad de Resultados:** Los datos en `data/processed/` no pueden ser editados manualmente. Solo el script `tools/export_signals.py` puede inyectarlos en el borrador.
 
 El Verifier actuará como Auditor ("Data-Driven Peer Review"). Compara el draft del artículo contra `Engram` y bloquea si el estudiante o la IA afirma éxito pero hay jitter consecutivo > 15ms.
 

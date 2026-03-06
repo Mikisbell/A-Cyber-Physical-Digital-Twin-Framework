@@ -1,42 +1,35 @@
-# belico.yaml - Orquestador Maestro del Stack Bélico (Arquitectura Pura)
-# Versión 2.0 (Marzo 2026) - Base Cero
+# belico.yaml - Master Orchestrator (Architecture Declaration)
+# Version 3.0 (March 2026)
 
 project_metadata:
-  name: "Investigacion_Base"
+  name: "Belico Stack EIU"
   author: "Ing. Mateo"
-  status: "init"
+  status: "factory_ready"
 
-# 1. Configuración de Memoria (Engram)
+# Memory (Engram)
 memory:
-  path: ".agent/memory/core"
+  path: ".agent/memory/engram"
   auto_commit: true
   hashing_algorithm: "sha256"
 
-# 2. Configuración de Equipos y Agentes (Agent Teams Lite)
-teams:
-  path: ".agent/teams/core"
-  active_roles:
-    - "guardian"
-    - "narrator"
+# Sub-agents
+agents:
+  verifier: ".agent/prompts/verifier.md"
+  physical_critic: ".agent/prompts/physical_critic.md"
 
-# 3. Auditoría Física y Lógica (Guardian Angel)
-security:
-  guardian_path: ".agent/security/guardian"
-  strict_mode: true
-  required_checks:
-    - "syntax_validation"
-    - "physics_guardrails"
+# External repos (cloned into .agents/)
+external:
+  engram: ".agents/engram"
+  agent_teams_lite: ".agents/agent-teams-lite"
+  gentleman_skills: ".agents/Gentleman-Skills"
 
-# 4. Habilidades e Inteligencia (Skills)
+# Skills
 skills:
-  gentleman_path: ".agent/skills/gentleman"
-  aitmpl_path: ".agent/skills/aitmpl"
-  active_modules:
-    - "clean_architecture"
-    - "scientific_research_writer"
+  signal_processing: ".agent/skills/signal_processing.md"
 
-# 5. Rutas Operativas (Lienzo en Blanco)
+# Workspace
 workspace:
   src: "src/"
   drafts: "articles/drafts/"
   tools: "tools/"
+  config: "config/"

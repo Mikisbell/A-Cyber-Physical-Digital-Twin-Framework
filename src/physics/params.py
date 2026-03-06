@@ -1,8 +1,8 @@
 # AUTO-GENERATED — No editar manualmente.
-# Fuente: config/params.yaml  |  Hash: 3dd726ee4864d752
+# Fuente: config/params.yaml  |  Hash: f376d4ba704b123b
 # Regenerar: python3 tools/generate_params.py
 
-CONFIG_HASH = "3dd726ee4864d752023f29f4150bc58b4e8cef951b845bb1038f2ad1fade6272"
+CONFIG_HASH = "f376d4ba704b123b46716b5ae31de1e08fa7b5cc63fca77daec73cf0435037cd"
 
 # Material
 MATERIAL_NAME = "Concreto Liviano Reciclado C&DW"
@@ -28,3 +28,6 @@ KF_R       = 0.01
 DT         = 0.01
 MAX_JITTER = 5
 BUFFER_DEPTH = 10
+
+# Nonlinear model status
+NONLINEAR_READY = False

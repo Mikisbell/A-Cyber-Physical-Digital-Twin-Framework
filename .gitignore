@@ -216,3 +216,4 @@ data/engram.db
 
 # Datasets sintéticos gigantes
 data/synthetic/*.csv
+archive/

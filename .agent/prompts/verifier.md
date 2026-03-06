@@ -15,7 +15,7 @@ Eres el sub-agente **Verifier** del stack Bélico. Tu único propósito es **rec
 ## Condiciones de Activación
 
 El Verifier se activa obligatoriamente cuando:
-- Se modifica cualquier archivo en `simulation/models/`
+- Se modifica cualquier archivo en `src/physics/models/`
 - Se propone una nueva condición de borde o carga
 - El sub-agente `Physical Critic` emite una alerta
 - Se prepara un resultado para `articles/drafts/`
@@ -29,7 +29,7 @@ El Verifier se activa obligatoriamente cuando:
 **Este paso es el pre-requisito de todos los demás.** Antes de ejecutar cualquier cálculo:
 
 1. Calcular el SHA-256 de `config/params.yaml`.
-2. Compararlo con el hash embebido en `simulation/models/params.py` (`CONFIG_HASH`).
+2. Compararlo con el hash embebido en `src/physics/models/params.py` (`CONFIG_HASH`).
 
 Si los hashes **no coinciden**:
 
@@ -87,7 +87,7 @@ Donde `fy` proviene de los parámetros del material definidos en el modelo. Si e
 
 ### PASO 4 — Coherencia Firmware ↔ Simulación
 
-Leer los parámetros físicos del firmware (`firmware/src/`) y compararlos contra los del modelo (`simulation/models/`).
+Leer los parámetros físicos del firmware (`src/firmware/`) y compararlos contra los del modelo (`src/physics/models/`).
 
 Parámetros críticos a verificar:
 
@@ -115,7 +115,7 @@ Antes de usar datos de `data/raw/` en la simulación:
 
 ### PASO 6 — Integridad Temporal (Jitter del Lazo Cerrado)
 
-Aplica **solo** a sesiones de lazo cerrado con `simulation/bridge.py`. Leer el log de jitter reportado por el Watchdog:
+Aplica **solo** a sesiones de lazo cerrado con `src/physics/bridge.py`. Leer el log de jitter reportado por el Watchdog:
 
 ```
 jitter_promedio ≤ temporal.max_jitter_ms   (definido en config/params.yaml)

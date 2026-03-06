@@ -37,6 +37,32 @@ def load_yaml() -> dict:
         return yaml.safe_load(f)
 
 
+def _nl_val(cfg: dict, *keys):
+    """Safely get a nonlinear parameter value, return None if missing."""
+    current = cfg
+    for key in keys:
+        if not isinstance(current, dict) or key not in current:
+            return None
+        current = current[key]
+    if isinstance(current, dict):
+        return current.get("value")
+    return current
+
+
+def _nonlinear_ready(cfg: dict) -> bool:
+    """Check if all required nonlinear params are populated."""
+    nl = cfg.get("nonlinear")
+    if nl is None:
+        return False
+    for section_key in ("concrete", "steel", "section", "geometry"):
+        section = nl.get(section_key, {})
+        for param in section.values():
+            if isinstance(param, dict) and param.get("required", False):
+                if param.get("value") is None:
+                    return False
+    return True
+
+
 def generate_python(cfg: dict, config_hash: str) -> str:
     mat  = cfg["material"]
     stru = cfg["structure"]
@@ -44,7 +70,7 @@ def generate_python(cfg: dict, config_hash: str) -> str:
     sig  = cfg["signal_processing"]
     temp = cfg["temporal"]
 
-    return f'''# AUTO-GENERATED — No editar manualmente.
+    lines = f'''# AUTO-GENERATED — No editar manualmente.
 # Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
 # Regenerar: python3 tools/generate_params.py
 
@@ -74,13 +100,49 @@ KF_R       = {sig["kalman"]["measurement_noise_r"]["value"]}
 DT         = {temp["dt_simulation"]["value"]}
 MAX_JITTER = {temp["max_jitter_ms"]["value"]}
 BUFFER_DEPTH = {temp["buffer_depth"]["value"]}
+
+# Nonlinear model status
+NONLINEAR_READY = {_nonlinear_ready(cfg)}
 '''
+
+    if _nonlinear_ready(cfg):
+        nl = cfg["nonlinear"]
+        lines += f'''
+# Nonlinear — Concrete (Concrete02)
+NL_EPSC0           = {nl["concrete"]["epsc0"]["value"]}
+NL_FPCU_RATIO      = {nl["concrete"]["fpcu_ratio"]["value"]}
+NL_EPSU            = {nl["concrete"]["epsU"]["value"]}
+NL_FT_RATIO        = {nl["concrete"]["ft_ratio"]["value"]}
+NL_ETS             = {nl["concrete"]["Ets"]["value"]}
+NL_CONFINEMENT     = {nl["concrete"]["confinement_ratio"]["value"]}
+
+# Nonlinear — Steel (Steel02)
+NL_FY_STEEL        = {nl["steel"]["fy"]["value"]}
+NL_ES_STEEL        = {nl["steel"]["Es"]["value"]}
+NL_B_HARDENING     = {nl["steel"]["b_hardening"]["value"]}
+
+# Nonlinear — Section
+NL_COVER           = {nl["section"]["cover"]["value"]}
+NL_N_BARS_FACE     = {nl["section"]["n_bars_face"]["value"]}
+NL_BAR_DIA         = {nl["section"]["bar_diameter"]["value"]}
+
+# Nonlinear — Geometry
+NL_COLUMN_L        = {nl["geometry"]["L"]["value"]}
+NL_COLUMN_B        = {nl["geometry"]["b"]["value"]}
+NL_N_ELEMENTS      = {nl["geometry"]["n_elements"]["value"]}
+'''
+
+    return lines
 
 
 def generate_header(cfg: dict, config_hash: str) -> str:
     mat  = cfg["material"]
+    stru = cfg["structure"]
+    dmp  = cfg["damping"]
     acq  = cfg["acquisition"]
     sig  = cfg["signal_processing"]
+    temp = cfg["temporal"]
+    grd  = cfg["guardrails"]
 
     return f'''// AUTO-GENERATED — No editar manualmente.
 // Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
@@ -88,16 +150,36 @@ def generate_header(cfg: dict, config_hash: str) -> str:
 #pragma once
 
 #define CONFIG_HASH     "{config_hash[:16]}"
+
+// ── Material ──
 #define MATERIAL_NAME   "{mat["name"]}"
 #define E_MODULUS       {mat["elastic_modulus_E"]["value"]}
+#define YIELD_STRENGTH  {mat["yield_strength_fy"]["value"]}
 #define RHO             {mat["density"]["value"]}
 #define K_TERM          {mat["thermal_conductivity"]["value"]}
 
+// ── Structure ──
+#define STIFFNESS_K     {stru["stiffness_k"]["value"]}
+#define MASS_M          {stru["mass_m"]["value"]}
+
+// ── Damping ──
+#define DAMPING_RATIO   {dmp["ratio_xi"]["value"]}
+
+// ── Acquisition ──
 #define SERIAL_BAUD     {acq["serial_baud"]["value"]}
 #define SAMPLE_RATE_HZ  {acq["sample_rate_hz"]["value"]}
 
+// ── Kalman Filter ──
 #define KF_Q            {sig["kalman"]["process_noise_q"]["value"]}
 #define KF_R            {sig["kalman"]["measurement_noise_r"]["value"]}
+
+// ── Temporal Sync ──
+#define HANDSHAKE_TOKEN "{temp["handshake_token"]["value"]}"
+#define MAX_JITTER_MS   {temp["max_jitter_ms"]["value"]}
+
+// ── Guardrails ──
+#define MAX_STRESS_RATIO  {grd["max_stress_ratio"]["value"]}
+#define MAX_SENSOR_SIGMA  {grd["max_sensor_outlier_sigma"]["value"]}
 '''
 
 

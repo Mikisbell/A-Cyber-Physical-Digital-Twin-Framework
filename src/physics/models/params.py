@@ -11,18 +11,18 @@ def load_sim_params():
             cfg = yaml.safe_load(f)
             
         return {
-            "mass": cfg["model"]["node_mass_kg"]["value"],
-            "k": cfg["model"]["stiffness_k_n_m"]["value"],
+            "mass": cfg["structure"]["mass_m"]["value"],
+            "k": cfg["structure"]["stiffness_k"]["value"],
             "fy": cfg["material"]["yield_strength_fy"]["value"],
-            "xi": cfg["material"]["damping_ratio"]["value"]
+            "xi": cfg["damping"]["ratio_xi"]["value"]
         }
     except Exception as e:
         # Fallback para no arruinar E2E si falla carga yaml
         print(f"⚠️ Warning loading yaml: {e}")
         return {
             "mass": 1000.0,
-            "k": 100000.0,
-            "fy": 250e6,
+            "k": 5000.0,
+            "fy": 20e6,
             "xi": 0.05
         }
 
@@ -61,6 +61,4 @@ def init_model():
     ops.algorithm('Newton')
     ops.analysis('Transient')
     
-    print(f"🏗️ [OPENSEES] Modelo 1-GDL inicializado (m={P['mass']}kg, k={P['k']}N/m)")
-
-init_model()
+    print(f"[OPENSEES] 1-DOF model initialized (m={P['mass']}kg, k={P['k']}N/m)")

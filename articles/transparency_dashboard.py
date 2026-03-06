@@ -10,7 +10,8 @@ import sys
 
 # Añadir la raíz al path para el import config.paths
 sys.path.append(str(Path(__file__).resolve().parent.parent))
-from config.paths import get_engram_db_path, get_drafts_dir, get_processed_data_dir
+from config.paths import get_engram_db_path, get_drafts_dir, get_processed_data_dir, get_params_file
+import yaml
 
 # Configuración del servidor cívico (Solo Lectura)
 app = dash.Dash(__name__, title="Auditoría Ciudadana - Búnker Bélico")
@@ -134,9 +135,12 @@ def update_dashboard(n):
             name='Esfuerzo Físico Censor',
             line=dict(color='#e74c3c', width=3)
         ))
-        # Yield limit teoric (Line of truth)
-        fy_mpa = 250.0 # Standard yield
-        limit_mpa = 0.85 * fy_mpa
+        # Yield limit from SSOT
+        with open(get_params_file(), "r") as _f:
+            _cfg = yaml.safe_load(_f)
+        fy_mpa = float(_cfg["material"]["yield_strength_fy"]["value"]) / 1e6
+        stress_ratio = float(_cfg["guardrails"]["max_stress_ratio"]["value"])
+        limit_mpa = stress_ratio * fy_mpa
         fig.add_trace(go.Scatter(
             x=[df['time_s'].min(), df['time_s'].max()],
             y=[limit_mpa, limit_mpa],

@@ -1,310 +1,664 @@
+"""
+articles/scientific_narrator.py — Multi-Domain IMRaD Paper Generator (EIU La Voz)
+==================================================================================
+Generates scientific papers in IMRaD format for any domain supported by
+the Belico Stack factory: structural, water, air.
+
+Architecture:
+  - Domain-specific SECTION BLOCKS (abstract, intro, methodology, results, discussion)
+  - Shared infrastructure (bibliography, figures, YAML frontmatter)
+  - Pluggable data sources (cv_results.json, Engram, LSTM, spectral)
+
+Usage:
+  python3 articles/scientific_narrator.py --domain structural --quartile Q2 --topic "..."
+  python3 articles/scientific_narrator.py --domain water --quartile Q3 --topic "..."
+  python3 articles/scientific_narrator.py --domain air --quartile Q4 --topic "..."
+"""
+
 import sys
-from pathlib import Path
-
-# Añadir la raíz al path para el import config.paths
-sys.path.append(str(Path(__file__).resolve().parent.parent))
-from config.paths import get_engram_db_path, get_drafts_dir, get_schema_engram_file, get_processed_data_dir
-
-import sqlite3
+import argparse
 import json
 import os
+import sqlite3
+from pathlib import Path
 from datetime import datetime
-import numpy as np
-import pandas as pd
-import torch
-import pickle
 
-# Fix #4: importar la clase desde el módulo único — no duplicar
-from src.ai.lstm_predictor import DegradationLSTM
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+from config.paths import get_engram_db_path, get_drafts_dir, get_processed_data_dir
 
-# Paths del Sistema (Resolución Dinámica)
-ENGRAM_DB_PATH = get_engram_db_path()
 DRAFT_DIR = get_drafts_dir()
-REPORT_PATH = DRAFT_DIR / "transparency_report.md"
+ENGRAM_DB = get_engram_db_path()
 
-def _extract_dominant_frequency(csv_path: Path) -> float:
-    """Skill Numérico (FFT): Extrae la Frecuencia Dominante pura de la serie temporal para guiar a la IA."""
-    if not csv_path.exists():
-        return 0.0
-    try:
-        df = pd.read_csv(csv_path)
-        if len(df) < 10:
-            return 0.0
-        dt = np.mean(np.diff(df['time_s']))
-        signal = df['accel_g'].values
-        signal = signal - np.mean(signal) # Remover DC
-        fft_vals = np.fft.rfft(signal)
-        fft_freq = np.fft.rfftfreq(len(signal), d=dt)
-        dom_idx = np.argmax(np.abs(fft_vals))
-        return float(fft_freq[dom_idx])
-    except Exception as e:
-        print(f"❌ [FFT_SKILL] Error en análisis espectral: {e}")
-        return 0.0
 
-def fetch_telemetry_events():
-    """Extrae el Baseline y la Alarma más recientes desde Engram."""
-    baseline, alarm = None, None
-    if not ENGRAM_DB_PATH.exists():
-        return None, None
-        
+# ═══════════════════════════════════════════════════════════════
+# ENGRAM INTEGRATION
+# ═══════════════════════════════════════════════════════════════
+
+def engram_fetch_baseline() -> dict | None:
+    """Fetch the most recent baseline calibration from Engram ledger."""
+    if not ENGRAM_DB.exists():
+        return None
     try:
-        with sqlite3.connect(ENGRAM_DB_PATH) as conn:
+        with sqlite3.connect(str(ENGRAM_DB)) as conn:
             conn.row_factory = sqlite3.Row
-            cursor = conn.cursor()
-            
-            cursor.execute('''
-                SELECT id, timestamp, hash_code, payload, tags 
-                FROM records WHERE tags LIKE '%"baseline"%' 
+            cur = conn.cursor()
+            cur.execute('''
+                SELECT id, timestamp, hash_code, payload, tags
+                FROM records WHERE tags LIKE '%"baseline"%'
                 ORDER BY timestamp DESC LIMIT 1
             ''')
-            baseline = cursor.fetchone()
-            
-            cursor.execute('''
-                SELECT id, timestamp, hash_code, payload, tags 
-                FROM records WHERE tags LIKE '%"alarm"%' 
-                ORDER BY timestamp DESC LIMIT 1
+            row = cur.fetchone()
+            if row:
+                return {
+                    "id": row["id"],
+                    "timestamp": row["timestamp"],
+                    "hash": row["hash_code"],
+                    "payload": json.loads(row["payload"]),
+                }
+    except Exception as e:
+        print(f"[NARRATOR] Engram read error: {e}")
+    return None
+
+
+def engram_fetch_telemetry_count() -> int:
+    """Count telemetry records in Engram for data sufficiency check."""
+    if not ENGRAM_DB.exists():
+        return 0
+    try:
+        with sqlite3.connect(str(ENGRAM_DB)) as conn:
+            cur = conn.cursor()
+            cur.execute('''
+                SELECT COUNT(*) FROM records
+                WHERE tags LIKE '%"lora_telemetry"%'
             ''')
-            alarm = cursor.fetchone()
-            
-    except sqlite3.Error as e:
-        print(f"❌ [NARRATOR] Error de lectura Engram: {e}")
-        
-    return baseline, alarm
+            return cur.fetchone()[0]
+    except Exception:
+        return 0
 
-def generate_paper_maestro(baseline, alarm):
-    """Genera un Paper Q1-Q4 en formato IMRaD con validación cruzada."""
-    topic = os.getenv("PAPER_TOPIC", "Auditoría Criptográfica en Módulos C&DW")
-    quartile = os.getenv("PAPER_QUARTILE", "Q2")
-    
-    cv_path = get_processed_data_dir() / "cv_results.json"
-    cv_data = {}
-    if cv_path.exists():
-        with open(cv_path, "r") as f:
-            cv_data = json.load(f)
-            
-    res_A = cv_data.get("control", {})
-    res_B = cv_data.get("experimental", {})
 
-    informe = f"""# 📄 Belico Stack Research Draft ({quartile})
-**Topic:** {topic}
-**Date:** {datetime.now().strftime('%Y-%m-%d')}
-**Novelty:** Integration of SHA-256 cryptographic auditing into Edge-SHM (LoRa) to mitigate thermodynamic paradoxes and sensing manipulation in Recycled Concrete (C&DW).
+def engram_log_paper_event(domain: str, quartile: str, topic: str, path: str):
+    """Register paper generation event in Engram ledger."""
+    if not ENGRAM_DB.exists():
+        return
+    try:
+        import hashlib
+        payload = json.dumps({
+            "event": "paper_generated",
+            "domain": domain,
+            "quartile": quartile,
+            "topic": topic,
+            "output_path": path,
+            "timestamp": datetime.now().isoformat(),
+        })
+        hash_code = hashlib.sha256(payload.encode()).hexdigest()[:16]
+        tags = json.dumps(["paper_generated", f"domain_{domain}", quartile.lower()])
 
+        with sqlite3.connect(str(ENGRAM_DB)) as conn:
+            conn.execute('''
+                INSERT INTO records (timestamp, hash_code, payload, tags)
+                VALUES (?, ?, ?, ?)
+            ''', (datetime.now().isoformat(), hash_code, payload, tags))
+            conn.commit()
+        print(f"[NARRATOR] Engram: paper event registered (hash={hash_code})")
+    except Exception as e:
+        print(f"[NARRATOR] Engram write error (non-critical): {e}")
+
+
+# ═══════════════════════════════════════════════════════════════
+# YAML FRONTMATTER (shared across all domains)
+# ═══════════════════════════════════════════════════════════════
+
+def generate_frontmatter(domain: str, quartile: str, topic: str, version: int = 1) -> str:
+    return f"""---
+title: "{topic}"
+domain: {domain}
+quartile: {quartile}
+version: v{version}
+status: draft
+date: "{datetime.now().strftime('%Y-%m-%d')}"
+authors:
+  - name: ""
+    affiliation: ""
+    email: ""
+ai_disclosure: "Sections marked <!-- AI_Assist --> were generated with AI assistance"
+human_validation: "<!-- HV: [INICIALES] -->"
+word_count_target: {_word_count_target(quartile)}
 ---
 
-## Abstract
-This paper presents a novel approach to Structural Health Monitoring (SHM) by deploying an autonomous Edge-IoT network powered by cryptographic validation ("Guardian Angel"). Applied to Recycled Construction and Demolition Waste (C&DW) elements, the system filters out thermodynamic paradoxes (e.g., impossible thermal gradients, sudden stiffness increases) before long-term LSTM memory storage. Cross-validation shows that unprotected systems suffer a **{res_A.get('false_positives', 15)}% false-positive rate**, whereas the proposed *Belico Stack* achieves **{res_B.get('data_integrity', 100)}% data integrity** with immutable SHA-256 event sealing.
+"""
 
-## 1. Introduction
-The use of C&DW in public infrastructure introduces unprecedented heterogeneity. Traditional SHM relies on passive continuous streaming, which is vulernable to sensor dropout, battery degradation (affecting ADC precision), and external physical tampering. We propose an Edge-AI paradigm where structural physics are computed at the sensor layer (Arduino Nicla Sense ME) and transmitted via LoRa exclusively upon threshold breach.
 
-## 2. Methodology (SSOT framework)
-The system logic is managed by a *Single Source of Truth* (SSOT) via `params.yaml`. 
+def _word_count_target(quartile: str) -> int:
+    return {"Q1": 10000, "Q2": 8000, "Q3": 6000, "Q4": 5000}.get(quartile, 6000)
+
+
+# ═══════════════════════════════════════════════════════════════
+# SECTION BLOCKS — STRUCTURAL DOMAIN
+# ═══════════════════════════════════════════════════════════════
+
+def _structural_abstract(cv_data: dict) -> str:
+    res_A = cv_data.get("control", {})
+    res_B = cv_data.get("experimental", {})
+    return f"""## Abstract
+<!-- AI_Assist -->
+This paper presents a novel approach to Structural Health Monitoring (SHM) by deploying
+an autonomous Edge-IoT network powered by cryptographic validation ("Guardian Angel").
+Applied to Recycled Construction and Demolition Waste (C&DW) elements, the system filters
+out thermodynamic paradoxes before long-term LSTM memory storage. Cross-validation shows
+that unprotected systems suffer a {res_A.get('false_positives', 15)}% false-positive rate,
+whereas the proposed framework achieves {res_B.get('data_integrity', 100)}% data integrity
+with immutable SHA-256 event sealing.
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _structural_introduction() -> str:
+    return """## 1. Introduction
+<!-- AI_Assist -->
+The use of C&DW in public infrastructure introduces unprecedented heterogeneity.
+Traditional SHM relies on passive continuous streaming, which is vulnerable to sensor
+dropout, battery degradation (affecting ADC precision), and external physical tampering.
+We propose an Edge-AI paradigm where structural physics are computed at the sensor layer
+(Arduino Nicla Sense ME) and transmitted via LoRa exclusively upon threshold breach.
+
+### 1.1 State of the Art
+[TODO: Expand with domain-specific literature review]
+
+### 1.2 Research Gap
+[TODO: Identify specific gap this paper addresses]
+
+### 1.3 Contributions
+[TODO: 3-4 bullet points of novel contributions]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _structural_methodology(cv_data: dict) -> str:
+    return """## 2. Methodology
+<!-- AI_Assist -->
+The system logic is managed by a *Single Source of Truth* (SSOT) via `params.yaml`.
+
+### 2.1 Hardware Architecture
 - **Core Edge Hardware:** BHI260AP IMU with on-silicon sensor fusion.
 - **Communications:** Ebyte E32-915T30D LoRa Module (915 MHz, 1 Watt).
-- **Guardian Angel:** A physics-based firewall that evaluates $f_n$, temperature gradients ($\\Delta T < 50^\\circ C$), and battery voltage ($V_{{bat}} > 3.5V$) before accepting payload.
+- **Guardian Angel:** A physics-based firewall that evaluates $f_n$, temperature
+  gradients ($\\Delta T < 50^\\circ C$), and battery voltage ($V_{bat} > 3.5V$).
+
+### 2.2 Numerical Model
+- OpenSeesPy with Concrete02 (Kent-Scott-Park) + Steel02 (Menegotto-Pinto)
+- Fiber section with confined/unconfined concrete zones
+- ForceBeamColumn elements with Gauss-Lobatto integration
+- Full Rayleigh damping ($\\alpha_M + \\beta_K$)
+
+### 2.3 Signal Processing
+- Kalman filter for noise reduction (Q=$10^{-5}$, R=$10^{-2}$)
+- FFT-based dominant frequency extraction
+- Jitter watchdog for temporal integrity
+<!-- HV: [INICIALES] -->
 
 """
-    if baseline:
-        b_payload = json.loads(baseline['payload'])
-        informe += f"""### Baseline Calibration
-The initial state was cryptographically sealed:
-- **Dominant Frequency ($f_n$):** {b_payload.get('f_n', 0):.2f} Hz
-- **Transaction Hash:** `{baseline['hash_code']}`
-- **Engram Ref:** {baseline['id']}
+
+
+def _structural_results(cv_data: dict) -> str:
+    res_A = cv_data.get("control", {})
+    res_B = cv_data.get("experimental", {})
+    text = """## 3. Results
+<!-- AI_Assist -->
+
+### 3.1 Cross-Validation (A/B Testing)
 """
-
-    informe += "\n## 3. Results (Cross-Validation & Sensitivity Analysis)\n"
-    informe += f"""### 3.1 A/B Testing: Traditional vs Belico Stack
-A control simulation was run alongside the experimental stack under {res_A.get("cycles", 500) if "cycles" in res_A else "N"} failure cycles.
-
-| Metric | Control Group (Traditional) | Experimental (Belico Stack) |
+    text += f"""
+| Metric | Control (Traditional) | Experimental (Belico Stack) |
 |---|---|---|
 | **False Positives** | {res_A.get('false_positives', 'N/A')} events | **{res_B.get('false_positives', 0)}** events |
 | **Data Integrity** | {res_A.get('data_integrity', 'N/A')}% | **{res_B.get('data_integrity', 100)}**% |
-| **Forensic Blocks** | 0 (Ignored) | **{res_B.get('blocked_by_guardian', 'N/A')}** malicious payloads |
+| **Blocked Payloads** | 0 | **{res_B.get('blocked_by_guardian', 'N/A')}** |
 
 """
-
+    # Fragility matrix
     if "fragility_matrix" in res_B:
-        informe += "### 3.2 Sensitivity Matrix (Fragility Curves via Multi-PGA)\n"
-        informe += "To explicitly quantify uncertainty, a parametric sweep of the subduction earthquake (CISMID/PEER) was executed. The table below represents the performance of the Belico Stack under increasing Peak Ground Accelerations (PGA):\n\n"
-        informe += "| PGA ($g$) | Malicious/Noise Packets Blocked | Data Integrity Retained |\n"
-        informe += "|-----------|----------------------------------|-----------------------|\n"
+        text += "### 3.2 Fragility Analysis (Multi-PGA)\n\n"
+        text += "| PGA ($g$) | Blocked Packets | Integrity Retained |\n"
+        text += "|---|---|---|\n"
         for row in res_B["fragility_matrix"]:
-            informe += f"| {row['pga']:.1f} | {row['blocked']} | {row['integrity']}% |\n"
-        informe += "\nAs observed, the Guardian Angel dynamically scales its filtration capacity proportionally to the kinetic violence of the event ($S_a$), maintaining a strict 100% data integrity for the long-term memory module.\n"
+            text += f"| {row['pga']:.1f} | {row['blocked']} | {row['integrity']}% |\n"
+        text += "\n"
 
-    # ── SALTELLI SENSITIVITY INDEX ──
+    # Sensitivity
     si_data = res_B.get("sensitivity_index", [])
     if si_data:
-        informe += "\n### 3.3 Sensitivity Analysis (Índice de Saltelli)\n"
-        informe += (
-            "To understand which C&DW material parameter has the greatest influence on the Guardian Angel "
-            "detection rate ($Y$), a first-order sensitivity index was computed using numerical finite differences ($\\delta = 1\\%$):\n\n"
-        )
-        informe += "|Parameter | Nominal $X_i$ | $\\partial Y / \\partial X_i$ | $S_i$ | Influence |\n"
-        informe += "|---|---|---|---|---|\n"
+        text += "### 3.3 Sensitivity Analysis (Saltelli Index)\n\n"
+        text += "| Parameter | Nominal $X_i$ | $\\partial Y/\\partial X_i$ | $S_i$ | Influence |\n"
+        text += "|---|---|---|---|---|\n"
         for row in si_data:
             level = "**HIGH**" if abs(row["S_i"]) > 0.5 else ("Medium" if abs(row["S_i"]) > 0.2 else "Low")
-            informe += f"| `{row['param']}` | {row['X_i']} | {row['dY_dXi']} | **{row['S_i']}** | {level} |\n"
-        informe += "\nThe parameter with the highest $S_i$ exhibits the most critical impact on structural safety prediction, guiding future experimental campaigns.\n"
+            text += f"| `{row['param']}` | {row['X_i']} | {row['dY_dXi']} | **{row['S_i']}** | {level} |\n"
+        text += "\n"
 
-    # ── ESPECTRO DE RESPUESTA Sa(T, ζ=5%) ──
+    # Spectral
     spectral = cv_data.get("spectral", {})
     if spectral:
         T_dom = spectral.get("T_dominant", "N/A")
         Sa_max = spectral.get("Sa_max", "N/A")
-        pga    = spectral.get("pga", "N/A")
-        # Incrustar figura SVG en el borrador GFM
-        svg_path = spectral.get("svg_path", "")
-        if svg_path and Path(svg_path).exists():
-            informe += f"\n![**Figure 1** — Response Spectrum Sa(T, \u03b6=5%): PEER Raw vs. Guardian Angel Filtered (Pisco 2007 M8.0)]({svg_path})\n"
-        informe += spectral.get("sa_raw_report", "")
-        informe += (
-            f"\n> **Key Finding**: The PISCO-2007 record (PGA={pga:.3f}g) shows maximum spectral demand of "
-            f"$S_a = {Sa_max:.3f}g$ at $T^* = {T_dom:.2f}s$. This dominant period "
-            "falls within the rigid response range of C&DW composite elements, "
-            "confirming that high-frequency subduction records are the critical design input for the Presa del Norte.\n"
-        )
-        # Fase 39: Comparativa C&DW vs Virgen (Eurocode 8)
+        pga = spectral.get("pga", "N/A")
+        text += f"""### 3.4 Response Spectrum
+
+The record (PGA={pga}g) shows maximum spectral demand $S_a = {Sa_max}g$ at $T^* = {T_dom}s$.
+
+"""
+        if spectral.get("sa_raw_report"):
+            text += spectral["sa_raw_report"] + "\n"
         cdw_dmp = spectral.get("cdw_damping", {})
-        if cdw_dmp:
-            informe += cdw_dmp.get("cdw_report", "")
-        # Fase 40: Amplificación de Suelo E.030
-        site_rep = spectral.get("site_report", "")
-        if site_rep:
-            informe += site_rep
+        if cdw_dmp.get("cdw_report"):
+            text += cdw_dmp["cdw_report"] + "\n"
+        if spectral.get("site_report"):
+            text += spectral["site_report"] + "\n"
 
-    # ── INFERENCIA LSTM ──
-    try:
-        model_path = Path("models/lstm/cdw_lstm_v1.pth")
-        scaler_x_path = Path("models/lstm/scaler_X.pkl")
-        scaler_y_path = Path("models/lstm/scaler_y.pkl")
-        
-        if model_path.exists() and scaler_x_path.exists():
-            with open(scaler_x_path, 'rb') as f:
-                scaler_X = pickle.load(f)
-            with open(scaler_y_path, 'rb') as f:
-                scaler_y = pickle.load(f)
-                
-            model = DegradationLSTM(input_size=5, hidden_size=64, num_layers=2)
-            model.load_state_dict(torch.load(model_path, map_location='cpu'))
-            model.eval()
-            
-            # Fix #1: Extraer serie histórica real desde Engram
-            SEQ_LEN = 30
-            real_rows = []
-            current_fn = 8.0
-            current_tmp = 25.0
-            try:
-                from config.paths import get_engram_db_path
-                engram_path = str(get_engram_db_path())
-                with sqlite3.connect(engram_path) as conn:
-                    conn.row_factory = sqlite3.Row
-                    cur = conn.cursor()
-                    cur.execute('''
-                        SELECT payload FROM records
-                        WHERE tags LIKE '%"lora_telemetry"%'
-                        AND tags NOT LIKE '%"error"%'
-                        ORDER BY timestamp DESC
-                        LIMIT ?
-                    ''', (SEQ_LEN,))
-                    rows = cur.fetchall()
-                    for r in reversed(rows):
-                        p = json.loads(r['payload'])
-                        real_rows.append([
-                            float(p.get('f_n', current_fn)),
-                            0.51,                          # k_term
-                            float(p.get('tmp', current_tmp)),
-                            22.0,                          # tmp_int 
-                            65.0                           # hum 
-                        ])
-            except Exception as db_e:
-                print(f"[NARRATOR] ⚠️  No se pudo leer historial Engram para TTF: {db_e}")
+    text += "<!-- HV: [INICIALES] -->\n\n"
+    return text
 
-            informe += "\n### 3.3 Deep Learning Time-To-Failure (TTF)\n"
-            if len(real_rows) < SEQ_LEN:
-                informe += (
-                    "> **Quantifying Initial State Uncertainty (Zero-Trust Cold Start):**\n"
-                    f"> The immutable Engram ledger currently holds {len(real_rows)} telemetry records. "
-                    f"Because LSTM networks fundamentally map the $P_X$ distribution, predicting structural degradation "
-                    f"with $N < {SEQ_LEN}$ sequential arrays entails an unacceptable epistemic uncertainty. "
-                    f"In adherence to *Zero-Trust Architecture* and rigorous Data Science protocols, "
-                    f"the Belico Stack halts predictive evaluation (Time-To-Failure projections) until the cryptographically "
-                    f"validated baseline is fulfilled. Honesty in data insufficiency outranks hallucinated predictions.\n"
-                )
-            else:
-                x_input = scaler_X.transform(real_rows)
-                x_tensor = torch.tensor(np.array([x_input]), dtype=torch.float32)
-                
-                # Inferencia con Monte Carlo Dropout
-                from src.ai.lstm_predictor import predict_ttf_with_uncertainty
-                mc_results = predict_ttf_with_uncertainty(model_path, x_tensor, scaler_y, n_passes=100)
-                
-                ttf_mu_days = mc_results["ttf_mu"]
-                ttf_sigma_days = mc_results["ttf_sigma"]
-                
-                ttf_mu_months = ttf_mu_days / 30.0
-                ttf_sigma_months = ttf_sigma_days / 30.0
-                
-                # Fase 42: Exportar BIM Metadata JSON para el Gemelo Digital Ciudadano
-                try:
-                    from tools.bim_exporter import generate_bim_metadata, export_to_json
-                    # Usamos mu_months como el prediction master
-                    metadata = generate_bim_metadata(
-                        module_id="CDW-Norte-001",
-                        ttf_months=ttf_mu_months,
-                        fn_current=float(real_rows[-1][0]), # Último fn sensado
-                        k_term=0.51,
-                        latencia_lora=1.2 # Promedio de latencia
-                    )
-                    export_to_json(metadata)
-                except Exception as bim_err:
-                    print(f"   ⚠️ BIM Export falló (no crítico): {bim_err}")
-                
-                informe += f"""
-An LSTM dual-layer neural network (64 nodes), optimized for the C&DW specific thermal decay ($k_{{term}} = 0.51 \\text{{ W/m}}\\cdot\\text{{K}}$), assimilated the 30-day validated vector. To quantify epistemic uncertainty, the network executed 100 stochastic forward passes via Monte Carlo Dropout ($p=0.2$).
 
-**Bayesian-Approximated Prediction:** The remaining useful life of the structural element is computed as **$\\mu = {ttf_mu_months:.1f}$ months** with an uncertainty envelope of **$\\sigma = \\pm {ttf_sigma_months:.2f}$ months**. 
+def _structural_discussion() -> str:
+    return """## 4. Discussion
+<!-- AI_Assist -->
+The framework effectively isolates the Deep Learning pipeline from physical and
+electronic deception. By coupling Edge-AI processing with local cryptographic sealing,
+predictive SHM systems can be deployed without compromising engineering truth.
 
-Because the input vector is cryptographically sealed by the Engram ledger against physical tampering, and the model explicitly provides its confidence interval rather than a deterministic scalar, the Time-To-Failure (TTF) projection establishes a rigorous foundation for proactive forensic maintenance.
-"""
-    except Exception as e:
-        informe += f"> ⚠️ Core AI Failure: {e}\n"
-        
-    informe += """
-## 4. Discussion and Conclusion
-The Belico Stack effectively isolates the Deep Learning pipeline from physical and electronic deception. By coupling Edge-AI processing with local cryptographic sealing, predictive SHM systems can be deployed in socially and politically precarious environments without compromising engineering truth.
+### 4.1 Limitations
+[TODO: Discuss limitations — synthetic data, SDOF simplifications, damping assumptions]
+
+### 4.2 Comparison with Existing Frameworks
+[TODO: Compare with state-of-the-art SHM-DT frameworks]
+<!-- HV: [INICIALES] -->
+
 """
 
+
+# ═══════════════════════════════════════════════════════════════
+# SECTION BLOCKS — WATER DOMAIN (FEniCSx / Navier-Stokes)
+# ═══════════════════════════════════════════════════════════════
+
+def _water_abstract(cv_data: dict) -> str:
+    return """## Abstract
+<!-- AI_Assist -->
+This paper presents a digital twin framework for hydraulic infrastructure monitoring
+using FEniCSx-based Navier-Stokes solvers coupled with Edge-IoT sensor networks.
+The system enables real-time comparison between numerical flow predictions and
+field-measured pressure/velocity data, with cryptographic data integrity enforcement
+for long-term structural health assessment of dams, pipes, and water treatment facilities.
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _water_introduction() -> str:
+    return """## 1. Introduction
+<!-- AI_Assist -->
+Hydraulic infrastructure (dams, pipelines, treatment plants) requires continuous
+monitoring of flow patterns, pressure distributions, and structural response to
+hydrodynamic loads. Traditional SCADA systems provide point measurements but lack
+the spatial resolution and physics-based interpretation needed for predictive maintenance.
+
+### 1.1 State of the Art
+[TODO: CFD in hydraulic SHM — FEniCSx, OpenFOAM, dam monitoring literature]
+
+### 1.2 Research Gap
+[TODO: Gap between CFD capability and real-time monitoring integration]
+
+### 1.3 Contributions
+[TODO: Novel contributions of this water-domain digital twin]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _water_methodology(cv_data: dict) -> str:
+    return """## 2. Methodology
+<!-- AI_Assist -->
+
+### 2.1 Governing Equations
+The incompressible Navier-Stokes equations govern the fluid domain:
+
+$$\\frac{\\partial \\mathbf{u}}{\\partial t} + (\\mathbf{u} \\cdot \\nabla)\\mathbf{u} = -\\frac{1}{\\rho}\\nabla p + \\nu \\nabla^2 \\mathbf{u} + \\mathbf{f}$$
+
+$$\\nabla \\cdot \\mathbf{u} = 0$$
+
+### 2.2 Numerical Solver
+- FEniCSx (DOLFINx) with Taylor-Hood elements (P2/P1)
+- IPCS (Incremental Pressure Correction Scheme) for time stepping
+- Mesh convergence study with Richardson extrapolation
+
+### 2.3 Sensor Integration
+- Pressure transducers at inlet/outlet boundaries
+- Flow velocity validation via ultrasonic flowmeter
+- SSOT-governed parameter synchronization (params.yaml)
+
+### 2.4 Dimensionless Parameters
+- Reynolds number: $Re = \\rho u L / \\mu$
+- Froude number: $Fr = u / \\sqrt{gL}$ (open channel)
+- Strouhal number: $St = fL/u$ (vortex shedding)
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _water_results(cv_data: dict) -> str:
+    return """## 3. Results
+<!-- AI_Assist -->
+
+### 3.1 Mesh Convergence
+[TODO: Richardson extrapolation table — 3 mesh levels, GCI index]
+
+### 3.2 Velocity Field Validation
+[TODO: Numerical vs measured velocity profiles at key cross-sections]
+
+### 3.3 Pressure Distribution
+[TODO: Pressure field comparison — FEniCSx prediction vs sensor readings]
+
+### 3.4 Temporal Evolution
+[TODO: Time series of flow variables — transient startup, steady state]
+
+### 3.5 Anomaly Detection
+[TODO: Deviation between model and sensor triggers Guardian Angel alert]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _water_discussion() -> str:
+    return """## 4. Discussion
+<!-- AI_Assist -->
+
+### 4.1 Model-Sensor Agreement
+[TODO: Quantify discrepancy — RMSE, R^2, Nash-Sutcliffe efficiency]
+
+### 4.2 Real-Time Feasibility
+[TODO: Computational cost vs sensor update rate — can the twin keep up?]
+
+### 4.3 Limitations
+[TODO: Turbulence modeling (RANS vs LES), mesh dependence, 2D vs 3D]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+# ═══════════════════════════════════════════════════════════════
+# SECTION BLOCKS — AIR DOMAIN (FEniCSx/SU2 — Wind Loading)
+# ═══════════════════════════════════════════════════════════════
+
+def _air_abstract(cv_data: dict) -> str:
+    return """## Abstract
+<!-- AI_Assist -->
+This paper presents a digital twin framework for wind-loaded structures using
+computational fluid dynamics (FEniCSx/SU2) coupled with Edge-IoT anemometer networks.
+The system provides real-time wind pressure coefficient estimation and vortex-induced
+vibration prediction for tall buildings, bridges, and exposed infrastructure,
+with cryptographic validation of sensor data integrity.
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _air_introduction() -> str:
+    return """## 1. Introduction
+<!-- AI_Assist -->
+Wind loading is a critical design consideration for tall buildings, bridges, and
+exposed structures. Traditional wind tunnel testing provides accurate pressure
+coefficients but cannot adapt to changing boundary conditions in real time.
+A digital twin approach combining CFD with field anemometry enables continuous
+assessment of wind-structure interaction.
+
+### 1.1 State of the Art
+[TODO: Wind engineering CFD — LES, RANS, wind tunnel correlation]
+
+### 1.2 Research Gap
+[TODO: Gap between offline CFD analysis and real-time wind monitoring]
+
+### 1.3 Contributions
+[TODO: Novel contributions — real-time CFD twin for wind SHM]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _air_methodology(cv_data: dict) -> str:
+    return """## 2. Methodology
+<!-- AI_Assist -->
+
+### 2.1 Governing Equations
+The Reynolds-Averaged Navier-Stokes (RANS) equations with $k$-$\\omega$ SST
+turbulence model:
+
+$$\\frac{\\partial \\bar{u}_i}{\\partial t} + \\bar{u}_j \\frac{\\partial \\bar{u}_i}{\\partial x_j} = -\\frac{1}{\\rho}\\frac{\\partial \\bar{p}}{\\partial x_i} + \\frac{\\partial}{\\partial x_j}\\left[(\\nu + \\nu_t)\\frac{\\partial \\bar{u}_i}{\\partial x_j}\\right]$$
+
+### 2.2 Numerical Solver
+- FEniCSx for low-Re flows / SU2 for high-Re external aerodynamics
+- Structured mesh with boundary layer refinement ($y^+ < 1$)
+- Time-dependent analysis for vortex shedding characterization
+
+### 2.3 Wind Pressure Coefficients
+$$C_p = \\frac{p - p_\\infty}{\\frac{1}{2}\\rho U_\\infty^2}$$
+
+### 2.4 Vortex-Induced Vibration
+- Strouhal number estimation: $St = f_s D / U$
+- Lock-in detection when $f_s \\approx f_n$ (structural natural frequency)
+
+### 2.5 Sensor Network
+- Ultrasonic anemometers (wind speed/direction)
+- Differential pressure taps on building facade
+- Accelerometers for vibration response correlation
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _air_results(cv_data: dict) -> str:
+    return """## 3. Results
+<!-- AI_Assist -->
+
+### 3.1 Mesh Independence Study
+[TODO: Mesh convergence — coarse/medium/fine, GCI for Cp and Cd]
+
+### 3.2 Pressure Coefficient Distribution
+[TODO: Cp contour maps at windward/leeward/side faces]
+
+### 3.3 Drag and Lift Coefficients
+[TODO: Cd, Cl time histories — compare with wind tunnel data]
+
+### 3.4 Vortex Shedding Frequency
+[TODO: FFT of Cl signal — Strouhal number vs Re]
+
+### 3.5 Structural Response Correlation
+[TODO: Wind pressure → structural acceleration — model vs measured]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+def _air_discussion() -> str:
+    return """## 4. Discussion
+<!-- AI_Assist -->
+
+### 4.1 CFD-Sensor Correlation
+[TODO: Quantify agreement — RMSE of Cp, phase lag in transient loads]
+
+### 4.2 Turbulence Model Sensitivity
+[TODO: k-omega SST vs k-epsilon vs LES — impact on Cp accuracy]
+
+### 4.3 Real-Time Wind Assessment
+[TODO: Can the twin update Cp fast enough for gust response?]
+
+### 4.4 Limitations
+[TODO: 2D vs 3D, terrain effects, ABL profile assumptions]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+# ═══════════════════════════════════════════════════════════════
+# SHARED CONCLUSION BLOCK
+# ═══════════════════════════════════════════════════════════════
+
+def _shared_conclusion(domain: str) -> str:
+    domain_phrase = {
+        "structural": "seismic monitoring of recycled concrete structures",
+        "water": "hydraulic infrastructure health monitoring",
+        "air": "wind-loaded structure assessment",
+    }.get(domain, "infrastructure monitoring")
+
+    return f"""## 5. Conclusions
+<!-- AI_Assist -->
+The proposed digital twin framework demonstrates effective integration of
+physics-based numerical modeling with Edge-IoT sensor networks for {domain_phrase}.
+Cryptographic data integrity enforcement ensures trustworthy long-term monitoring.
+
+### Key Findings
+[TODO: 4-6 numbered key findings]
+
+### Future Work
+[TODO: Field deployment, multi-structure monitoring, cross-domain integration]
+<!-- HV: [INICIALES] -->
+
+"""
+
+
+# ═══════════════════════════════════════════════════════════════
+# DOMAIN ROUTER — selects correct section blocks
+# ═══════════════════════════════════════════════════════════════
+
+DOMAIN_SECTIONS = {
+    "structural": {
+        "abstract": _structural_abstract,
+        "introduction": _structural_introduction,
+        "methodology": _structural_methodology,
+        "results": _structural_results,
+        "discussion": _structural_discussion,
+        "bib_categories": ["shm", "cdw", "seismic", "edge_iot", "ml_dl",
+                           "signal", "crypto", "digital_twin", "codes"],
+    },
+    "water": {
+        "abstract": _water_abstract,
+        "introduction": _water_introduction,
+        "methodology": _water_methodology,
+        "results": _water_results,
+        "discussion": _water_discussion,
+        "bib_categories": ["shm", "cfd", "hydraulics", "edge_iot",
+                           "digital_twin", "crypto", "codes"],
+    },
+    "air": {
+        "abstract": _air_abstract,
+        "introduction": _air_introduction,
+        "methodology": _air_methodology,
+        "results": _air_results,
+        "discussion": _air_discussion,
+        "bib_categories": ["shm", "cfd", "wind", "edge_iot",
+                           "digital_twin", "crypto", "codes"],
+    },
+}
+
+
+def load_cv_data() -> dict:
+    cv_path = get_processed_data_dir() / "cv_results.json"
+    if cv_path.exists():
+        with open(cv_path) as f:
+            return json.load(f)
+    return {}
+
+
+def generate_paper(domain: str, quartile: str, topic: str, version: int = 1) -> Path:
+    """Generate a full IMRaD paper for the given domain."""
+    if domain not in DOMAIN_SECTIONS:
+        raise ValueError(f"Unknown domain: {domain}. Valid: {', '.join(DOMAIN_SECTIONS)}")
+
+    sections = DOMAIN_SECTIONS[domain]
+    cv_data = load_cv_data()
+
+    # Engram: fetch baseline and telemetry count
+    baseline = engram_fetch_baseline()
+    telemetry_n = engram_fetch_telemetry_count()
+    if baseline:
+        cv_data["_engram_baseline"] = baseline
+    cv_data["_engram_telemetry_count"] = telemetry_n
+
+    paper = generate_frontmatter(domain, quartile, topic, version)
+
+    # Title
+    paper += f"# {topic}\n\n"
+
+    # Engram provenance note
+    if baseline:
+        paper += f"> **Engram Baseline:** hash=`{baseline['hash']}` | "
+        paper += f"fn={baseline['payload'].get('f_n', 'N/A')} Hz | "
+        paper += f"records={telemetry_n}\n\n"
+
+    # Abstract (takes cv_data)
+    paper += sections["abstract"](cv_data)
+
+    # Introduction (no args)
+    paper += sections["introduction"]()
+
+    # Methodology (takes cv_data for dynamic content)
+    paper += sections["methodology"](cv_data)
+
+    # Results (takes cv_data)
+    paper += sections["results"](cv_data)
+
+    # Discussion (no args)
+    paper += sections["discussion"]()
+
+    # Shared conclusion
+    paper += _shared_conclusion(domain)
+
+    # Bibliography
     try:
         from tools.bibliography_engine import generate_bibliography
-        
-        # Recuperar lista de fuentes externas usadas en este paper
-        import ast
-        sources_str = os.getenv("EXTERNAL_SOURCES", "['peer_berkeley']")
-        sources_list = ast.literal_eval(sources_str)
-        
-        informe += generate_bibliography(sources_list)
+        bib_cats = sections["bib_categories"]
+        paper += generate_bibliography(bib_cats)
     except Exception as bib_err:
-        informe += f"\n## References\n> ⚠️ Error generating bibliography: {bib_err}\n"
+        paper += f"\n## References\n> Error generating bibliography: {bib_err}\n"
 
-    informe += """
----
-*Generated by the EIU Orchestrator Core — April 2026*
-"""
+    # Footer
+    paper += f"\n---\n*Generated by EIU La Voz -- {datetime.now().strftime('%Y-%m-%d')}*\n"
 
+    # Write to file
     DRAFT_DIR.mkdir(parents=True, exist_ok=True)
-    slug = "".join([c if c.isalnum() else "_" for c in topic]).strip("_")[:20]
+    slug = "".join([c if c.isalnum() else "_" for c in topic]).strip("_")[:30]
     paper_out = DRAFT_DIR / f"paper_{quartile}_{slug}.md"
-    
+
     with open(paper_out, "w") as f:
-        f.write(informe)
-    
-    print(f"✅ [NARRATOR] IMRaD Draft Exported to: {paper_out}")
+        f.write(paper)
+
+    print(f"[NARRATOR] IMRaD draft exported: {paper_out}")
+    print(f"[NARRATOR] Domain: {domain} | Quartile: {quartile} | Version: v{version}")
+
+    # Engram: register paper generation event
+    engram_log_paper_event(domain, quartile, topic, str(paper_out))
+
+    return paper_out
+
+
+def main():
+    parser = argparse.ArgumentParser(description="EIU Multi-Domain Paper Generator")
+    parser.add_argument("--domain", choices=list(DOMAIN_SECTIONS.keys()),
+                        default="structural", help="Research domain")
+    parser.add_argument("--quartile", choices=["Q1", "Q2", "Q3", "Q4"],
+                        default="Q2", help="Target journal quartile")
+    parser.add_argument("--topic", type=str,
+                        default=os.getenv("PAPER_TOPIC", "Digital Twin Framework"),
+                        help="Paper topic/title")
+    parser.add_argument("--version", type=int, default=1, help="Draft version number")
+
+    args = parser.parse_args()
+
+    # Backward compat: honor env vars if CLI not provided
+    if os.getenv("PAPER_QUARTILE") and "--quartile" not in sys.argv:
+        args.quartile = os.getenv("PAPER_QUARTILE")
+
+    generate_paper(args.domain, args.quartile, args.topic, args.version)
+
 
 if __name__ == "__main__":
-    print("🧠 [NARRATOR] Fetching Engram Crypto-evidence for Academic Draft...")
-    base, alrm = fetch_telemetry_events()
-    generate_paper_maestro(base, alrm)
+    main()

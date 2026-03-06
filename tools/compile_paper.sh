@@ -21,6 +21,19 @@ set -e
 DRAFT="${1:-}"
 TEMPLATE="${2:---template plain}"
 OUT_DIR="articles/compiled"
+BIB_FILE="articles/references.bib"
+
+# Auto-generate BibTeX if not present
+if [ ! -f "$BIB_FILE" ]; then
+  echo "  Generating BibTeX file..."
+  python3 tools/generate_bibtex.py --output "$BIB_FILE" 2>/dev/null || true
+fi
+
+# Build citeproc flag if .bib exists
+CITE_FLAGS=""
+if [ -f "$BIB_FILE" ]; then
+  CITE_FLAGS="--citeproc --bibliography=$BIB_FILE"
+fi
 
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -64,13 +77,27 @@ case "$TEMPLATE" in
     echo "  Template  : IEEE Transactions (2-col)"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
+      $CITE_FLAGS \
       --variable geometry:margin=2.5cm \
       --variable fontsize=10pt \
-      --variable mainfont="Times New Roman" \
+      --variable mainfont="TeX Gyre Termes" \
       --variable linestretch=1.0 \
       --toc \
       --number-sections \
-      --highlight-style=pygments \
+      --syntax-highlighting=pygments \
+      -o "$PDF_OUT"
+    ;;
+
+  "--template conference")
+    echo "  Template  : Conference (EWSHM/IMAC, compact)"
+    pandoc "$DRAFT" \
+      --pdf-engine=xelatex \
+      $CITE_FLAGS \
+      --variable geometry:margin=2cm \
+      --variable fontsize=10pt \
+      --variable mainfont="TeX Gyre Termes" \
+      --variable linestretch=1.08 \
+      --number-sections \
       -o "$PDF_OUT"
     ;;
 
@@ -78,6 +105,7 @@ case "$TEMPLATE" in
     echo "  Template  : Elsevier (single-col)"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
+      $CITE_FLAGS \
       --variable geometry:margin=3cm \
       --variable fontsize=12pt \
       --variable linestretch=1.5 \
@@ -93,6 +121,7 @@ case "$TEMPLATE" in
     echo "  Template  : Plain PDF"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
+      $CITE_FLAGS \
       --variable geometry:margin=2.5cm \
       --variable fontsize=11pt \
       --variable colorlinks=true \

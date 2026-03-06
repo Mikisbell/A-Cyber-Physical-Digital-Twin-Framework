@@ -1,12 +1,17 @@
+# Project: Presa del Norte — C&DW Structural Monitoring
+# This file is a project-specific override template.
+# All physics parameters come from config/params.yaml (SSOT).
+
 project: Presa_del_Norte
-domain: agua
-status: active
+domain: structural
+status: pending_field_data
+site:
+  name: "La Presa del Norte, La Esperanza"
+  element: "Columna C&DW"
+  soil_profile: S2  # from config/soil_params.yaml
 orchestration:
-  teams_lite: true
-  aitmpl_scientific: true
   guardian_angel: true
-physics_guardrails:
-  check: reynolds_number
-  limit: convergence_1e-6
-  kf_r: 0.01
-  integrator: Navier-Stokes-Solver
+  engram_notary: true
+notes: >
+  Awaiting field data campaign (S1 ambient 30min minimum).
+  See articles/field_data_campaign.md for protocol.

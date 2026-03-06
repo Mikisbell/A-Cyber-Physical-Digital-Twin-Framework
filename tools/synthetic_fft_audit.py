@@ -16,11 +16,12 @@ from datetime import datetime
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config.paths import get_processed_data_dir, get_drafts_dir
+from src.physics.params import SAMPLE_RATE_HZ
 
 # ─── Configuración ────────────────────────────────────────────────────────────
 FREQUENCIES_TO_TEST  = [2.0, 5.2, 8.0, 12.0, 18.0]
 TOLERANCE_PCT        = 5.0      # Umbral de aprobación
-FS                   = 100.0    # Hz de muestreo (igual que Arduino a 100Hz)
+FS                   = float(SAMPLE_RATE_HZ)  # From SSOT via params.py
 T_SIGNAL             = 10.0     # Segundos de señal sintética
 NOISE_RATIO          = 0.10     # ±10% de ruido gaussiano sobre la amplitud
 AMPLITUDE            = 1.0      # g (máximo del sensor)

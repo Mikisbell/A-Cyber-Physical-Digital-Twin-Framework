@@ -1,42 +1,36 @@
 #!/bin/bash
-# init_investigation.sh - Despliegue del Stack Bélico (Arquitectura Pura)
+# init_investigation.sh - Bootstrap for new Belico Stack deployment
+# NOTE: This is a one-time init script. The current project is already deployed.
 
-echo "🚀 [STACK BÉLICO] Inicializando Arquitectura Pura..."
+set -e
 
-# 1. Crear Estructura Base
-mkdir -p .agent/{memory,teams,skills,security}
-mkdir -p src
-mkdir -p articles
+echo "[STACK BELICO] Initializing directory structure..."
+
+# 1. Core directories
+mkdir -p .agent/{memory,prompts,skills}
+mkdir -p .agents
+mkdir -p src/{physics,ai,firmware}
+mkdir -p config
+mkdir -p articles/drafts
 mkdir -p tools
+mkdir -p data/{raw,processed,synthetic,external}
+mkdir -p models/lstm
+mkdir -p projects
 
-# 2. Archivos Maestros
+# 2. Master files
 touch belico.yaml
-cp .env.example .env
 
-echo "📦 [STACK BÉLICO] Estructura de carpetas creada."
+echo "[STACK BELICO] Directory structure created."
 
-# 3. Clonar los 7 Repositorios Core
-echo "📥 [STACK BÉLICO] Clonando Ecosistema Cognitivo..."
+# 3. Clone external repos
+echo "[STACK BELICO] Cloning external dependencies..."
 
-# Memoria y Equipos
-git clone https://github.com/Gentleman-Programming/engram.git .agent/memory/engram || true
-git clone https://github.com/Gentleman-Programming/agent-teams-lite.git .agent/teams/agent-teams-lite || true
+git clone https://github.com/Gentleman-Programming/engram.git .agents/engram || true
+git clone https://github.com/Gentleman-Programming/agent-teams-lite.git .agents/agent-teams-lite || true
+git clone https://github.com/Gentleman-Programming/Gentleman-Skills.git .agents/Gentleman-Skills || true
 
-# Habilidades y Seguridad
-git clone https://github.com/Gentleman-Programming/Gentleman-Skills.git .agent/skills/gentleman || true
-git clone https://github.com/Gentleman-Programming/gentleman-guardian-angel.git .agent/security/guardian-angel || true
+echo "[STACK BELICO] External repos cloned into .agents/"
 
-# Inteligencia (AITMPL) - Mock/CLI
-echo "📥 [STACK BÉLICO] Instalando AITMPL Skills..."
-npx aitmpl@latest install --skill=scientific-research --path=.agent/skills/aitmpl || true
-
-# Configuración y Entorno
-git clone https://github.com/Gentleman-Programming/veil.nvim.git .agent/security/veil.nvim || true
-git clone https://github.com/Gentleman-Programming/Gentleman.Dots.git .agent/config/dots || true
-
-
-echo "✅ [STACK BÉLICO] Los 7 repositorios han sido inyectados. Despertando al Búnker..."
-
-# 4. Certificación del Entorno (Smoke Test)
-echo "🔍 [STACK BÉLICO] Ejecutando Smoke Test del Guardian Angel..."
+# 4. Smoke test
+echo "[STACK BELICO] Running smoke test..."
 python3 src/init_bunker.py

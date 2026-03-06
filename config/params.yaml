@@ -7,10 +7,18 @@
 
 metadata:
   project: "belico-stack"
-  version: "1.0.0"
-  last_updated: "2026-03-04"
+  version: "2.0.0"
+  last_updated: "2026-03-06"
   author: ""
   config_hash: ""  # Generado automáticamente por tools/generate_params.py
+
+# ─────────────────────────────────────────────────
+# DOMINIO DEL PROYECTO
+# ─── Define qué solver backend usa torture_chamber ─
+# Valores: "structural" (OpenSeesPy), "water" (FEniCSx), "air" (FEniCSx/SU2)
+# ─────────────────────────────────────────────────
+project:
+  domain: "structural"
 
 # ─────────────────────────────────────────────────
 # ─────────────────────────────────────────────────
@@ -38,6 +46,145 @@ material:
     value: 0.51        # W/m·K (Propiedad de degradación a predecir por LSTM)
     units: "W/m·K"
     symbol: "k_term"
+
+# ─────────────────────────────────────────────────
+# MODELO NO-LINEAL (Concrete02 + Steel02 + Fiber Section)
+# ─── OBLIGATORIO al crear un proyecto nuevo ──────
+# Valores null = no configurado. torture_chamber.py usa modelo lineal como fallback.
+# Al iniciar un proyecto, el usuario DEBE proveer estos datos de laboratorio o literatura.
+# ─────────────────────────────────────────────────
+nonlinear:
+  # Concreto C&DW — modelo Concrete02 (Kent-Scott-Park modificado)
+  concrete:
+    epsc0:
+      value: null        # Deformación al pico de compresión (typ. 0.002)
+      units: "-"
+      desc: "Strain at peak compressive stress fc'"
+      required: true
+    fpcu_ratio:
+      value: null        # Resistencia residual post-pico como fracción de fc (typ. 0.2)
+      units: "-"
+      desc: "Residual/peak stress ratio (fpcu = fpcu_ratio * fc)"
+      required: true
+    epsU:
+      value: null        # Deformación última de aplastamiento (typ. 0.005-0.008 para C&DW)
+      units: "-"
+      desc: "Ultimate crushing strain"
+      required: true
+    ft_ratio:
+      value: null        # Resistencia a tracción como fracción de fc (typ. 0.08-0.12)
+      units: "-"
+      desc: "Tensile/compressive strength ratio (ft = ft_ratio * fc)"
+      required: true
+    Ets:
+      value: null        # Pendiente de tension stiffening (typ. fc/0.002)
+      units: "Pa"
+      desc: "Tension stiffening slope"
+      required: true
+    confinement_ratio:
+      value: null        # Factor de confinamiento fcc/fc (typ. 1.2-1.5 según estribos)
+      units: "-"
+      desc: "Confined/unconfined strength ratio (Mander model)"
+      required: true
+
+  # Acero de refuerzo — modelo Steel02 (Giuffré-Menegotto-Pinto)
+  steel:
+    fy:
+      value: null        # Fluencia del acero (typ. 420e6 Pa para Grado 60)
+      units: "Pa"
+      desc: "Steel yield strength"
+      required: true
+    Es:
+      value: null        # Módulo elástico del acero (typ. 200e9 Pa)
+      units: "Pa"
+      desc: "Steel elastic modulus"
+      required: true
+    b_hardening:
+      value: null        # Ratio de endurecimiento por deformación (typ. 0.01)
+      units: "-"
+      desc: "Strain hardening ratio (post-yield slope / Es)"
+      required: true
+    R0:
+      value: 18.0        # Parámetro de transición curva (default Menegotto-Pinto)
+      units: "-"
+      desc: "Steel02 transition parameter R0"
+      required: false
+    cR1:
+      value: 0.925       # Default Menegotto-Pinto
+      units: "-"
+      desc: "Steel02 coefficient cR1"
+      required: false
+    cR2:
+      value: 0.15        # Default Menegotto-Pinto
+      units: "-"
+      desc: "Steel02 coefficient cR2"
+      required: false
+
+  # Sección de fibras — geometría del refuerzo
+  section:
+    cover:
+      value: null        # Recubrimiento de concreto (typ. 0.04 m)
+      units: "m"
+      desc: "Concrete cover thickness"
+      required: true
+    n_bars_face:
+      value: null        # Barras por cara (typ. 2-4)
+      units: "-"
+      desc: "Number of rebar per face"
+      required: true
+    bar_diameter:
+      value: null        # Diámetro de barra (typ. 0.016 m = 16mm)
+      units: "m"
+      desc: "Rebar diameter"
+      required: true
+    stirrup_diameter:
+      value: null        # Diámetro del estribo (typ. 0.008-0.010 m)
+      units: "m"
+      desc: "Stirrup/tie diameter"
+      required: true
+    stirrup_spacing:
+      value: null        # Separación de estribos (typ. 0.10-0.20 m)
+      units: "m"
+      desc: "Stirrup spacing"
+      required: true
+    n_integration_pts:
+      value: 5           # Puntos de integración por elemento (default OK)
+      units: "-"
+      desc: "Gauss-Lobatto integration points per element"
+      required: false
+
+  # Geometría de columna
+  geometry:
+    L:
+      value: null        # Longitud de columna (m)
+      units: "m"
+      desc: "Column length"
+      required: true
+    b:
+      value: null        # Ancho de sección cuadrada (m)
+      units: "m"
+      desc: "Section width (square section assumed)"
+      required: true
+    n_elements:
+      value: 4           # Elementos por columna (default OK para forceBeamColumn)
+      units: "-"
+      desc: "Number of elements along column height"
+      required: false
+
+  # Análisis dinámica
+  analysis:
+    integrator:
+      value: "Newmark"
+      desc: "Time integration method"
+      required: false
+    beta:
+      value: 0.25        # Newmark average acceleration
+      units: "-"
+      required: false
+    gamma:
+      value: 0.5
+      units: "-"
+      required: false
 
 # ─────────────────────────────────────────────────
 # PARÁMETROS ESTRUCTURALES
@@ -163,3 +310,137 @@ guardrails:
   max_sensor_outlier_sigma:
     value: 3.0         # Outliers > 3σ → datos inválidos
     description: "Límite estadístico para detección de ruido en sensores"
+
+# ─────────────────────────────────────────────────
+# DOMINIO AGUA (FEniCSx — Navier-Stokes)
+# ─── Activar con project.domain: "water" ────────
+# Valores null = no configurado. Llenar al crear proyecto de fluidos.
+# ─────────────────────────────────────────────────
+fluid:
+  properties:
+    viscosity_mu:
+      value: null        # Pa.s (typ. 1e-3 para agua, 1.8e-5 para aire)
+      units: "Pa.s"
+      desc: "Dynamic viscosity"
+      required: true
+    density_rho:
+      value: null        # kg/m3 (typ. 1000 para agua)
+      units: "kg/m3"
+      desc: "Fluid density"
+      required: true
+  geometry:
+    length:
+      value: null        # m — longitud del dominio de simulación
+      units: "m"
+      desc: "Domain length"
+      required: true
+    height:
+      value: null        # m — altura del dominio
+      units: "m"
+      desc: "Domain height"
+      required: true
+    width:
+      value: null        # m — ancho (0 para simulación 2D)
+      units: "m"
+      desc: "Domain width (0 for 2D)"
+      required: true
+  boundary:
+    inlet_velocity:
+      value: null        # m/s — velocidad de entrada
+      units: "m/s"
+      desc: "Inlet velocity"
+      required: true
+    outlet_pressure:
+      value: null        # Pa — presión de salida (typ. 0 gauge)
+      units: "Pa"
+      desc: "Outlet pressure (gauge)"
+      required: true
+  mesh:
+    resolution:
+      value: null        # elementos por metro
+      units: "elem/m"
+      desc: "Mesh resolution"
+      required: true
+  analysis:
+    time_step:
+      value: null        # s — paso temporal
+      units: "s"
+      desc: "Time step for transient analysis"
+      required: true
+    total_time:
+      value: null        # s — duración total
+      units: "s"
+      desc: "Total simulation time"
+      required: true
+
+# ─────────────────────────────────────────────────
+# DOMINIO AIRE (FEniCSx/SU2 — Wind Loading)
+# ─── Activar con project.domain: "air" ──────────
+# Valores null = no configurado. Llenar al crear proyecto de viento.
+# ─────────────────────────────────────────────────
+air:
+  properties:
+    viscosity_mu:
+      value: null        # Pa.s (typ. 1.8e-5 para aire a 20°C)
+      units: "Pa.s"
+      desc: "Air dynamic viscosity"
+      required: true
+    density_rho:
+      value: null        # kg/m3 (typ. 1.225 a nivel del mar)
+      units: "kg/m3"
+      desc: "Air density"
+      required: true
+  geometry:
+    length:
+      value: null        # m — longitud del túnel de viento / dominio
+      units: "m"
+      desc: "Domain length"
+      required: true
+    height:
+      value: null        # m — altura del dominio
+      units: "m"
+      desc: "Domain height"
+      required: true
+    width:
+      value: null        # m — ancho (0 para 2D)
+      units: "m"
+      desc: "Domain width (0 for 2D)"
+      required: true
+    obstacle_width:
+      value: null        # m — ancho del edificio/obstáculo
+      units: "m"
+      desc: "Obstacle/building width"
+      required: true
+    obstacle_height:
+      value: null        # m — altura del edificio/obstáculo
+      units: "m"
+      desc: "Obstacle/building height"
+      required: true
+  boundary:
+    inlet_velocity:
+      value: null        # m/s — velocidad del viento
+      units: "m/s"
+      desc: "Wind speed at inlet"
+      required: true
+    turbulence_intensity:
+      value: null        # adimensional (typ. 0.1-0.2)
+      units: "-"
+      desc: "Turbulence intensity at inlet"
+      required: true
+  mesh:
+    resolution:
+      value: null        # elementos por metro
+      units: "elem/m"
+      desc: "Mesh resolution"
+      required: true
+  analysis:
+    time_step:
+      value: null        # s
+      units: "s"
+      desc: "Time step"
+      required: true
+    total_time:
+      value: null        # s
+      units: "s"
+      desc: "Total simulation time"
+      required: true

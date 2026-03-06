@@ -25,9 +25,10 @@ from datetime import datetime
 
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config.paths import get_processed_data_dir, get_drafts_dir
+from src.physics.params import SAMPLE_RATE_HZ
 
 # ─── Configuración ─────────────────────────────────────────────────────────────
-FS           = 100.0    # Hz — igual al Arduino real
+FS           = float(SAMPLE_RATE_HZ)  # From SSOT via params.py
 T_SIGNAL     = 10.0     # segundos — Δf = 0.10 Hz (suficiente para resolver 0.26 Hz)
 NOISE_RATIO  = 0.10     # ±10% ruido Gaussiano (realista para sensor de campo)
 AMPLITUDE    = 0.12     # g — vibracion de servicio, no resonancia

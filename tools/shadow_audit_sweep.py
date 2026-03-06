@@ -20,11 +20,12 @@ from pathlib import Path
 # Añadir la raíz al path para el import config.paths
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 from config.paths import get_processed_data_dir, get_drafts_dir
+from src.physics.params import SAMPLE_RATE_HZ, DT
 
 # ─── Configuración del Barrido ─────────────────────────────────────────
 FREQUENCIES_TO_TEST = [2.0, 5.2, 8.0, 12.0, 18.0]
 TOLERANCE_PCT = 5.0         # Umbral de aprobación < 5%
-DT_SIMULATION = 0.01        # dt del params.yaml (100 Hz de muestreo)
+DT_SIMULATION = DT          # From SSOT via params.py
 
 def _run_battle_with_freq(f_hz: float, timeout: int = 45) -> bool:
     """Ejecuta el ciclo E2E completo a una frecuencia dada y espera al CSV."""

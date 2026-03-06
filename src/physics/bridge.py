@@ -134,31 +134,36 @@ def compute_jitter_ms(t_arduino_ms: int, t_linux_ns: int, baseline_offset_ms: fl
 # ─────────────────────────────────────────────────────────
 # INYECCIÓN EN OPENSEESPY (Cámara de Tortura)
 # ─────────────────────────────────────────────────────────
-def inject_and_analyze(accel_g: float, dt: float) -> dict:
+def inject_and_analyze(accel_g: float, dt: float, model_props: dict = None) -> dict:
     """
-    Aplica la aceleración del sensor al modelo de OpenSeesPy y avanza un paso.
-    Retorna un dict con {converged: bool, iterations: int, stress_pa: float}.
-    """
-    mass_kg = 5000.0 # m en tope de la cámara
-    
-    # Fuerza Sísmica F = m * a
-    force = mass_kg * accel_g * 9.81  # N = kg · m/s²
+    Apply sensor acceleration to OpenSeesPy model and advance one step.
+    model_props comes from torture_chamber.init_model() return value.
 
-    # DOF 1 = X; Patrón Transitorio tag=2 (Linear TimeSeries tag=2 pre-configurado)
-    # Carga lateral en tope de la columna (nodo 2)
-    ops.load(2, force, 0.0, 0.0)
-    
-    ok = ops.analyze(1, dt)          # 0 ok, -1 div
-    
-    # Extraemos el Momento Flector en la base para vigilar la energía (Nodo 1)
-    # Reacciones en la base: [Rx, Ry, Mz]
+    Adapts to both linear (1 element, node 2) and nonlinear (multi-element,
+    top_node from model_props) configurations automatically.
+    """
+    if model_props is None:
+        model_props = {}
+
+    mass_kg = model_props.get("mass_kg", 1000.0)
+    I_m4 = model_props.get("I_m4", 0.25**4 / 12.0)
+    b_m = model_props.get("b_m", 0.25)
+    c = b_m / 2.0  # distance to neutral axis
+    top_node = model_props.get("top_node", 2)
+
+    force = mass_kg * accel_g * 9.81  # N
+
+    ops.load(top_node, force, 0.0, 0.0)
+    ok = ops.analyze(1, dt)
+
     try:
         ops.reactions()
-        Mz_base = abs(ops.nodeReaction(1, 3)) # Momento flector en el empotramiento Z
-        # Esfuerzo de flexión M*c/I (Columna de la cámara: E=200e9, I=8.33e-6, A=0.01)
-        # c aprox (raiz cuadrada del área simplificada 0.1m)
-        stress_pa = (Mz_base * 0.05) / 8.33e-6
-    except:
+        Mz_base = abs(ops.nodeReaction(1, 3))
+        # For linear model: elastic beam theory sigma = Mc/I
+        # For nonlinear model: this is an approximation — fiber section
+        # tracks actual stress internally, but Mc/I gives a comparable metric
+        stress_pa = (Mz_base * c) / I_m4
+    except Exception:
         stress_pa = 0.0
 
     return {
@@ -168,18 +173,17 @@ def inject_and_analyze(accel_g: float, dt: float) -> dict:
 
 
 # ─────────────────────────────────────────────────────────
-# MODO PREDICCIÓN (Worst-Case en Paralelo)
+# MODO PREDICCION (Placeholder — requiere implementacion)
 # ─────────────────────────────────────────────────────────
 def run_worst_case_prediction(accel_g: float, cfg: dict):
     """
-    Dispara una simulación de peor escenario en un hilo separado.
-    Activa cuando accel_g > temporal.prediction_mode.trigger_threshold_g.
+    Placeholder for worst-case prediction mode.
+    TODO: Implement when PgNN surrogate is integrated into real-time loop.
+    Currently logs the trigger event only.
     """
     threshold = cfg["temporal"]["prediction_mode"]["trigger_threshold_g"]["value"]
     if accel_g > threshold:
-        print(f"[BRIDGE] ⚠️  MODO PREDICCIÓN ACTIVADO — accel={accel_g:.3f}g > {threshold}g")
-        print("[BRIDGE]    Physical Critic: verificando pandeo y torsión en worst-case...")
-        # La simulación de peor escenario se implementa en simulation/models/worst_case.py
+        print(f"[BRIDGE] PREDICTION MODE TRIGGERED — accel={accel_g:.3f}g > {threshold}g (not yet implemented)")
 
 
 # ─────────────────────────────────────────────────────────
@@ -466,10 +470,12 @@ def run_bridge(port: str = "/dev/ttyUSB0", reset_baseline: bool = False):
     with serial.Serial(port, baud, timeout=2) as ser:
         time.sleep(2)
 
-        # Iniciar modelo Cámara de Tortura OpenSeesPy
-        print("[BRIDGE] 🏗️  Inicializando Cámara de Tortura (P-Delta) para el combate...")
-        from src.physics.torture_chamber import init_model
-        init_model()
+        # Initialize solver backend based on domain in SSOT
+        from src.physics.solver_backend import get_solver_backend
+        domain = cfg.get("project", {}).get("domain", "structural")
+        print(f"[BRIDGE] Initializing solver backend (domain={domain})...")
+        solver_backend = get_solver_backend(cfg)
+        model_props = solver_backend.init_model(cfg)
 
         if not handshake(ser, cfg, config_hash):
             print("[BRIDGE] ❌ PIPELINE BLOQUEADO — Handshake fallido.")
@@ -610,11 +616,8 @@ def run_bridge(port: str = "/dev/ttyUSB0", reset_baseline: bool = False):
                 if pred_enabled:
                     run_worst_case_prediction(accel_processed, cfg)
 
-                # ─ Inyectar en OpenSeesPy (pasamos cfg local)
-                # El modelo ops debe ser instanciado antes. 
-                global cfg_local
-                cfg_local = cfg
-                result = inject_and_analyze(accel_processed, dt)
+                # Inject into solver backend (domain-agnostic)
+                result = solver_backend.step(accel_processed, dt, model_props)
 
                 # RED LINE 3 — Divergencia numérica
                 if aborter.check_rl3_convergence(result["converged"]):

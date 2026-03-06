@@ -20,14 +20,15 @@
 
 #include "Arduino.h"
 #include "Arduino_BHY2.h"
+#include "params.h"  // SSOT — auto-generated from config/params.yaml
 // #include "arduinoFFT.h" // Descomentar en IDE tras instalar arduinoFFT
 
 // ─────────────────────────────────────────────────────────
-// CONFIGURACIÓN DE SHM Y FÍSICA
+// CONFIGURACION DE SHM Y FISICA (derivada de SSOT)
 // ─────────────────────────────────────────────────────────
 #define SAMPLES 256            // Debe ser potencia de 2 para la FFT
-#define SAMPLING_FREQ 100.0    // Hz
-#define LORA_BAUD 9600         // Baudrate estándar para módulos LoRa UART (E32/E220)
+#define SAMPLING_FREQ ((float)SAMPLE_RATE_HZ)
+#define LORA_BAUD 9600         // Baudrate para modulos LoRa UART (E32/E220)
 
 // Umbrales de Seguridad (Red Lines Locales)
 const float NOMINAL_FN = 8.0;  // Frecuencia estructural nominal (Hz)
@@ -68,8 +69,8 @@ public:
     }
 };
 
-// Instancia del filtro (Q y R alineados con los de params.yaml)
-KalmanFilter1D kf(1e-5, 0.01, 1.0, 0.0);
+// Instancia del filtro (Q y R from SSOT params.h)
+KalmanFilter1D kf(KF_Q, KF_R, 1.0, 0.0);
 
 // ─────────────────────────────────────────────────────────
 // MEMORIA Y FFT
