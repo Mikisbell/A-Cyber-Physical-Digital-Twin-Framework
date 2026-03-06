@@ -8,6 +8,8 @@
 #   bash tools/setup_dependencies.sh          # interactive
 #   bash tools/setup_dependencies.sh --all    # install everything
 #   bash tools/setup_dependencies.sh --check  # only check status
+#   bash tools/setup_dependencies.sh --update # update all to latest
+#   bash tools/setup_dependencies.sh --lock   # save current versions to lockfile
 
 set -euo pipefail
 
@@ -150,6 +152,111 @@ setup_engram() {
   fi
 }
 
+# ── Update ─────────────────────────────────────────────────────────────
+
+get_version() {
+  local name="$1"
+  case "$name" in
+    engram|gentle-ai|gga)
+      if check_command "$name"; then
+        "$name" version 2>/dev/null || "$name" --version 2>/dev/null || echo "unknown"
+      else
+        echo "not-installed"
+      fi
+      ;;
+    agent-teams-lite|Gentleman-Skills)
+      if [[ -d "$ROOT/.agents/$name/.git" ]]; then
+        git -C "$ROOT/.agents/$name" rev-parse --short HEAD 2>/dev/null || echo "unknown"
+      else
+        echo "not-installed"
+      fi
+      ;;
+  esac
+}
+
+update_component() {
+  local name="$1" brew_formula="$2" gh_repo="$3"
+  local before after
+
+  before="$(get_version "$name")"
+
+  case "$name" in
+    engram|gentle-ai|gga)
+      if ! check_command "$name"; then
+        echo -e "  ${YELLOW}[SKIP]${NC} $name — not installed"
+        return
+      fi
+      if check_command brew && brew list "$brew_formula" &>/dev/null; then
+        brew upgrade "$brew_formula" 2>/dev/null || true
+      else
+        install_from_release "$name" "$gh_repo"
+      fi
+      ;;
+    agent-teams-lite|Gentleman-Skills)
+      if [[ -d "$ROOT/.agents/$name/.git" ]]; then
+        git -C "$ROOT/.agents/$name" pull --ff-only 2>/dev/null || {
+          echo -e "  ${YELLOW}[WARN]${NC} $name — pull failed (local changes?)"
+          return
+        }
+      else
+        echo -e "  ${YELLOW}[SKIP]${NC} $name — not installed"
+        return
+      fi
+      ;;
+  esac
+
+  after="$(get_version "$name")"
+  if [[ "$before" == "$after" ]]; then
+    echo -e "  ${GREEN}[OK]${NC} $name — up to date ($after)"
+  else
+    echo -e "  ${GREEN}[UPDATED]${NC} $name — $before → $after"
+  fi
+}
+
+update_all() {
+  print_header
+  echo "  Updating all dependencies..."
+  echo ""
+  for comp in "${COMPONENTS[@]}"; do
+    IFS='|' read -r name brew_formula gh_repo required <<< "$comp"
+    update_component "$name" "$brew_formula" "$gh_repo"
+  done
+  echo ""
+  echo -e "${GREEN}  Update complete.${NC}"
+  echo ""
+  save_lockfile
+}
+
+# ── Lockfile ──────────────────────────────────────────────────────────
+
+LOCKFILE="$ROOT/config/dependencies.lock"
+
+save_lockfile() {
+  mkdir -p "$(dirname "$LOCKFILE")"
+  {
+    echo "# Belico Stack — Dependency Versions"
+    echo "# Generated: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    echo "# Re-lock: bash tools/setup_dependencies.sh --lock"
+    echo ""
+    for comp in "${COMPONENTS[@]}"; do
+      IFS='|' read -r name brew_formula gh_repo required <<< "$comp"
+      local ver
+      ver="$(get_version "$name")"
+      # For git repos, also capture the remote URL and branch
+      if [[ "$name" == "agent-teams-lite" || "$name" == "Gentleman-Skills" ]]; then
+        local branch=""
+        if [[ -d "$ROOT/.agents/$name/.git" ]]; then
+          branch="$(git -C "$ROOT/.agents/$name" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
+        fi
+        echo "$name=$ver  # branch=$branch repo=$gh_repo"
+      else
+        echo "$name=$ver  # brew=$brew_formula repo=$gh_repo"
+      fi
+    done
+  } > "$LOCKFILE"
+  echo -e "  ${GREEN}Lockfile saved:${NC} config/dependencies.lock"
+}
+
 # ── Main ──────────────────────────────────────────────────────────────
 
 main() {
@@ -170,6 +277,20 @@ main() {
       IFS='|' read -r name brew_formula gh_repo required <<< "$comp"
       check_component "$name" "$brew_formula" "$gh_repo" "$required"
     done
+    echo ""
+    return 0
+  fi
+
+  # Update mode
+  if [[ "$mode" == "--update" ]]; then
+    update_all
+    return 0
+  fi
+
+  # Lock mode
+  if [[ "$mode" == "--lock" ]]; then
+    print_header
+    save_lockfile
     echo ""
     return 0
   fi
@@ -233,6 +354,10 @@ main() {
 
   # Post-install: configure Engram
   setup_engram
+
+  # Save lockfile with installed versions
+  echo ""
+  save_lockfile
 
   echo ""
   echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"

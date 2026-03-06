@@ -57,6 +57,16 @@ This installs (via Homebrew or binary download):
 | [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | AI code review on commits (optional) | `brew install gentleman-programming/tap/gga` |
 | [Gentleman Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | Skill library reference (optional) | Cloned to `.agents/Gentleman-Skills/` |
 
+### Keeping dependencies updated
+
+```bash
+bash tools/setup_dependencies.sh --update   # update all to latest
+bash tools/setup_dependencies.sh --lock     # save current versions
+bash tools/setup_dependencies.sh --check    # check status without changing anything
+```
+
+Current versions are tracked in `config/dependencies.lock`.
+
 ### 3. Configure your AI agent
 
 ```bash

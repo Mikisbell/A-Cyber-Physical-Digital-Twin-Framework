@@ -1,0 +1,9 @@
+# Belico Stack — Dependency Versions
+# Generated: 2026-03-06T20:17:52Z
+# Re-lock: bash tools/setup_dependencies.sh --lock
+
+engram=engram 1.7.1  # brew=gentleman-programming/tap/engram repo=Gentleman-Programming/engram
+gentle-ai=not-installed  # brew=gentleman-programming/tap/gentle-ai repo=Gentleman-Programming/gentle-ai
+gga=unknown  # brew=gentleman-programming/tap/gga repo=Gentleman-Programming/gentleman-guardian-angel
+agent-teams-lite=6ab22bb  # branch=main repo=Gentleman-Programming/agent-teams-lite
+Gentleman-Skills=ac0dc7d  # branch=main repo=Gentleman-Programming/Gentleman-Skills
