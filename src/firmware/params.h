@@ -1,9 +1,9 @@
 // AUTO-GENERATED — No editar manualmente.
-// Fuente: config/params.yaml  |  Hash: f376d4ba704b123b
+// Fuente: config/params.yaml  |  Hash: 71bd0061bbcf0625
 // Regenerar: python3 tools/generate_params.py
 #pragma once
 
-#define CONFIG_HASH     "f376d4ba704b123b"
+#define CONFIG_HASH     "71bd0061bbcf0625"
 
 // ── Material ──
 #define MATERIAL_NAME   "Concreto Liviano Reciclado C&DW"
@@ -34,3 +34,27 @@
 // ── Guardrails ──
 #define MAX_STRESS_RATIO  0.6
 #define MAX_SENSOR_SIGMA  3.0
+
+// ── Firmware Edge Common ──
+#define WINDOW_SIZE_SAMPLES  256
+#define ACCEL_THRESHOLD_G    0.05f
+#define SLEEP_INTERVAL_MS    5000
+#define LORA_BAUD            9600
+
+// ── Firmware Edge Alarms ──
+#define NOMINAL_FN_HZ        8.095f
+#define FN_DROP_WARN_RATIO   0.9f
+#define FN_DROP_CRIT_RATIO   0.7f
+#define MAX_G_ALARM          0.4f
+
+// ── Guardian Angel Gates ──
+#define GA_RIGIDEZ_TOL_HZ    1.0
+#define GA_RIGIDEZ_EXT_HZ    3.0
+#define GA_TEMP_MIN_C         -5.0
+#define GA_TEMP_MAX_C         80.0
+#define GA_TEMP_EXT_MIN_C     -15.0
+#define GA_TEMP_EXT_MAX_C     120.0
+#define GA_GRAD_EXT_C         20.0
+#define GA_GRAD_IMP_C         50.0
+#define GA_BAT_UNRELIABLE_V   3.5
+#define GA_BAT_CRITICAL_V     3.3

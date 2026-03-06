@@ -34,15 +34,13 @@
 #define E32_M1_PIN   D3
 #define E32_AUX_PIN  D4      // HIGH = Modulo listo, LOW = ocupado transmitiendo
 
-// ─── Parametros del Sistema (SSOT + locales) ─────────────────────────────────
-#define WINDOW_SIZE       256     // Muestras para FFT (2.56s @ SAMPLE_RATE_HZ)
-// SAMPLE_RATE_HZ comes from params.h (SSOT)
-#define ACCEL_THRESHOLD_G 0.05f   // Umbral para despertar (vibracion estructural)
-#define SLEEP_INTERVAL_MS 5000    // Ciclo base de sueno entre bursts (5s duty cycle)
+// ─── Parametros del Sistema (todos desde SSOT params.h) ──────────────────────
+#define WINDOW_SIZE       WINDOW_SIZE_SAMPLES
+// SAMPLE_RATE_HZ, ACCEL_THRESHOLD_G, SLEEP_INTERVAL_MS from params.h
+// NOMINAL_FN_HZ, FN_DROP_CRIT_RATIO, MAX_G_ALARM from params.h
 
-// Umbral de Alarma RL2 (rigidez perdida > 30%)
-#define FN_ALARM_HZ       5.6f
-#define MAX_G_ALARM       0.45f
+// Umbral de Alarma RL2 (fn critica = nominal * ratio critico)
+#define FN_ALARM_HZ       (NOMINAL_FN_HZ * FN_DROP_CRIT_RATIO)
 
 // ─── Sensores BHI260AP ───────────────────────────────────────────────────────
 SensorXYZ   accel(SENSOR_ID_ACC);
@@ -146,8 +144,9 @@ void transmitPayload(float fn, float max_g_val, float tmp, bool alarm) {
     uint32_t t_unix_approx = millis() / 1000UL;
 
     char payload[80];
+    // Note: BHI260AP in field mode has no humidity sensor — omit HUM field
     snprintf(payload, sizeof(payload),
-        "LORA:T:%lu,TMP:%.1f,HUM:55.0,FN:%.2f,MAX_G:%.3f,STAT:%s",
+        "LORA:T:%lu,TMP:%.1f,FN:%.2f,MAX_G:%.3f,STAT:%s",
         (unsigned long)t_unix_approx, tmp, fn, max_g_val, stat
     );
 
@@ -167,7 +166,7 @@ void setup() {
     nicla::leds.setColor(red);   // LED rojo = inicializando
 
     Serial.begin(SERIAL_BAUD);  // Debug (se puede desactivar en campo)
-    Serial1.begin(9600);   // UART hacia E32
+    Serial1.begin(LORA_BAUD);   // UART hacia E32 (SSOT)
 
     // Pines de control E32
     pinMode(E32_M0_PIN, OUTPUT);
@@ -228,7 +227,7 @@ void loop() {
         bufferIdx = 0;              // Reset buffer
 
         // 4. Deep Sleep entre ciclos (máximo ahorro)
-        LowPower.deepSleep(SLEEP_INTERVAL_MS);
+        LowPower.deepSleep(SLEEP_INTERVAL_MS);  // SSOT
     }
 
     // Microdelay a 100Hz (10ms por muestra)

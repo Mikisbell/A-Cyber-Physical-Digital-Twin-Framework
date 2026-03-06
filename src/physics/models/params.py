@@ -17,14 +17,10 @@ def load_sim_params():
             "xi": cfg["damping"]["ratio_xi"]["value"]
         }
     except Exception as e:
-        # Fallback para no arruinar E2E si falla carga yaml
-        print(f"⚠️ Warning loading yaml: {e}")
-        return {
-            "mass": 1000.0,
-            "k": 5000.0,
-            "fy": 20e6,
-            "xi": 0.05
-        }
+        raise RuntimeError(
+            f"SSOT load failed: {e}. "
+            f"Verify config/params.yaml exists and is valid YAML."
+        ) from e
 
 P = load_sim_params()
 

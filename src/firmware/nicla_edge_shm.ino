@@ -26,15 +26,14 @@
 // ─────────────────────────────────────────────────────────
 // CONFIGURACION DE SHM Y FISICA (derivada de SSOT)
 // ─────────────────────────────────────────────────────────
-#define SAMPLES 256            // Debe ser potencia de 2 para la FFT
-#define SAMPLING_FREQ ((float)SAMPLE_RATE_HZ)
-#define LORA_BAUD 9600         // Baudrate para modulos LoRa UART (E32/E220)
+#define SAMPLES          WINDOW_SIZE_SAMPLES  // Potencia de 2 para FFT (SSOT)
+#define SAMPLING_FREQ    ((float)SAMPLE_RATE_HZ)
 
-// Umbrales de Seguridad (Red Lines Locales)
-const float NOMINAL_FN = 8.0;  // Frecuencia estructural nominal (Hz)
-const float FN_DROP_WARN = 0.90; // Caída del 10% -> WARN
-const float FN_DROP_CRIT = 0.70; // Caída del 30% -> ALARM_RL2
-const float MAX_G_CRIT   = 0.40; // Aceleración de alarma
+// Umbrales de Seguridad (desde SSOT params.h)
+#define NOMINAL_FN       NOMINAL_FN_HZ
+#define FN_DROP_WARN     FN_DROP_WARN_RATIO
+#define FN_DROP_CRIT     FN_DROP_CRIT_RATIO
+#define MAX_G_CRIT       MAX_G_ALARM
 
 // ─────────────────────────────────────────────────────────
 // FILTRO DE KALMAN 1D P-DELTA (Edge AI)
@@ -95,8 +94,8 @@ unsigned long current_unix_epoch = 1710000000;
 // SETUP
 // ─────────────────────────────────────────────────────────
 void setup() {
-    Serial.begin(115200);   // Consola Debug (USB)
-    Serial1.begin(LORA_BAUD); // Telemetría LoRa (Tx/Rx)
+    Serial.begin(SERIAL_BAUD);   // Consola Debug (USB, SSOT)
+    Serial1.begin(LORA_BAUD); // Telemetría LoRa (SSOT)
 
     while (!Serial && millis() < 3000); // Espera opcional a la consola serial
     
@@ -155,16 +154,20 @@ void loop() {
         double peak_freq = FFT.MajorPeak();
         */
         
-        // (Mock de la salida de FFT mientras arduinoFFT no esté linkeado en el build)
-        // Sustituiremos peak_freq con un dummy para validar la compilación y lógica.
-        double peak_freq = NOMINAL_FN; 
+        // FFT not linked — skip structural alarm logic, report NO_FFT status
+        double peak_freq = -1.0;  // Sentinel: no real measurement available
         
         // Lógica de Estado Estructural
-        String stat = "OK";
-        if (peak_freq < (NOMINAL_FN * FN_DROP_CRIT) || max_g_window > MAX_G_CRIT) {
+        String stat;
+        if (peak_freq < 0) {
+            // FFT not available — report data only, no alarm logic
+            stat = "NO_FFT";
+        } else if (peak_freq < (NOMINAL_FN * FN_DROP_CRIT) || max_g_window > MAX_G_CRIT) {
             stat = "ALARM_RL2";
         } else if (peak_freq < (NOMINAL_FN * FN_DROP_WARN)) {
             stat = "WARN";
+        } else {
+            stat = "OK";
         }
 
         // Simulación de reloj RTC (Sumamos 2.56 segs por ventana)

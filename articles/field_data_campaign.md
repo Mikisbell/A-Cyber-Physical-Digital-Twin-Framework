@@ -54,7 +54,7 @@ ENGRAM_DATA_DIR=.agent/memory/engram engram stats
 # Esperar: database path correcto
 
 # 5. Calibracion baseline (si no existe o tiene >7 dias)
-python tools/calibrate_baseline.py --duration 60 --output config/field_baseline.yaml
+python tools/baseline_calibration.py --duration 60 --output config/field_baseline.yaml
 # Actualiza fn_baseline_hz, max_g_ambient, guardian thresholds
 
 # 6. Verificar espacio en disco

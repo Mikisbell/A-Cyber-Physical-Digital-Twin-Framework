@@ -1,8 +1,8 @@
 # AUTO-GENERATED — No editar manualmente.
-# Fuente: config/params.yaml  |  Hash: f376d4ba704b123b
+# Fuente: config/params.yaml  |  Hash: 71bd0061bbcf0625
 # Regenerar: python3 tools/generate_params.py
 
-CONFIG_HASH = "f376d4ba704b123b46716b5ae31de1e08fa7b5cc63fca77daec73cf0435037cd"
+CONFIG_HASH = "71bd0061bbcf06255c6eaa83bf95edbe27e6b5eda44938713babd73e0889140d"
 
 # Material
 MATERIAL_NAME = "Concreto Liviano Reciclado C&DW"

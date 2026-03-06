@@ -143,8 +143,12 @@ def generate_header(cfg: dict, config_hash: str) -> str:
     sig  = cfg["signal_processing"]
     temp = cfg["temporal"]
     grd  = cfg["guardrails"]
+    fw   = cfg.get("firmware", {})
+    fw_common = fw.get("edge_common", {})
+    fw_alarm  = fw.get("edge_alarms", {})
+    fw_ga     = fw.get("guardian_angel", {})
 
-    return f'''// AUTO-GENERATED — No editar manualmente.
+    header = f'''// AUTO-GENERATED — No editar manualmente.
 // Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
 // Regenerar: python3 tools/generate_params.py
 #pragma once
@@ -181,6 +185,42 @@ def generate_header(cfg: dict, config_hash: str) -> str:
 #define MAX_STRESS_RATIO  {grd["max_stress_ratio"]["value"]}
 #define MAX_SENSOR_SIGMA  {grd["max_sensor_outlier_sigma"]["value"]}
 '''
+
+    # Firmware edge constants (if firmware section exists in SSOT)
+    if fw_common:
+        header += f'''
+// ── Firmware Edge Common ──
+#define WINDOW_SIZE_SAMPLES  {fw_common["window_size_samples"]["value"]}
+#define ACCEL_THRESHOLD_G    {fw_common["accel_threshold_g"]["value"]}f
+#define SLEEP_INTERVAL_MS    {fw_common["sleep_interval_ms"]["value"]}
+#define LORA_BAUD            {fw_common["lora_baud"]["value"]}
+'''
+
+    if fw_alarm:
+        header += f'''
+// ── Firmware Edge Alarms ──
+#define NOMINAL_FN_HZ        {fw_alarm["nominal_fn_hz"]["value"]}f
+#define FN_DROP_WARN_RATIO   {fw_alarm["fn_drop_warn_ratio"]["value"]}f
+#define FN_DROP_CRIT_RATIO   {fw_alarm["fn_drop_crit_ratio"]["value"]}f
+#define MAX_G_ALARM          {fw_alarm["max_g_alarm"]["value"]}f
+'''
+
+    if fw_ga:
+        header += f'''
+// ── Guardian Angel Gates ──
+#define GA_RIGIDEZ_TOL_HZ    {fw_ga["rigidez_tolerance_hz"]["value"]}
+#define GA_RIGIDEZ_EXT_HZ    {fw_ga["rigidez_extreme_hz"]["value"]}
+#define GA_TEMP_MIN_C         {fw_ga["temp_min_c"]["value"]}
+#define GA_TEMP_MAX_C         {fw_ga["temp_max_c"]["value"]}
+#define GA_TEMP_EXT_MIN_C     {fw_ga["temp_extreme_min_c"]["value"]}
+#define GA_TEMP_EXT_MAX_C     {fw_ga["temp_extreme_max_c"]["value"]}
+#define GA_GRAD_EXT_C         {fw_ga["grad_extreme_c"]["value"]}
+#define GA_GRAD_IMP_C         {fw_ga["grad_impossible_c"]["value"]}
+#define GA_BAT_UNRELIABLE_V   {fw_ga["bat_unreliable_v"]["value"]}
+#define GA_BAT_CRITICAL_V     {fw_ga["bat_critical_v"]["value"]}
+'''
+
+    return header
 
 
 def main(dry_run: bool = False):

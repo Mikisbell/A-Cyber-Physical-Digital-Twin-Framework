@@ -310,6 +310,84 @@ guardrails:
   max_sensor_outlier_sigma:
     value: 3.0         # Outliers > 3σ → datos inválidos
     description: "Límite estadístico para detección de ruido en sensores"
+  abort_jitter_ms:
+    value: 10.0        # ms — RL-1: jitter que dispara abort consecutivo
+    description: "Umbral de jitter para protocolo de aborto RL-1"
+  abort_jitter_consec:
+    value: 3           # paquetes — RL-1: consecutivos antes de abort
+    description: "Paquetes consecutivos con jitter > abort_jitter_ms antes de abortar"
+  stress_ratio_abort:
+    value: 0.85        # fracción de fy — RL-2: abort por esfuerzo
+    description: "Fracción de fy que dispara aborto RL-2 (más estricto que max_stress_ratio)"
+  lora_stale_timeout_s:
+    value: 15.0        # s — máximo lag admitido en telemetría LoRa
+    description: "Paquetes LoRa con latencia > este valor se descartan como STALE"
+
+# ─────────────────────────────────────────────────
+# FIRMWARE EDGE — Umbrales de Alarma
+# ─── Consumidos por params.h → .ino ─────────────
+# ─────────────────────────────────────────────────
+firmware:
+  edge_common:
+    window_size_samples:
+      value: 256         # Potencia de 2 para FFT (2.56s @ 100Hz)
+      units: "samples"
+    accel_threshold_g:
+      value: 0.05        # g — umbral para despertar del deep sleep
+      units: "g"
+    sleep_interval_ms:
+      value: 5000         # ms — ciclo base de sueño entre bursts
+      units: "ms"
+    lora_baud:
+      value: 9600         # Baudrate para módulos LoRa UART (E32/E220)
+      units: "baud"
+
+  edge_alarms:
+    nominal_fn_hz:
+      value: 8.095        # Hz — frecuencia baseline de campo (La Presa)
+      units: "Hz"
+      source: "config/field_baseline.yaml"
+    fn_drop_warn_ratio:
+      value: 0.90          # Caída del 10% → WARN
+      units: "dimensionless"
+    fn_drop_crit_ratio:
+      value: 0.70          # Caída del 30% → ALARM_RL2
+      units: "dimensionless"
+    max_g_alarm:
+      value: 0.40          # g — aceleración que dispara alarma
+      units: "g"
+
+  guardian_angel:
+    rigidez_tolerance_hz:
+      value: 1.0           # Hz — tolerancia por vibración ambiental
+      units: "Hz"
+    rigidez_extreme_hz:
+      value: 3.0
+      units: "Hz"
+    temp_min_c:
+      value: -5.0
+      units: "C"
+    temp_max_c:
+      value: 80.0
+      units: "C"
+    temp_extreme_min_c:
+      value: -15.0
+      units: "C"
+    temp_extreme_max_c:
+      value: 120.0
+      units: "C"
+    grad_extreme_c:
+      value: 20.0          # °C — gradiente térmico máximo entre lecturas
+      units: "C"
+    grad_impossible_c:
+      value: 50.0
+      units: "C"
+    bat_unreliable_v:
+      value: 3.5           # V — ADC pierde precisión
+      units: "V"
+    bat_critical_v:
+      value: 3.3           # V — oscilador puede desregularse
+      units: "V"
 
 # ─────────────────────────────────────────────────
 # DOMINIO AGUA (FEniCSx — Navier-Stokes)

@@ -114,7 +114,8 @@ def parse_packet(raw: str) -> dict | None:
             "accel_g":      float(parts["A"]),
             "disp_mm":      float(parts.get("D", 0.0)),
         }
-    except (ValueError, KeyError):
+    except (ValueError, KeyError) as e:
+        print(f"[BRIDGE] PARSE ERROR: {type(e).__name__}: {e} — raw: {raw[:80]}")
         return None
 
 
@@ -145,9 +146,14 @@ def inject_and_analyze(accel_g: float, dt: float, model_props: dict = None) -> d
     if model_props is None:
         model_props = {}
 
-    mass_kg = model_props.get("mass_kg", 1000.0)
-    I_m4 = model_props.get("I_m4", 0.25**4 / 12.0)
-    b_m = model_props.get("b_m", 0.25)
+    if "mass_kg" not in model_props or "I_m4" not in model_props or "b_m" not in model_props:
+        raise ValueError(
+            "inject_and_analyze requires mass_kg, I_m4, b_m in model_props. "
+            "These must come from torture_chamber.init_model(), not defaults."
+        )
+    mass_kg = model_props["mass_kg"]
+    I_m4 = model_props["I_m4"]
+    b_m = model_props["b_m"]
     c = b_m / 2.0  # distance to neutral axis
     top_node = model_props.get("top_node", 2)
 
@@ -163,8 +169,13 @@ def inject_and_analyze(accel_g: float, dt: float, model_props: dict = None) -> d
         # For nonlinear model: this is an approximation — fiber section
         # tracks actual stress internally, but Mc/I gives a comparable metric
         stress_pa = (Mz_base * c) / I_m4
-    except Exception:
-        stress_pa = 0.0
+    except Exception as e:
+        print(f"[BRIDGE] ERROR: OpenSeesPy reaction query failed: {e}")
+        return {
+            "converged": ok == 0,
+            "stress_pa": None,  # Sentinel — caller must handle as error
+            "error": str(e),
+        }
 
     return {
         "converged": ok == 0,
@@ -222,11 +233,11 @@ class AbortController:
     RL-2: Esfuerzo crítico    — σ_sensor > 0.85 · fy
     RL-3: Divergencia numérica — OpenSeesPy no converge en el paso actual
     """
-    ABORT_JITTER_MS     = 10.0  # ms   (RL-1, fijo por Protocolo Bélico)
-    JITTER_CONSEC_LIMIT = 3     # paquetes seguidos (RL-1)
-    STRESS_RATIO_ABORT  = 0.85  # fracción de fy (RL-2)
-
-    def __init__(self, fy_pa: float):
+    def __init__(self, fy_pa: float, cfg: dict | None = None):
+        grd = (cfg or {}).get("guardrails", {})
+        self.ABORT_JITTER_MS     = grd.get("abort_jitter_ms", {}).get("value", 10.0)
+        self.JITTER_CONSEC_LIMIT = grd.get("abort_jitter_consec", {}).get("value", 3)
+        self.STRESS_RATIO_ABORT  = grd.get("stress_ratio_abort", {}).get("value", 0.85)
         self.fy_pa          = fy_pa
         self.jitter_consec  = 0      # contador de paquetes consecutivos
         self.abort_reason   = None
@@ -290,18 +301,18 @@ class GuardianAngel:
       separadas por el intervalo LoRa (5 s) viola la conservación de
       la energía sin fuente externa declarada.
     """
-    RIGIDEZ_TOLERANCE_HZ  = 1.0
-    RIGIDEZ_EXTREME_HZ    = 3.0
-    TEMP_MIN_C            = -5.0
-    TEMP_MAX_C            = 80.0
-    TEMP_EXTREME_MIN_C    = -15.0
-    TEMP_EXTREME_MAX_C    = 120.0
-    GRAD_EXTREME_C        = 20.0
-    GRAD_IMPOSSIBLE_C     = 50.0
-    BAT_UNRELIABLE_V      = 3.5   # V: por debajo el ADC pierde precisión
-    BAT_CRITICAL_V        = 3.3   # V: por debajo el oscilador puede desregularse
-
-    def __init__(self):
+    def __init__(self, cfg: dict | None = None):
+        ga = (cfg or {}).get("firmware", {}).get("guardian_angel", {})
+        self.RIGIDEZ_TOLERANCE_HZ = ga.get("rigidez_tolerance_hz", {}).get("value", 1.0)
+        self.RIGIDEZ_EXTREME_HZ   = ga.get("rigidez_extreme_hz", {}).get("value", 3.0)
+        self.TEMP_MIN_C           = ga.get("temp_min_c", {}).get("value", -5.0)
+        self.TEMP_MAX_C           = ga.get("temp_max_c", {}).get("value", 80.0)
+        self.TEMP_EXTREME_MIN_C   = ga.get("temp_extreme_min_c", {}).get("value", -15.0)
+        self.TEMP_EXTREME_MAX_C   = ga.get("temp_extreme_max_c", {}).get("value", 120.0)
+        self.GRAD_EXTREME_C       = ga.get("grad_extreme_c", {}).get("value", 20.0)
+        self.GRAD_IMPOSSIBLE_C    = ga.get("grad_impossible_c", {}).get("value", 50.0)
+        self.BAT_UNRELIABLE_V     = ga.get("bat_unreliable_v", {}).get("value", 3.5)
+        self.BAT_CRITICAL_V       = ga.get("bat_critical_v", {}).get("value", 3.3)
         self.fn_baseline: float | None = None
         self.tmp_last:    float | None = None
         self.violations:  list[str]    = []
@@ -389,8 +400,8 @@ def run_bridge(port: str = "/dev/ttyUSB0", reset_baseline: bool = False):
     kf_r         = float(cfg["signal_processing"]["kalman"]["measurement_noise_r"]["value"])
 
     watchdog  = JitterWatchdog(max_jitter, warn_jitter)
-    aborter   = AbortController(fy_pa)
-    guardian  = GuardianAngel()
+    aborter   = AbortController(fy_pa, cfg)
+    guardian  = GuardianAngel(cfg)
     kf        = RealTimeKalmanFilter1D(q=kf_q, r=kf_r) if kf_enabled else None
     buffer: deque = deque(maxlen=buffer_depth)
 
@@ -500,8 +511,7 @@ def run_bridge(port: str = "/dev/ttyUSB0", reset_baseline: bool = False):
                         print("\n[BRIDGE] ⚠️ ALERTA: Tiempo de espera (Timeout) alcanzado.")
                         send_shutdown(ser, "Fallo de Hardware Crítico: Pérdida de Comunicación (Señal Inexistente)")
                         break
-                except Exception as e:
-                    # Captura OSError / SerialException (Cable Arrancado / Emulador Muerto)
+                except (OSError, serial.SerialException) as e:
                     print(f"\n[BRIDGE] ⚠️ ERROR CRÍTICO DE ENLACE FÍSICO: {e}")
                     send_shutdown(ser, "DESASTRE DE DATOS: Enlace Serial destruido (Cable desconectado/Sensor apagado)")
                     break
@@ -514,7 +524,8 @@ def run_bridge(port: str = "/dev/ttyUSB0", reset_baseline: bool = False):
                 # ─ FLUJO LORA EDGE AI (ASÍNCRONO / EVENTOS) ─
                 if pkt.get("is_lora"):
                     latency_s = time.time() - pkt["t_unix"]
-                    is_stale  = latency_s > 15.0 # Max 15 segundos admitidos en telemetría
+                    stale_timeout = cfg["guardrails"]["lora_stale_timeout_s"]["value"]
+                    is_stale  = latency_s > stale_timeout
                     
                     status_col = "✅" if pkt["stat"] == "OK" else ("⚠️ " if pkt["stat"] == "WARN" else "🛑")
                     
