@@ -78,6 +78,12 @@ def run_research(quartile: str, topic: str, cycles: int):
             accel_filt = adapter.scale_to_pga(accel_raw, target_pga_g=0.45)
             sa_filt = compute_spectral_response(accel_filt, dt_target)
             
+            # Fase 40: Amplificación de Suelo E.030 (site-specific)
+            from src.physics.spectral_engine import apply_site_amplification, generate_site_amplification_report, load_soil_params
+            soil_p   = load_soil_params()
+            sa_site  = apply_site_amplification(sa_raw, soil_p)
+            sa_report_site = generate_site_amplification_report(sa_site)
+            
             # Encontrar periodo de mayor demanda espectral
             peak_idx = np.argmax(sa_raw["Sa"])
             T_dom = float(sa_raw["T"][peak_idx])
@@ -88,7 +94,11 @@ def run_research(quartile: str, topic: str, cycles: int):
                 "T_dominant": T_dom,
                 "Sa_max": Sa_max,
                 "pga": sa_raw["pga"],
-                "sa_raw_report": generate_spectral_report(sa_raw, sa_filt)
+                "sa_raw_report": generate_spectral_report(sa_raw, sa_filt),
+                "site_report":  sa_report_site,
+                "Sa_site_max":  float(sa_site["Sa_star_site"]),
+                "T_star_site":  float(sa_site["T_star_site"]),
+                "soil_type":    soil_p["soil_type"]
             }
             with open(cv_out, "w") as f:
                 json.dump(results, f, default=lambda x: x.tolist() if hasattr(x, 'tolist') else x)

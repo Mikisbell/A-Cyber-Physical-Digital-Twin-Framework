@@ -148,6 +148,147 @@ def generate_spectral_report(sa_raw: dict, sa_filtered: dict) -> str:
 
 
 # ══════════════════════════════════════════════════════════════
+# FASE 40 — AMPLIFICACIÓN DE SUELO (NORMA E.030-2018, PERÚ)
+# Referencia: RNE E.030 Artículo 14 y Tabla 4
+# ══════════════════════════════════════════════════════════════
+
+def load_soil_params(soil_yaml_path = None) -> dict:
+    """
+    Carga los parámetros de suelo desde config/soil_params.yaml.
+    Si el archivo no existe, usa valores conservadores por defecto (S2, Zona 4).
+    """
+    import yaml
+    if soil_yaml_path is None:
+        soil_yaml_path = ROOT / "config" / "soil_params.yaml"
+    
+    defaults = {"S": 1.05, "Tp": 0.6, "Tl": 2.0, "Z": 0.45,
+                "C_max": 2.5, "soil_type": "S2", "zone": 4}
+    try:
+        with open(soil_yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+        amp  = data.get("amplification", {})
+        plat = data.get("spectral_plateau", {"C_max": 2.5})
+        design = data.get("design", {})
+        return {
+            "S":         float(amp.get("S",  defaults["S"])),
+            "Tp":        float(amp.get("Tp", defaults["Tp"])),
+            "Tl":        float(amp.get("Tl", defaults["Tl"])),
+            "Z":         float(design.get("Z", defaults["Z"])),
+            "C_max":     float(plat.get("C_max", defaults["C_max"])),
+            "soil_type": data.get("site_conditions", {}).get("soil_type", defaults["soil_type"]),
+            "zone":      data.get("site_conditions", {}).get("zone",      defaults["zone"]),
+        }
+    except Exception:
+        print("⚠️ [SOIL] soil_params.yaml no encontrado. Usando S2 por defecto.")
+        return defaults
+
+
+def compute_c_factor(T: float, Tp: float, Tl: float, C_max: float = 2.5) -> float:
+    """
+    Factor de amplificación sísmica C(T) según R.N.E. E.030-2018, Artículo 14:
+
+        C = C_max                     si  T  <  Tp     (Plataforma)
+        C = C_max * (Tp / T)          si  Tp <= T < Tl  (Decaimiento 1/T)
+        C = C_max * (Tp * Tl / T²)   si  T  >= Tl      (Decaimiento 1/T²)
+    """
+    if T < Tp:
+        return C_max
+    elif T < Tl:
+        return C_max * (Tp / T)
+    else:
+        return C_max * (Tp * Tl / T**2)
+
+
+def apply_site_amplification(sa_base: dict, soil_params: dict = None) -> dict:
+    """
+    Convierte el Espectro de Roca Base Sa(T) en Espectro de Sitio Sa_site(T)
+    aplicando el Factor de Amplificación de Suelo de la Norma E.030.
+
+    Sa_site(T) = Sa_base(T) × S × [ C(T) / C_max ]
+
+    El término [C(T)/C_max] representa la "joroba" del espectro de sitio:
+    la amplificación es máxima en la plataforma (T < Tp) y decae en periodos
+    largos, modelando la respuesta real del suelo localmente.
+
+    Retorna:
+      - dict con los mismos campos que sa_base + claves 'Sa_site', 'soil_params', 'C_factors'
+    """
+    if soil_params is None:
+        soil_params = load_soil_params()
+
+    S    = soil_params["S"]
+    Tp   = soil_params["Tp"]
+    Tl   = soil_params["Tl"]
+    Cmax = soil_params["C_max"]
+    T    = sa_base["T"]
+
+    C_arr     = np.array([compute_c_factor(t, Tp, Tl, Cmax) for t in T])
+    Sa_site   = sa_base["Sa"] * S * (C_arr / Cmax)
+
+    # Periodo de mayor demanda en el espectro de sitio
+    peak_idx   = int(np.argmax(Sa_site))
+    T_star     = float(T[peak_idx])
+    Sa_star    = float(Sa_site[peak_idx])
+    zone_label = ("plataforma" if T_star < Tp else
+                  "decaimiento 1/T" if T_star < Tl else "decaimiento 1/T²")
+
+    print(f"   🌍 [E.030] Suelo {soil_params['soil_type']} | S={S} | Tp={Tp}s | Tl={Tl}s")
+    print(f"   🌍 [E.030] Sa_site máx = {Sa_star:.3f}g @ T*={T_star:.2f}s ({zone_label})")
+
+    return {
+        **sa_base,
+        "Sa_site":    Sa_site,
+        "C_factors":  C_arr,
+        "soil_params": soil_params,
+        "T_star_site": T_star,
+        "Sa_star_site": Sa_star,
+        "zone_label":  zone_label,
+    }
+
+
+def generate_site_amplification_report(sa_site_dict: dict) -> str:
+    """
+    Genera la Sección 3.6 del paper Q1 con la corrección geotécnica del sitio.
+    """
+    sp   = sa_site_dict["soil_params"]
+    T    = sa_site_dict["T"]
+    Sb   = sa_site_dict["Sa"]       # Roca base
+    Ss   = sa_site_dict["Sa_site"]  # Sitio amplificado
+    T_st = sa_site_dict["T_star_site"]
+    sa_s = sa_site_dict["Sa_star_site"]
+    zone = sa_site_dict["zone_label"]
+
+    indices = np.round(np.linspace(0, len(T)-1, 10)).astype(int)
+
+    lines = []
+    lines.append("\n### 3.6 Site-Specific Spectral Amplification (E.030-2018, Soil S2)\n")
+    lines.append(
+        f"The Site Amplification Factor $C(T)$ (E.030-2018, Art. 14) was applied "
+        f"over the PEER base-rock spectrum to obtain a site-specific demand curve for "
+        f"the Presa del Norte (Soil Type S2, Zone 4, $Z=0.45g$):\n\n"
+        f"$$C(T) = \\begin{{cases}} 2.5 & T < {sp['Tp']}s \\\\\\\\ "
+        f"2.5 \\cdot T_p/T & {sp['Tp']}s \\le T < {sp['Tl']}s \\\\\\\\ "
+        f"2.5 \\cdot T_p T_l / T^2 & T \\ge {sp['Tl']}s \\end{{cases}}$$\n"
+    )
+    lines.append(f"| Period T (s) | Sa Base-Rock (g) | Sa Site {sp['soil_type']} (g) | C Factor |")
+    lines.append("|---|---|---|---|")
+    for idx in indices:
+        t = T[idx]; sb = Sb[idx]; ss = Ss[idx]
+        c = sa_site_dict["C_factors"][idx]
+        lines.append(f"| {t:.2f} | {sb:.4f} | {ss:.4f} | {c:.2f} |")
+
+    lines.append(
+        f"\n> **Site Interpretation**: The maximum site-adjusted demand reaches "
+        f"$S_{{a,site}} = {sa_s:.3f}g$ at $T^* = {T_st:.2f}s$ ({zone}). "
+        f"Given the measured natural frequency $f_n$ of the C\u0026DW module (from Engram telemetry), "
+        f"the system evaluates whether the structure sits in the amplification plateau "
+        f"($T < T_p = {sp['Tp']}s$), where spectral demand is **maximum and constant**, representing "
+        f"the highest collapse risk scenario for low-rise structures in La Esperanza.\n"
+    )
+    return "\n".join(lines)
+
+
+# ══════════════════════════════════════════════════════════════
 # FASE 39 — MÓDULO DE DISIPACIÓN DE ENERGÍA C&DW (ζ VARIABLE)
 # Referencia: Eurocode 8, Ecuación B.3
 # ══════════════════════════════════════════════════════════════

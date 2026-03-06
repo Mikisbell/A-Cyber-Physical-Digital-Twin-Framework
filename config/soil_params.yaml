@@ -1,0 +1,40 @@
+# config/soil_params.yaml
+# Single Source of Truth — Parámetros de Amplificación de Suelo (Norma E.030-2018, Perú)
+# ==========================================================================================
+# Proyecto: Presa del Norte — La Esperanza
+# Referencia: RNE E.030 Diseño Sismorresistente (2018), Tabla 3 y Tabla 4
+
+site_conditions:
+  project:    "Presa del Norte"
+  location:   "La Esperanza, Trujillo, La Libertad, Perú"
+  zone:       4            # Zona Sísmica 4 — Costa norte/central (Z = 0.45g)
+  soil_type:  "S2"         # Suelo Intermedio (depósitos aluviales, Vs=180-500 m/s)
+
+# Factor de suelo y periodos de control (E.030, Tabla 4)
+amplification:
+  S:          1.05         # Factor de suelo S (S2, Zona 4)
+  Tp:         0.6          # Periodo de inicio de la plataforma espectral (s)
+  Tl:         2.0          # Periodo de inicio de la zona de decaimiento 1/T² (s)
+
+# Factor de amplificación sísmica C (E.030, Artículo 14)
+# C = 2.5               si T < Tp
+# C = 2.5 * (Tp/T)      si Tp <= T < Tl
+# C = 2.5 * (Tp*Tl/T²)  si T >= Tl
+spectral_plateau:
+  C_max:      2.5          # Máximo valor de C (plataforma espectral)
+
+# Parámetros de diseño estructural
+design:
+  Z:          0.45         # Factor de zona sísmica (g)
+  U:          1.5          # Factor de uso (Categoría A - infraestructura esencial)
+  R:          6.0          # Coeficiente de reducción (pórticos de concreto armado)
+  # Nota: Para C&DW con ζ variable, R debería ajustarse.
+  # La propuesta del "Factor R Adaptativo" (Fase 41) usará la telemetría del Engram.
+
+# Notas metodológicas para el paper Q1
+paper_notes:
+  soil_source: "Estimación basada en mapas geotécnicos del CISMID y perfil litológico de La Esperanza"
+  validation:  "Pendiente validación in-situ con ensayo de refracción sísmica (MASW)"
+  reviewer_note: >
+    El perfil S2 deberá ser confirmado con un estudio de mecánica de suelos certificado
+    antes del envío final. El EIU adopta este valor como hipótesis de trabajo conservadora.

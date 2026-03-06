@@ -171,6 +171,10 @@ A control simulation was run alongside the experimental stack under {res_A.get("
         cdw_dmp = spectral.get("cdw_damping", {})
         if cdw_dmp:
             informe += cdw_dmp.get("cdw_report", "")
+        # Fase 40: Amplificación de Suelo E.030
+        site_rep = spectral.get("site_report", "")
+        if site_rep:
+            informe += site_rep
 
     # ── INFERENCIA LSTM ──
     try:
