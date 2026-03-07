@@ -90,6 +90,25 @@ bash tools/setup_dependencies.sh --check    # check status without changing anyt
 
 Current versions are tracked in `config/dependencies.lock`.
 
+### Updating an existing project
+
+If you created your project by copying belico-stack (not cloning), add the upstream remote to pull future updates:
+
+```bash
+cd ~/PROYECTOS/your-project
+git remote add belico https://github.com/Mikisbell/belico-stack.git
+git fetch belico
+git merge belico/main --allow-unrelated-histories
+```
+
+For subsequent updates:
+
+```bash
+git fetch belico && git merge belico/main
+```
+
+This brings new tools, sub-agents, skills, and bug fixes without overwriting your project-specific files (`PRD.md`, `config/params.yaml`). Resolve any merge conflicts if your local files differ.
+
 ### 3. Configure your AI agent
 
 ```bash

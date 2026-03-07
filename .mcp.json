@@ -6,10 +6,7 @@
     },
     "semantic-scholar": {
       "command": "semanticscholar-mcp-server",
-      "args": [],
-      "env": {
-        "SEMANTIC_SCHOLAR_API_KEY": "${SEMANTIC_SCHOLAR_API_KEY}"
-      }
+      "args": []
     }
   }
 }
