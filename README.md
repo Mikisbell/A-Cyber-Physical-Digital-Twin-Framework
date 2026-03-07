@@ -67,25 +67,19 @@ bash tools/setup_dependencies.sh --check    # check status without changing anyt
 
 Current versions are tracked in `config/dependencies.lock`.
 
-### 3. Configure your project
+### 3. Bootstrap your project
 
 ```bash
 python3 tools/init_project.py
 ```
 
-The wizard asks you step by step:
-1. **Project type** — structural (seismic/FEM), water (CFD), or air (wind loading)
-2. **Material properties** — modulus, strength, density (with sensible defaults)
-3. **Sensor config** — sample rate, Kalman filter parameters
-4. **LoRa telemetry** — optional, for field deployments
+Only asks 3 things: **project name**, **domain** (structural/water/air), and **author**. That's it.
 
-It writes `config/params.yaml` (the Single Source of Truth) and auto-propagates to `src/firmware/params.h` and `src/physics/params.py`.
+It generates:
+- `PRD.md` — research roadmap skeleton (to fill during your AI session)
+- `config/params.yaml` — parameter skeleton with `null` values (to fill during research)
 
-To reconfigure later:
-```bash
-python3 tools/init_project.py          # edit existing config
-python3 tools/init_project.py --reset  # start fresh (auto-backup)
-```
+You don't need to know material properties upfront — that's what the research is for. The AI agent will guide you to find and fill the right values during your session.
 
 ### 4. Configure your AI agent
 

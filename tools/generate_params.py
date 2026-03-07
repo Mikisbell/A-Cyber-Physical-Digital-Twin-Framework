@@ -63,12 +63,32 @@ def _nonlinear_ready(cfg: dict) -> bool:
     return True
 
 
+def _v(section: dict, key: str, fallback="None"):
+    """Extract value from SSOT section, returning fallback string for nulls."""
+    if key not in section:
+        return fallback
+    entry = section[key]
+    if isinstance(entry, dict):
+        val = entry.get("value")
+    else:
+        val = entry
+    return fallback if val is None else val
+
+
+def _c_val(section: dict, key: str):
+    """Extract value for C header. Returns '0 /* TODO: pending research */' for nulls."""
+    val = _v(section, key, fallback=None)
+    if val is None:
+        return "0  /* TODO: pending research */"
+    return val
+
+
 def generate_python(cfg: dict, config_hash: str) -> str:
-    mat  = cfg["material"]
-    stru = cfg["structure"]
-    acq  = cfg["acquisition"]
-    sig  = cfg["signal_processing"]
-    temp = cfg["temporal"]
+    mat  = cfg.get("material", {})
+    stru = cfg.get("structure", {})
+    acq  = cfg.get("acquisition", {})
+    sig  = cfg.get("signal_processing", {})
+    temp = cfg.get("temporal", {})
 
     lines = f'''# AUTO-GENERATED — No editar manualmente.
 # Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
@@ -77,29 +97,29 @@ def generate_python(cfg: dict, config_hash: str) -> str:
 CONFIG_HASH = "{config_hash}"
 
 # Material
-MATERIAL_NAME = "{mat["name"]}"
-E         = {mat["elastic_modulus_E"]["value"]}
-fc        = {mat["yield_strength_fy"]["value"]}
-nu        = {mat["poisson_ratio"]["value"]}
-rho       = {mat["density"]["value"]}
-k_term    = {mat["thermal_conductivity"]["value"]}
+MATERIAL_NAME = "{_v(mat, "name", "")}"
+E         = {_v(mat, "elastic_modulus_E")}
+fc        = {_v(mat, "yield_strength_fy")}
+nu        = {_v(mat, "poisson_ratio")}
+rho       = {_v(mat, "density")}
+k_term    = {_v(mat, "thermal_conductivity")}
 
 # Estructura
-k         = {stru["stiffness_k"]["value"]}
+k         = {_v(stru, "stiffness_k")}
 
 # Adquisición
-BAUD_RATE = {acq["serial_baud"]["value"]}
-SAMPLE_RATE_HZ = {acq["sample_rate_hz"]["value"]}
+BAUD_RATE = {_v(acq, "serial_baud", 115200)}
+SAMPLE_RATE_HZ = {_v(acq, "sample_rate_hz", 100)}
 
 # Kalman
-KF_ENABLED = {sig["kalman"]["enabled"]}
-KF_Q       = {sig["kalman"]["process_noise_q"]["value"]}
-KF_R       = {sig["kalman"]["measurement_noise_r"]["value"]}
+KF_ENABLED = {sig.get("kalman", {}).get("enabled", True)}
+KF_Q       = {_v(sig.get("kalman", {}), "process_noise_q", 1e-5)}
+KF_R       = {_v(sig.get("kalman", {}), "measurement_noise_r", 0.01)}
 
 # Temporal
-DT         = {temp["dt_simulation"]["value"]}
-MAX_JITTER = {temp["max_jitter_ms"]["value"]}
-BUFFER_DEPTH = {temp["buffer_depth"]["value"]}
+DT         = {_v(temp, "dt_simulation", 0.01)}
+MAX_JITTER = {_v(temp, "max_jitter_ms", 5)}
+BUFFER_DEPTH = {_v(temp, "buffer_depth", 10)}
 
 # Nonlinear model status
 NONLINEAR_READY = {_nonlinear_ready(cfg)}
@@ -136,17 +156,21 @@ NL_N_ELEMENTS      = {nl["geometry"]["n_elements"]["value"]}
 
 
 def generate_header(cfg: dict, config_hash: str) -> str:
-    mat  = cfg["material"]
-    stru = cfg["structure"]
-    dmp  = cfg["damping"]
-    acq  = cfg["acquisition"]
-    sig  = cfg["signal_processing"]
-    temp = cfg["temporal"]
-    grd  = cfg["guardrails"]
+    mat  = cfg.get("material", {})
+    stru = cfg.get("structure", {})
+    dmp  = cfg.get("damping", {})
+    acq  = cfg.get("acquisition", {})
+    sig  = cfg.get("signal_processing", {})
+    temp = cfg.get("temporal", {})
+    grd  = cfg.get("guardrails", {})
     fw   = cfg.get("firmware", {})
     fw_common = fw.get("edge_common", {})
     fw_alarm  = fw.get("edge_alarms", {})
     fw_ga     = fw.get("guardian_angel", {})
+
+    kal = sig.get("kalman", {})
+    htoken = temp.get("handshake_token", {})
+    htoken_val = htoken.get("value", "BELICO_SYNC") if isinstance(htoken, dict) else htoken
 
     header = f'''// AUTO-GENERATED — No editar manualmente.
 // Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
@@ -156,34 +180,34 @@ def generate_header(cfg: dict, config_hash: str) -> str:
 #define CONFIG_HASH     "{config_hash[:16]}"
 
 // ── Material ──
-#define MATERIAL_NAME   "{mat["name"]}"
-#define E_MODULUS       {mat["elastic_modulus_E"]["value"]}
-#define YIELD_STRENGTH  {mat["yield_strength_fy"]["value"]}
-#define RHO             {mat["density"]["value"]}
-#define K_TERM          {mat["thermal_conductivity"]["value"]}
+#define MATERIAL_NAME   "{_v(mat, "name", "")}"
+#define E_MODULUS       {_c_val(mat, "elastic_modulus_E")}
+#define YIELD_STRENGTH  {_c_val(mat, "yield_strength_fy")}
+#define RHO             {_c_val(mat, "density")}
+#define K_TERM          {_c_val(mat, "thermal_conductivity")}
 
 // ── Structure ──
-#define STIFFNESS_K     {stru["stiffness_k"]["value"]}
-#define MASS_M          {stru["mass_m"]["value"]}
+#define STIFFNESS_K     {_c_val(stru, "stiffness_k")}
+#define MASS_M          {_c_val(stru, "mass_m")}
 
 // ── Damping ──
-#define DAMPING_RATIO   {dmp["ratio_xi"]["value"]}
+#define DAMPING_RATIO   {_c_val(dmp, "ratio_xi")}
 
 // ── Acquisition ──
-#define SERIAL_BAUD     {acq["serial_baud"]["value"]}
-#define SAMPLE_RATE_HZ  {acq["sample_rate_hz"]["value"]}
+#define SERIAL_BAUD     {_v(acq, "serial_baud", 115200)}
+#define SAMPLE_RATE_HZ  {_v(acq, "sample_rate_hz", 100)}
 
 // ── Kalman Filter ──
-#define KF_Q            {sig["kalman"]["process_noise_q"]["value"]}
-#define KF_R            {sig["kalman"]["measurement_noise_r"]["value"]}
+#define KF_Q            {_v(kal, "process_noise_q", 1e-5)}
+#define KF_R            {_v(kal, "measurement_noise_r", 0.01)}
 
 // ── Temporal Sync ──
-#define HANDSHAKE_TOKEN "{temp["handshake_token"]["value"]}"
-#define MAX_JITTER_MS   {temp["max_jitter_ms"]["value"]}
+#define HANDSHAKE_TOKEN "{htoken_val}"
+#define MAX_JITTER_MS   {_v(temp, "max_jitter_ms", 5)}
 
 // ── Guardrails ──
-#define MAX_STRESS_RATIO  {grd["max_stress_ratio"]["value"]}
-#define MAX_SENSOR_SIGMA  {grd["max_sensor_outlier_sigma"]["value"]}
+#define MAX_STRESS_RATIO  {_v(grd, "max_stress_ratio", 0.6)}
+#define MAX_SENSOR_SIGMA  {_v(grd, "max_sensor_outlier_sigma", 3.0)}
 '''
 
     # Firmware edge constants (if firmware section exists in SSOT)
