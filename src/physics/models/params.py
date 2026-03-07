@@ -3,7 +3,7 @@ import yaml
 from pathlib import Path
 
 # Carga de la SSOT (Solo lectura para simulación simple)
-PARAMS_PATH = Path(__file__).parent.parent.parent / "config" / "params.yaml"
+PARAMS_PATH = Path(__file__).parent.parent.parent.parent / "config" / "params.yaml"
 
 def load_sim_params():
     try:
