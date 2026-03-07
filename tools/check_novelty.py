@@ -13,6 +13,7 @@ Usage:
   python3 tools/check_novelty.py                    # Extract keywords from PRD.md
   python3 tools/check_novelty.py --deep             # Extra queries + citation network
   python3 tools/check_novelty.py --save             # Save report to articles/drafts/
+  python3 tools/check_novelty.py --threshold 0.5    # Custom HIGH threat threshold
 
 Sources:
   - OpenAlex API (250M+ works, Scopus/PubMed/CrossRef coverage)
@@ -43,6 +44,9 @@ ARXIV_BASE = "http://export.arxiv.org/api/query"
 # Contact email for polite pool (OpenAlex recommends it for faster responses)
 MAILTO = "mailto:belico-stack@research.local"
 
+# Default threat thresholds (overridable via --threshold / --threshold-medium)
+DEFAULT_THRESHOLD_HIGH = 0.6
+DEFAULT_THRESHOLD_MEDIUM = 0.3
 
 # OpenAlex API key (free, no billing). Override via env var or .env file.
 _DEFAULT_OPENALEX_KEY = "0tf39ysz34eIKFV3e3caoI"
@@ -89,12 +93,23 @@ STOPWORDS = {
 # ═══════════════════════════════════════════════════════════════════════
 
 def _get_json(url: str, retries: int = 2) -> dict | None:
-    """GET a URL and return parsed JSON, with retries."""
+    """GET a URL and return parsed JSON, with HTTP-aware retries (M4)."""
     for attempt in range(retries + 1):
         try:
             req = urllib.request.Request(url, headers={"User-Agent": MAILTO})
             with urllib.request.urlopen(req, timeout=15) as resp:
                 return json.loads(resp.read().decode("utf-8"))
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 503) and attempt < retries:
+                # Rate limited or service unavailable — back off exponentially
+                wait = 2 ** (attempt + 1)
+                print(f"    [RATE] HTTP {e.code}, waiting {wait}s...")
+                time.sleep(wait)
+            elif attempt < retries:
+                time.sleep(1)
+            else:
+                print(f"    [WARN] Failed: HTTP {e.code} {e.reason}")
+                return None
         except Exception as e:
             if attempt < retries:
                 time.sleep(1)
@@ -120,15 +135,34 @@ def search_openalex(query: str, per_page: int = 10) -> list[dict]:
     papers = []
     for w in data["results"]:
         source = (w.get("primary_location") or {}).get("source") or {}
+        # H2: capture abstract for deeper threat assessment
+        abstract_index = w.get("abstract_inverted_index") or {}
+        abstract_text = _reconstruct_abstract(abstract_index)
         papers.append({
             "title": w.get("display_name", "Unknown"),
             "year": w.get("publication_year"),
             "journal": source.get("display_name", "Unknown"),
             "doi": w.get("doi", ""),
             "cited_by": w.get("cited_by_count", 0),
+            "abstract": abstract_text,
             "source": "OpenAlex",
         })
     return papers
+
+
+def _reconstruct_abstract(inverted_index: dict) -> str:
+    """Reconstruct abstract from OpenAlex inverted index format."""
+    if not inverted_index:
+        return ""
+    # inverted_index: {"word": [pos1, pos2, ...], ...}
+    words = {}
+    for word, positions in inverted_index.items():
+        for pos in positions:
+            words[pos] = word
+    if not words:
+        return ""
+    max_pos = max(words.keys())
+    return " ".join(words.get(i, "") for i in range(max_pos + 1)).strip()
 
 
 def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
@@ -139,6 +173,12 @@ def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
         req = urllib.request.Request(url, headers={"User-Agent": MAILTO})
         with urllib.request.urlopen(req, timeout=15) as resp:
             xml_data = resp.read().decode("utf-8")
+    except urllib.error.HTTPError as e:
+        if e.code in (429, 503):
+            print(f"    [RATE] arXiv HTTP {e.code}, skipping...")
+        else:
+            print(f"    [WARN] arXiv failed: HTTP {e.code}")
+        return []
     except Exception as e:
         print(f"    [WARN] arXiv failed: {e}")
         return []
@@ -153,12 +193,14 @@ def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
     for entry in root.findall("atom:entry", ns):
         title = entry.findtext("atom:title", "", ns).strip().replace("\n", " ")
         published = entry.findtext("atom:published", "", ns)[:4]
+        summary = entry.findtext("atom:summary", "", ns).strip().replace("\n", " ")
         papers.append({
             "title": title,
             "year": int(published) if published.isdigit() else None,
             "journal": "arXiv (preprint)",
             "doi": "",
             "cited_by": 0,
+            "abstract": summary[:500],
             "source": "arXiv",
         })
     return papers
@@ -174,12 +216,14 @@ def get_citing_works(openalex_id: str, per_page: int = 5) -> list[dict]:
     papers = []
     for w in data["results"]:
         source = (w.get("primary_location") or {}).get("source") or {}
+        abstract_index = w.get("abstract_inverted_index") or {}
         papers.append({
             "title": w.get("display_name", "Unknown"),
             "year": w.get("publication_year"),
             "journal": source.get("display_name", "Unknown"),
             "doi": w.get("doi", ""),
             "cited_by": w.get("cited_by_count", 0),
+            "abstract": _reconstruct_abstract(abstract_index),
             "source": "OpenAlex (citation)",
         })
     return papers
@@ -354,10 +398,20 @@ def generate_queries(keywords: list[str], deep: bool = False) -> list[str]:
 # ═══════════════════════════════════════════════════════════════════════
 
 def deduplicate(papers: list[dict]) -> list[dict]:
-    """Remove duplicate papers by title similarity."""
+    """Remove duplicate papers by DOI (preferred) or title similarity (H3)."""
+    seen_dois = set()
     seen_titles = set()
     unique = []
     for p in papers:
+        # Prefer DOI dedup (globally unique identifier)
+        doi = (p.get("doi") or "").strip().lower()
+        if doi:
+            if doi in seen_dois:
+                continue
+            seen_dois.add(doi)
+            unique.append(p)
+            continue
+        # Fallback: title-based dedup
         title = p.get("title") or ""
         normalized = title.lower().strip()[:80]
         if not normalized:
@@ -368,14 +422,31 @@ def deduplicate(papers: list[dict]) -> list[dict]:
     return unique
 
 
-def assess_threat(paper: dict, keywords: list[str]) -> str:
-    """Assess threat level based on keyword overlap in title."""
-    title_lower = paper["title"].lower()
-    matches = sum(1 for kw in keywords if kw in title_lower)
+def assess_threat(paper: dict, keywords: list[str],
+                  threshold_high: float = DEFAULT_THRESHOLD_HIGH,
+                  threshold_medium: float = DEFAULT_THRESHOLD_MEDIUM) -> str:
+    """Assess threat level based on keyword overlap in title + abstract (H1, H2, H4).
+
+    H1: Uses word boundary matching to avoid false positives (e.g. "SHM" in "pushme").
+    H2: Checks both title and abstract for keyword presence.
+    H4: Thresholds are configurable via parameters.
+    """
+    title_lower = (paper.get("title") or "").lower()
+    abstract_lower = (paper.get("abstract") or "").lower()
+    searchable = f"{title_lower} {abstract_lower}"
+
+    matches = 0
+    for kw in keywords:
+        # H1: word boundary matching — prevents partial matches
+        # e.g. keyword "shm" won't match "pushme" but will match "shm-based"
+        pattern = r'\b' + re.escape(kw) + r'\b'
+        if re.search(pattern, searchable):
+            matches += 1
+
     ratio = matches / max(len(keywords), 1)
-    if ratio >= 0.6:
+    if ratio >= threshold_high:
         return "HIGH"
-    elif ratio >= 0.3:
+    elif ratio >= threshold_medium:
         return "MEDIUM"
     return "LOW"
 
@@ -385,19 +456,19 @@ def assess_threat(paper: dict, keywords: list[str]) -> str:
 # ═══════════════════════════════════════════════════════════════════════
 
 def generate_report(keywords: list[str], papers: list[dict],
-                    queries_run: int, verdict: str, gap: str) -> str:
+                    queries_run: int, verdict: str, gap: str,
+                    threat_counts: dict) -> str:
     """Generate the novelty report in Markdown."""
     kw_list = ", ".join(keywords)
 
     rows = ""
     for i, p in enumerate(papers[:25], 1):
-        threat = assess_threat(p, keywords)
         rows += (f"| {i} | {p['title'][:80]} | {p['year']} | "
-                 f"{p['journal'][:30]} | {p['cited_by']} | {threat} | {p['source']} |\n")
+                 f"{p['journal'][:30]} | {p['cited_by']} | {p['threat']} | {p['source']} |\n")
 
-    high = sum(1 for p in papers if assess_threat(p, keywords) == "HIGH")
-    medium = sum(1 for p in papers if assess_threat(p, keywords) == "MEDIUM")
-    low = sum(1 for p in papers if assess_threat(p, keywords) == "LOW")
+    high = threat_counts.get("HIGH", 0)
+    medium = threat_counts.get("MEDIUM", 0)
+    low = threat_counts.get("LOW", 0)
 
     return f"""---
 title: Novelty Check Report
@@ -461,6 +532,10 @@ def main():
                         help="Deep search: more queries + citation network")
     parser.add_argument("--save", action="store_true",
                         help="Save report to articles/drafts/novelty_report.md")
+    parser.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD_HIGH,
+                        help=f"HIGH threat threshold (default: {DEFAULT_THRESHOLD_HIGH})")
+    parser.add_argument("--threshold-medium", type=float, default=DEFAULT_THRESHOLD_MEDIUM,
+                        help=f"MEDIUM threat threshold (default: {DEFAULT_THRESHOLD_MEDIUM})")
     args = parser.parse_args()
 
     print("=" * 60)
@@ -502,13 +577,14 @@ def main():
         queries_run += 1
         time.sleep(0.2)  # polite rate limiting
 
-    # ── Search arXiv ──
+    # ── Search arXiv (M3: 3s between requests per API policy) ──
     print(f"\n  Searching arXiv...")
-    for q in queries[:5]:  # arXiv is slower, limit queries
+    for i, q in enumerate(queries[:5]):  # arXiv is slower, limit queries
         results = search_arxiv(q, max_results=5)
         all_papers.extend(results)
         queries_run += 1
-        time.sleep(0.5)  # arXiv rate limit: 1 req/3s
+        if i < min(len(queries), 5) - 1:
+            time.sleep(3)  # M3: arXiv requires >= 3s between requests
 
     # ── Citation network (deep mode) ──
     if args.deep and all_papers:
@@ -530,14 +606,18 @@ def main():
     unique_papers = deduplicate(all_papers)
     print(f"\n  Total unique papers: {len(unique_papers)}")
 
-    # ── Assess threats ──
-    high_threat = [p for p in unique_papers if assess_threat(p, keywords) == "HIGH"]
-    medium_threat = [p for p in unique_papers if assess_threat(p, keywords) == "MEDIUM"]
-    low_threat = [p for p in unique_papers if assess_threat(p, keywords) == "LOW"]
+    # ── Assess threats (M8: single pass, store result on each paper) ──
+    threat_counts = {"HIGH": 0, "MEDIUM": 0, "LOW": 0}
+    for p in unique_papers:
+        p["threat"] = assess_threat(p, keywords, args.threshold, args.threshold_medium)
+        threat_counts[p["threat"]] += 1
 
-    print(f"    HIGH threat:   {len(high_threat)}")
-    print(f"    MEDIUM threat: {len(medium_threat)}")
-    print(f"    LOW threat:    {len(low_threat)}")
+    high_threat = [p for p in unique_papers if p["threat"] == "HIGH"]
+    medium_threat = [p for p in unique_papers if p["threat"] == "MEDIUM"]
+
+    print(f"    HIGH threat:   {threat_counts['HIGH']}")
+    print(f"    MEDIUM threat: {threat_counts['MEDIUM']}")
+    print(f"    LOW threat:    {threat_counts['LOW']}")
 
     # ── Verdict ──
     if len(high_threat) >= 2:
@@ -566,12 +646,11 @@ def main():
     if high_threat or medium_threat:
         print(f"\n  Top threats:")
         for p in (high_threat + medium_threat)[:5]:
-            threat = assess_threat(p, keywords)
-            print(f"    [{threat}] {p['title'][:70]} ({p['year']}, {p['journal'][:25]})")
+            print(f"    [{p['threat']}] {p['title'][:70]} ({p['year']}, {p['journal'][:25]})")
 
     # ── Save report ──
     if args.save:
-        report = generate_report(keywords, unique_papers, queries_run, verdict, gap)
+        report = generate_report(keywords, unique_papers, queries_run, verdict, gap, threat_counts)
         REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
         REPORT_PATH.write_text(report, encoding="utf-8")
         print(f"\n  Report saved: {REPORT_PATH}")

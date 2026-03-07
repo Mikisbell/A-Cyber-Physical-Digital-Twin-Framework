@@ -17,10 +17,16 @@ import re
 import shutil
 import subprocess
 import sys
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    print("ERROR: PyYAML no esta instalado.")
+    print("  Ejecuta: pip install pyyaml")
+    print("  O: pip install -r requirements.txt")
+    sys.exit(1)
 
 ROOT = Path(__file__).resolve().parent.parent
 YAML_PATH = ROOT / "config" / "params.yaml"
@@ -33,15 +39,26 @@ SETUP_DEPS = ROOT / "tools" / "setup_dependencies.sh"
 # Utilities
 # ═══════════════════════════════════════════════════════════════════════════
 
-def ask(prompt: str, default=None) -> str:
-    suffix = f" [{default}]" if default else ""
+_SENTINEL = object()
+
+
+def ask(prompt: str, default=_SENTINEL, optional: bool = False) -> str:
+    if default is not _SENTINEL:
+        suffix = f" [{default}]"
+    elif optional:
+        suffix = " (opcional, Enter para saltar)"
+    else:
+        suffix = ""
     while True:
         raw = input(f"  {prompt}{suffix}: ").strip()
-        if not raw and default:
-            return default
-        if raw:
-            return raw
-        print("    (campo obligatorio)")
+        if not raw:
+            if default is not _SENTINEL:
+                return default
+            if optional:
+                return ""
+            print("    (campo obligatorio)")
+            continue
+        return raw
 
 
 def ask_choice(prompt: str, options: list[dict]) -> dict:
@@ -263,8 +280,7 @@ def check_dependencies() -> dict:
     deps = {}
     for cmd, name in [("engram", "Engram"), ("gentle-ai", "Gentle AI"),
                       ("gga", "GGA")]:
-        result = subprocess.run(["which", cmd], capture_output=True)
-        deps[name] = result.returncode == 0
+        deps[name] = shutil.which(cmd) is not None
     # Check cloned repos
     deps["Agent Teams Lite"] = (ROOT / ".agents" / "agent-teams-lite").exists()
     return deps
@@ -287,7 +303,7 @@ def install_dependencies():
 # ═══════════════════════════════════════════════════════════════════════════
 
 def generate_skeleton(project_name: str, domain: dict) -> dict:
-    return {
+    base = {
         "metadata": {
             "project": project_name,
             "version": "1.0.0",
@@ -302,23 +318,10 @@ def generate_skeleton(project_name: str, domain: dict) -> dict:
         "material": {
             "name": "",
             "elastic_modulus_E": {"value": None, "units": "Pa", "symbol": "E"},
-            "yield_strength_fy": {"value": None, "units": "Pa", "symbol": "fc"},
+            "yield_strength_fy": {"value": None, "units": "Pa", "symbol": "fy"},
             "poisson_ratio": {"value": None, "units": "dimensionless", "symbol": "nu"},
             "density": {"value": None, "units": "kg/m^3", "symbol": "rho"},
             "thermal_conductivity": {"value": None, "units": "W/m*K", "symbol": "k_term"},
-        },
-        "structure": {
-            "stiffness_k": {"value": None, "units": "N/m", "symbol": "k",
-                            "firmware_var": "STIFFNESS_K", "simulation_var": "k"},
-            "mass_m": {"value": None, "units": "kg", "symbol": "m",
-                       "firmware_var": "MASS_M", "simulation_var": "mass"},
-            "natural_frequency_fn": {"value": None, "units": "Hz",
-                                     "symbol": "fn", "computed": True},
-        },
-        "damping": {
-            "method": "rayleigh",
-            "ratio_xi": {"value": None, "units": "dimensionless", "symbol": "xi",
-                         "firmware_var": "DAMPING_RATIO", "simulation_var": "xi"},
         },
         "acquisition": {
             "sample_rate_hz": {"value": 100, "units": "Hz",
@@ -346,6 +349,38 @@ def generate_skeleton(project_name: str, domain: dict) -> dict:
             "max_sensor_outlier_sigma": {"value": 3.0},
         },
     }
+
+    # Domain-specific parameters
+    if domain["key"] == "structural":
+        base["structure"] = {
+            "stiffness_k": {"value": None, "units": "N/m", "symbol": "k",
+                            "firmware_var": "STIFFNESS_K", "simulation_var": "k"},
+            "mass_m": {"value": None, "units": "kg", "symbol": "m",
+                       "firmware_var": "MASS_M", "simulation_var": "mass"},
+            "natural_frequency_fn": {"value": None, "units": "Hz",
+                                     "symbol": "fn", "computed": True},
+        }
+        base["damping"] = {
+            "method": "rayleigh",
+            "ratio_xi": {"value": None, "units": "dimensionless", "symbol": "xi",
+                         "firmware_var": "DAMPING_RATIO", "simulation_var": "xi"},
+        }
+    elif domain["key"] == "water":
+        base["fluid"] = {
+            "viscosity": {"value": None, "units": "Pa*s", "symbol": "mu"},
+            "reynolds_number": {"value": None, "units": "dimensionless", "symbol": "Re"},
+            "inlet_velocity": {"value": None, "units": "m/s", "symbol": "U_in"},
+            "pipe_diameter": {"value": None, "units": "m", "symbol": "D"},
+        }
+    elif domain["key"] == "air":
+        base["air"] = {
+            "wind_speed": {"value": None, "units": "m/s", "symbol": "U_ref"},
+            "air_density": {"value": 1.225, "units": "kg/m^3", "symbol": "rho_air"},
+            "turbulence_intensity": {"value": None, "units": "dimensionless", "symbol": "I_u"},
+            "reference_height": {"value": None, "units": "m", "symbol": "z_ref"},
+        }
+
+    return base
 
 
 def generate_prd(project_name: str, domain: dict, author: str,
@@ -395,7 +430,41 @@ Keywords: {keywords}
 
 ---
 
-## 6. Parametros a Investigar
+## 6. Gap Analysis
+
+<!-- Resultado del novelty check. Ejecuta: python3 tools/check_novelty.py --save -->
+
+(Pendiente — se genera automaticamente durante EXPLORE)
+
+---
+
+## 7. Riesgos
+
+| # | Riesgo | Impacto | Mitigacion |
+|---|--------|---------|------------|
+| 1 | (Por identificar durante EXPLORE) | | |
+
+---
+
+## 8. Criterios de Exito
+
+- [ ] Novelty check: ORIGINAL o INCREMENTAL con diferenciacion clara
+- [ ] Datos: suficientes para el quartil seleccionado
+- [ ] Modelo: convergencia verificada por el Verifier
+- [ ] Paper: pasa validate_submission.py sin errores
+- [ ] Review: Reviewer Simulator no encuentra bloqueadores
+
+---
+
+## 9. Fuera de Alcance
+
+<!-- Que NO va a cubrir este paper -->
+
+(Por definir)
+
+---
+
+## 10. Parametros a Investigar
 
 El agente AI te guiara para completar estos parametros durante la sesion:
 
@@ -405,7 +474,7 @@ El agente AI te guiara para completar estos parametros durante la sesion:
 
 ---
 
-## 7. Pipeline
+## 11. Pipeline
 
 ```
 config/params.yaml (SSOT)
@@ -427,7 +496,7 @@ data/raw/               data/processed/
 
 ---
 
-## 8. Siguiente Paso
+## 12. Siguiente Paso
 
 Abre Claude Code en este directorio y di: `Engram conecto`
 """
@@ -452,27 +521,28 @@ def main():
 
     banner(f"NUEVO PROYECTO — {default_name}")
     print(f"  Directorio: {ROOT}")
-    print(f"  Solo necesito 3 cosas. El resto lo investigamos juntos en Claude.")
+    print(f"  Solo necesito 4 cosas. El resto lo investigamos juntos en Claude.")
 
     # Backup if needed
     if args.reset:
+        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         for f in [YAML_PATH, PRD_PATH]:
             if f.exists():
-                backup = f.with_suffix(f"{f.suffix}.bak.{date.today()}")
+                backup = f.with_suffix(f"{f.suffix}.bak.{ts}")
                 shutil.copy2(f, backup)
                 info(f"Backup: {backup.name}")
 
     # ── 1. Project name (default = folder name) ──
-    banner("NOMBRE DEL PROYECTO")
+    banner("1. NOMBRE DEL PROYECTO")
     project_name = ask("Como se llama tu proyecto?", default_name)
 
     # ── 2. Domain ──
-    banner("DOMINIO")
+    banner("2. DOMINIO")
     domain = ask_choice("En que area trabajas?", DOMAINS)
     info(f"Dominio: {domain['key']} ({domain['solver']})")
 
     # ── 3. Research keywords (auto-detected from folder name) ──
-    banner("TEMA DE INVESTIGACION")
+    banner("3. TEMA DE INVESTIGACION")
     detected_kw = detect_keywords_from_name(project_name)
     if detected_kw:
         print(f"  Detectadas del nombre del proyecto: {detected_kw}")
@@ -483,10 +553,11 @@ def main():
         print("  Ejemplo: digital twin, seismic, reinforced concrete, SHM")
         research_keywords = ask("Keywords de investigacion")
 
-    # ── 4. Author ──
-    author = ask("Tu nombre (autor)", "")
+    # ── 4. Author (optional) ──
+    banner("4. AUTOR")
+    author = ask("Tu nombre (autor)", optional=True)
 
-    # ── 4. Create directory structure ──
+    # ── 5. Create directory structure ──
     banner("ESTRUCTURA DE DIRECTORIOS")
     created = ensure_directories()
     if created:
@@ -495,7 +566,7 @@ def main():
     else:
         info("Estructura completa (todos los directorios existen)")
 
-    # ── 5. Dependencies ──
+    # ── 6. Dependencies ──
     if not args.skip_deps:
         banner("DEPENDENCIAS")
         deps = check_dependencies()
@@ -515,7 +586,7 @@ def main():
         else:
             info("Todas las dependencias instaladas")
 
-    # ── 6. Generate config files ──
+    # ── 7. Generate config files ──
     banner("GENERANDO ARCHIVOS")
 
     # params.yaml
@@ -568,6 +639,7 @@ def main():
     print(f"""
   Proyecto:  {project_name}
   Dominio:   {domain['key']} ({domain['solver']})
+  Keywords:  {research_keywords}
   Directorio: {ROOT}
 
   Archivos generados:
@@ -577,14 +649,22 @@ def main():
     src/physics/params.py  — Constantes Python (con None)
 
   SIGUIENTE PASO:
-  Abre Claude Code en este directorio y di:
+  1. Verificar originalidad del tema:
 
-    Engram conecto
+     python3 tools/check_novelty.py --save
 
-  El sistema te preguntara que tipo de articulo quieres desarrollar
-  (Conference/Q4/Q3/Q2/Q1) y te guiara con la investigacion.
+  2. Abrir Claude Code y decir:
+
+     Engram conecto
+
+  El sistema ejecutara el novelty check automaticamente durante EXPLORE
+  y te preguntara que tipo de articulo quieres desarrollar.
 """)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        print("\n\n  Cancelado.\n")
+        sys.exit(130)
