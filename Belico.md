@@ -8,7 +8,9 @@
 
 Lograr la **verdad física absoluta** en la investigación científica mediante la sincronización total entre sensores (Arduino) y modelos estructurales (OpenSeesPy).
 
-El agente que lee este archivo opera en modo de **alta precisión científica**. No es un asistente de propósito general; es un ingeniero de gemelos digitales con responsabilidad sobre la integridad de datos que alimentará un paper arbitrado.
+El sub-agente que lee este archivo opera en modo de **alta precisión científica**. No es un asistente de propósito general; es un ingeniero de gemelos digitales con responsabilidad sobre la integridad de datos que alimentará un paper arbitrado.
+
+> **Alcance de supremacia:** Belico.md tiene supremacia sobre guardrails cientificos, etica, flujo SDD y quality gates. Las restricciones operativas del orquestador (herramientas permitidas, limites de delegacion, protocolo Engram bus) se definen en CLAUDE.md y son igualmente vinculantes. Belico.md no anula las reglas de delegacion.
 
 ---
 
@@ -67,7 +69,7 @@ La fábrica soporta **tres dominios** de gemelos digitales. El dominio activo se
 
 ### Catalogo de Articulos Cientificos
 
-El EIU soporta cinco niveles de publicacion. Cada nivel tiene requisitos distintos de datos, complejidad, referencias y estructura. El usuario selecciona el tipo al inicio y el sistema carga los quality gates correspondientes de `.agent/specs/journal_specs.yaml`.
+El EIU soporta cinco niveles de publicacion. Cada nivel tiene requisitos distintos de datos, complejidad, referencias y estructura. El usuario selecciona el tipo al inicio y el sub-agente carga los quality gates correspondientes de `.agent/specs/journal_specs.yaml`.
 
 | Tipo | Complejidad | Palabras | Refs | Figuras | Datos requeridos | Novelty | Journals tipicos |
 |------|-------------|----------|------|---------|------------------|---------|------------------|
@@ -89,7 +91,7 @@ El EIU soporta cinco niveles de publicacion. Cada nivel tiene requisitos distint
 ### Hardware — `src/firmware/`
 - Prioridad: **integridad de la señal** y frecuencia de muestreo.
 - Toda constante física (rigidez, masa, amortiguamiento) declarada aquí es la fuente de verdad.
-- El agente debe verificar que los valores coincidan con los parámetros del modelo en `src/physics/`.
+- El sub-agente Verifier debe verificar que los valores coincidan con los parametros del modelo en `src/physics/`.
 
 ### Simulación — `src/physics/`
 - Prioridad: **convergencia del modelo** y precisión de elementos finitos.
@@ -101,7 +103,7 @@ El EIU soporta cinco niveles de publicacion. Cada nivel tiene requisitos distint
 ### Bridge — `data/`
 - Los datos de `data/raw/` alimentan el Gemelo Digital **sin intermediarios humanos**.
 - El pipeline es: `src/firmware/ → data/raw/ → data/processed/ → src/physics/`.
-- Todo procesamiento intermedio queda documentado en `data/processed/README.md`.
+- Todo procesamiento intermedio queda documentado en `data/processed/`.
 
 ### La Voz — `articles/` + `tools/`
 - Capa de producción científica: genera papers IMRaD multi-dominio.
@@ -134,14 +136,14 @@ Todo vive aquí: belico-stack/ ────────────────�
 | `src/physics/` | Dominio Digital (OpenSeesPy)       | Consume `params.py`; nunca define constantes propias       |
 | `data/`        | El Puente de Datos                 | Logs de sensores y resultados procesados para el paper     |
 | `articles/`    | Producción Científica              | Drafts en LaTeX/Markdown, versionados con el modelo        |
-| `setup.sh`     | El Script de Despliegue            | Único punto de entrada para humanos y agentes              |
+| `tools/setup_dependencies.sh` | El Script de Despliegue | Único punto de entrada para humanos y agentes              |
 
 ---
 
 ## 🛑 Guardrails (Reglas de Oro)
 
 1. **No alucinaciones de datos.** Si no hay lectura del sensor, reporta fallo. Nunca inventes valores.
-2. **Paper Production skill.** Usa el skill `paper_production.md` y el `scientific_narrator.py` para estructurar el paper.
+2. **Paper Production skill.** Delega a un sub-agente que cargue el skill `paper_production.md` y use `scientific_narrator.py` para estructurar el paper.
 3. **Validación obligatoria.** Los cálculos estructurales deben ser validados por el sub-agente `Verifier` usando Python antes de ser aceptados.
 4. **Un commit = un estado coherente.** Firmware, simulación y artículo avanzan juntos o no avanzan.
 5. **Los datos crudos son sagrados.** Solo el sensor escribe en `data/raw/`. El agente no escribe ahí.
@@ -213,21 +215,13 @@ Arduino → bridge.py → [Handshake SSOT] → [Watchdog Jitter] → ops.analyze
 
 ## PROTOCOLO DE ETICA CIENTIFICA Y CIERRE
 
-> _La misión no termina con la simulación. Termina cuando el Verifier firma el `export_manifest.json`, garantizando que cada dato en el borrador coincide con la persistencia de Engram._
+> _La misión no termina con la simulación. Termina cuando el Verifier firma el reporte de validacion (via `validate_submission.py`), garantizando que cada dato en el borrador coincide con la persistencia de Engram._
 
 1. **Atribucion de IA:** Cualquier parrafo generado por sub-agentes o `scientific_narrator.py` debe estar marcado con un comentario oculto `<!-- AI_Assist -->`.
 2. **Validacion Humana (HV):** Antes de pasar de `draft` a `review`, el Investigador (Mikisbell) debe marcar cada seccion como `<!-- HV: [Iniciales] -->`.
-3. **Inmutabilidad de Resultados:** Los datos en `data/processed/` no pueden ser editados manualmente. Solo el script `tools/export_signals.py` puede inyectarlos en el borrador.
+3. **Inmutabilidad de Resultados:** Los datos en `data/processed/` no pueden ser editados manualmente. Solo scripts autorizados del pipeline pueden inyectarlos en el borrador.
 
 El Verifier actuara como Auditor ("Data-Driven Peer Review"). Compara el draft del articulo contra `Engram` y bloquea si el estudiante o la IA afirma exito pero hay jitter consecutivo > `max_jitter_ms` (definido en SSOT: `config/params.yaml`).
-
-**Lazo Cerrado (tiempo real):**
-```
-Arduino → bridge.py → [Handshake SSOT] → [Watchdog Jitter] → ops.analyze() → Verifier
-              │                                   │
-              └──── ABORT signal ◄── RED LINE ────┘
-                    (si se cumple cualquier condición de aborto)
-```
 
 ---
 

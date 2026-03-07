@@ -2,9 +2,12 @@
 # tools/run_battle_freq.sh — Wrapper paramétrico para el barrido de frecuencias
 # Uso: bash tools/run_battle_freq.sh <frecuencia_hz>
 # Ejemplo: bash tools/run_battle_freq.sh 8.0
+set -euo pipefail
+cd "$(dirname "$0")/.."
 
 FREQ=${1:-5.2}
 
+trap 'kill $EMU_PID $BRIDGE_PID 2>/dev/null' EXIT
 source .venv/bin/activate 2>/dev/null
 export PYTHONPATH=$PWD:$PYTHONPATH
 

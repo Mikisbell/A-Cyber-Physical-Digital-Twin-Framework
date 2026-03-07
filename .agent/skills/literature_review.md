@@ -10,6 +10,8 @@ metadata:
 
 # Skill: Literature Review Agent
 
+> **Audiencia:** Este skill es cargado por el sub-agente Bibliography Agent, NO por el orquestador. El sub-agente lee archivos, ejecuta tools y guarda resultados en Engram.
+
 ## When to Use
 
 - Building the "Related Work" or "Literature Review" section of a paper
@@ -99,7 +101,7 @@ Structure the section by research themes (NOT chronologically):
 1. Verify every cited paper exists via `get_semantic_scholar_paper_details`
 2. Extract BibTeX-ready metadata (title, authors, year, venue, DOI)
 3. Flag any reference that cannot be verified (potential hallucination)
-4. Update `tools/bibliography_engine.py` with new verified references
+4. Update `tools/bibliography_engine.py` with new verified references (sub-agent executes this edit)
 5. Mark generated text with `<!-- AI_Assist -->`
 
 ## Output Format
@@ -134,3 +136,7 @@ For each verified reference, produce:
 ## Integration with Paper Production
 
 This skill feeds into Phase 6 (IMPLEMENT Batch 4: Abstract + Intro + Refs) of the `paper_production.md` skill. The Bibliography Agent sub-agent should invoke this skill when preparing references for any paper draft.
+
+### Engram Integration
+- On start: `mem_search("task: bibliography_agent")` to read assigned task
+- On complete: `mem_save("result: bibliography_agent — {N} refs generated, categories: {list}")`

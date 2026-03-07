@@ -17,9 +17,10 @@
 #   plain     -> Reporte técnico simple (sin plantilla LaTeX externa)
 
 set -e
+cd "$(dirname "$0")/.."
 
 DRAFT="${1:-}"
-TEMPLATE="${2:---template plain}"
+TEMPLATE="${2:-plain}"
 OUT_DIR="articles/compiled"
 BIB_FILE="articles/references.bib"
 
@@ -73,7 +74,7 @@ fi
 
 # ── 2. Compilación según template ──
 case "$TEMPLATE" in
-  "--template ieee")
+  "ieee")
     echo "  Template  : IEEE Transactions (2-col)"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
@@ -84,11 +85,11 @@ case "$TEMPLATE" in
       --variable linestretch=1.0 \
       --toc \
       --number-sections \
-      --syntax-highlighting=pygments \
+      --highlight-style=pygments \
       -o "$PDF_OUT"
     ;;
 
-  "--template conference")
+  "conference")
     echo "  Template  : Conference (EWSHM/IMAC, compact)"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
@@ -101,7 +102,7 @@ case "$TEMPLATE" in
       -o "$PDF_OUT"
     ;;
 
-  "--template elsevier")
+  "elsevier")
     echo "  Template  : Elsevier (single-col)"
     pandoc "$DRAFT" \
       --pdf-engine=xelatex \
@@ -112,7 +113,6 @@ case "$TEMPLATE" in
       --toc \
       --number-sections \
       --highlight-style=tango \
-      --metadata title="Bélico Stack Research" \
       -o "$PDF_OUT"
     ;;
 

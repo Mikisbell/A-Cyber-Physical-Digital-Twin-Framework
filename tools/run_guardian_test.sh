@@ -26,26 +26,28 @@ print("  GUARDIAN ANGEL — STRESS TEST DE INCONSISTENCIA FÍSICA")
 print("=" * 64)
 
 casos = [
-    # (descripcion, fn_hz, tmp_c, expected_ok)
-    ("Paquete sano (baseline)",             8.0,  22.0, True),
-    ("S-1 Rigidez Mágica: fn sube a 11Hz", 11.0, 22.0, False),
+    # (descripcion, fn_hz, tmp_c, expected_status)
+    ("Paquete sano (baseline)",             8.0,  22.0, "ok"),
+    ("S-1 Rigidez Mágica: fn sube a 11Hz", 11.0, 22.0, "!ok"),
 ]
 ga2 = GuardianAngel()  # Guardian fresco para S-2
 casos_s2 = [
-    ("Paquete sano (baseline)",              8.0,  22.0, True),
-    ("S-2 Temperatura 500°C",                7.9, 500.0, False),
+    ("Paquete sano (baseline)",              8.0,  22.0, "ok"),
+    ("S-2 Temperatura 500°C",                7.9, 500.0, "!ok"),
 ]
 ga3 = GuardianAngel()  # Guardian fresco para S-3
 casos_s3 = [
-    ("Paquete sano (baseline)",              8.0,  22.0, True),
-    ("S-3 Gradiente Brusco: 22→60°C",        7.9,  60.0, False),
+    ("Paquete sano (baseline)",              8.0,  22.0, "ok"),
+    ("S-3 Gradiente Brusco: 22→60°C",        7.9,  60.0, "!ok"),
 ]
 
 def run_casos(guardian, lista):
     for desc, fn, tmp, expected in lista:
-        ok, msg = guardian.validate(fn=fn, tmp=tmp)
+        status, msg = guardian.validate(fn=fn, tmp=tmp)
+        ok = (status == "ok")
+        expected_ok = (expected == "ok")
         icono = "✅" if ok else "🚨"
-        resultado = "PASS" if ok == expected else "❌ FALLO DE TEST"
+        resultado = "PASS" if ok == expected_ok else "❌ FALLO DE TEST"
         msg_show = f"→ {msg}" if msg else ""
         print(f"  {icono}  [{resultado}]  {desc}")
         if msg_show:

@@ -120,7 +120,7 @@ El EIU se construye sobre el ecosistema open-source de Gentleman Programming. Es
 | Generador de Figuras | `tools/plot_figures.py` | FUNCIONAL (multi-dominio) | Figuras numeradas PDF+PNG. Structural: 4 figs. Water/Air: placeholders. |
 | Validador Pre-Submission | `tools/validate_submission.py` | FUNCIONAL (verificado E2E) | 9 checks + journal specs + modo --diagnose (DAG loop-back). |
 | Cover Letter Generator | `tools/generate_cover_letter.py` | FUNCIONAL | Cover letter parametrica + respuesta a reviewers point-by-point. |
-| Journal Specs (TDD) | `.agent/specs/journal_specs.yaml` | FUNCIONAL | Quality gates: Q1(50+refs,8+figs,6k+words), conference(10+refs,3+figs,2.5k+words). |
+| Journal Specs (TDD) | `.agent/specs/journal_specs.yaml` | FUNCIONAL | Quality gates: Q1(40+refs,6+figs,6k+words), conference(10+refs,3+figs,2.5k+words). |
 
 ### 5.4 Sub-Agentes y Skills (Refuerzos Gentleman v3.0)
 
@@ -246,7 +246,7 @@ Paper Q1-Q4 listo para submission
 | Gap | Impacto | Accion |
 |-----|---------|--------|
 | LSTM: pipeline validable pero sin proyecto | Se entrena cuando haya un proyecto real | Pipeline listo (datos sinteticos + arquitectura). Entrenar es paso de PRODUCCION, no de fabrica. |
-| Engram MCP tools no cargan | Sin memoria persistente entre sesiones | Diagnosticar MCP server |
+| ~~Engram MCP tools no cargan~~ | ~~RESUELTO~~ | Engram MCP operativo (DB unificada en ~/.engram/engram.db) |
 | Boveda sismica con solo 3 registros | Limitado para analisis estadistico | Expandir con PEER NGA-West2 |
 | ~~Bibliografia en 42 refs~~ | ~~RESUELTO~~ | Expandida a 53 refs en 12 categorias + BibTeX generator (65 entradas) |
 
@@ -271,12 +271,14 @@ Paper Q1-Q4 listo para submission
 
 ## 9. Producto: Que Entrega el EIU
 
+**Nota:** Los rangos son indicativos. La fuente de verdad es `.agent/specs/journal_specs.yaml`.
+
 | Nivel | Target | Requisitos de Datos | Refs | Estado |
 |-------|--------|-------------------|------|--------|
 | Conference | EWSHM, SHMII, IMAC | Datos sinteticos + framework | 10-30 | FABRICA LISTA (pipeline E2E verificado, falta producir draft real) |
 | Q3/Q4 | Journals regionales | Datos de campo (30min) + 2 metodos | 25-60 | PENDIENTE campo |
-| Q2 | Journals intermedios | Campo + laboratorio + fragilidad | 35-80 | PENDIENTE lab |
-| Q1 | Engineering Structures, SHM (SAGE) | 2+ estructuras + contribucion teorica | 50-120 | PENDIENTE datos |
+| Q2 | Journals intermedios | Campo + laboratorio + fragilidad | 30-80 | PENDIENTE lab |
+| Q1 | Engineering Structures, SHM (SAGE) | 2+ estructuras + contribucion teorica | 40-120 | PENDIENTE datos |
 
 ---
 

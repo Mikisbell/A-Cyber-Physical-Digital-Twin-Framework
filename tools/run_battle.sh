@@ -9,10 +9,13 @@
 #   dano_critico [Hz] — Daño progresivo: k-40%, amplitud creciente (pre-colapso)
 #   presa         — Perfil sísmico Kanai-Tajimi (corona de represa, fg=2.5 Hz)
 #   dropout        — Simulacro de cable USB desconectado
+set -euo pipefail
+cd "$(dirname "$0")/.."
 
 echo "🎖️ [BATTLE] Iniciando la Operación Resonancia en Cámara de Tortura..."
 
-source .venv/bin/activate
+trap 'kill $EMU_PID $BRIDGE_PID 2>/dev/null' EXIT
+source .venv/bin/activate 2>/dev/null || true
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 # Matar procesos huérfanos previos
@@ -55,8 +58,5 @@ wait $BRIDGE_PID
 echo "🛡️ [BATTLE] El Bridge ha asegurado los datos y se ha cerrado."
 
 kill -9 $TAIL_PID 2>/dev/null
-
-echo "📊 [BATTLE] Generando reporte de bajas..."
-python3 tools/export_signals.py
 
 echo "✅ [BATTLE] Operación finalizada con rigor."

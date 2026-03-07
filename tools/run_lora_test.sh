@@ -1,6 +1,9 @@
 #!/bin/bash
 # Lanza el MOCK de LoRa y conecta el bridge al puerto virtual generado.
-source .venv/bin/activate
+set -euo pipefail
+cd "$(dirname "$0")/.."
+trap 'kill $LORA_PID 2>/dev/null; rm -f lora_out.txt' EXIT
+source .venv/bin/activate 2>/dev/null || true
 export PYTHONPATH=$PWD:$PYTHONPATH
 
 MODE=${1:-sano}
@@ -21,6 +24,4 @@ fi
 echo "🔌 Conectando bridge a $PTY_PORT..."
 python3 src/physics/bridge.py $PTY_PORT
 
-kill $LORA_PID
-rm lora_out.txt
 echo "🏁 Test finalizado."

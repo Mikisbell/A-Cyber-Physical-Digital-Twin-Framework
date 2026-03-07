@@ -24,6 +24,15 @@ El Verifier se activa obligatoriamente cuando:
 
 ## Protocolo de Verificación (Orden Obligatorio)
 
+### Protocolo Engram Bus (OBLIGATORIO)
+
+**Al iniciar:**
+1. `mem_search("task: verifier")` — lee la tarea asignada por el orquestador
+2. `mem_search("risk: {paper_id}")` — lee riesgos conocidos para atacar
+
+**Al terminar:**
+3. `mem_save("result: verifier — {PASS|FAIL} — {causa si FAIL} — archivos revisados: {lista}")` — resultado compacto para el orquestador
+
 ### PASO 0 — Integridad de Configuración (Hash SSOT)
 
 **Este paso es el pre-requisito de todos los demás.** Antes de ejecutar cualquier cálculo:

@@ -32,8 +32,8 @@ EXPLORE --> PROPOSE -|          |-> TASKS --> IMPLEMENT --> VERIFY --> ARCHIVE -
 ```
 
 ### 1. EXPLORE (Orchestrator)
-- Read `config/params.yaml` to confirm active domain
-- Check `data/processed/` for available datasets
+- Grep `project.domain` in `config/params.yaml` to confirm active domain
+- Glob `data/processed/` to list available datasets (names only, do not read contents)
 - Search Engram (layer 1 compact): `mem_search("paper")`
 - Identify risks: `mem_save("risk: {paper_id} — {description}")`
 
@@ -64,9 +64,9 @@ EXPLORE --> PROPOSE -|          |-> TASKS --> IMPLEMENT --> VERIFY --> ARCHIVE -
 ### 6. IMPLEMENT (Sub-agents, batched)
 - Execute one batch at a time via delegated sub-agents
 - Each batch must pass partial VERIFY before advancing
-- Generate sections via `scientific_narrator.py` or manual writing
-- Generate figures via `plot_figures.py`
-- Generate BibTeX via `generate_bibtex.py`
+- Sub-agent generates sections via `scientific_narrator.py` or manual writing
+- Sub-agent generates figures via `plot_figures.py`
+- Sub-agent generates BibTeX via `generate_bibtex.py`
 - Mark AI-generated content with `<!-- AI_Assist -->`
 - Sub-agents read context from Engram, write results to Engram
 

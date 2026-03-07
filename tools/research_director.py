@@ -7,11 +7,11 @@ la generación de Papers Científicos (Q1-Q4).
 
 Flujo:
   1. Configura el tópico y cuartil objetivo.
-  2. Ejecuta Cross Validation A/B (Concreto Nominal vs C&DW+Belico).
+  2. Ejecuta Cross Validation A/B y campana espectral parametrica.
   3. Lanza el Scientific Narrator para redactar el Paper.
   
 Uso:
-  python3 tools/research_director.py --quartile Q2 --topic "Resiliencia ante humedad extrema"
+  python3 tools/research_director.py --quartile Q2 --topic "Digital Twin framework for SHM"
 """
 
 import argparse
@@ -32,7 +32,6 @@ def announce_research(quartile: str, topic: str, cycles: int):
     print(f"  📌 Status: Buscando publicación {quartile}")
     print(f"  📌 Temática: '{topic}'")
     print(f"  📌 Ciclos Estresantes: {cycles}")
-    print(f"  📌 Novelty Central: Auditoría Criptográfica en Edge-AI SHM")
     print("="*70 + "\n")
 
 def run_research(quartile: str, topic: str, cycles: int):
@@ -47,8 +46,6 @@ def run_research(quartile: str, topic: str, cycles: int):
     print("\n[2/3] 🔬 Ejecutando Motor de Validación Cruzada (A/B Test)...")
     cv_engine = CrossValidationEngine(cycles=cycles)
     results = cv_engine.execute_validation_suite()
-    si_results = cv_engine.execute_sensitivity_report()
-    results["sensitivity_index"] = si_results
     
     # Guardar temporalmente los resultados de la validación cruzada para el narrador
     import json
@@ -57,14 +54,26 @@ def run_research(quartile: str, topic: str, cycles: int):
     with open(cv_out, "w") as f:
         json.dump(results, f)
     
+    # Load SSOT params early (needed for spectral config and narrator)
+    import yaml
+    cfg_path = ROOT / "config" / "params.yaml"
+    params = {}
+    domain = "structural"
+    if cfg_path.exists():
+        with open(cfg_path) as _f:
+            params = yaml.safe_load(_f) or {}
+            domain = params.get("project", {}).get("domain", "structural")
+
     # 2b. Cálculo Espectral (Sa vs T) — Norma E.030 / ASCE 7-22
     print("\n[2b/3] 📈 Calculando Espectro de Respuesta Sa(T, ζ=5%)...")
+    seismic_file = params.get("seismic", {}).get("ground_motion_file", "PISCO_2007_ICA_EW.AT2")
+    target_pga = params.get("seismic", {}).get("target_pga_g", 0.45)
     try:
         from src.physics.peer_adapter import PeerAdapter
         from src.physics.spectral_engine import compute_spectral_response, generate_spectral_report
         import numpy as np
         
-        pisco_at2 = ROOT / "data" / "external" / "peer_berkeley" / "PISCO_2007_ICA_EW.AT2"
+        pisco_at2 = ROOT / "data" / "external" / "peer_berkeley" / seismic_file
         if pisco_at2.exists():
             adapter = PeerAdapter(target_frequency_hz=100.0)
             raw_dict = adapter.read_at2_file(pisco_at2)
@@ -75,7 +84,7 @@ def run_research(quartile: str, topic: str, cycles: int):
             sa_raw = compute_spectral_response(accel_raw, dt_target)
             
             # Espectro del sismo filtrado (Guardian Angel: elimina picos por encima del PGA target)
-            accel_filt = adapter.scale_to_pga(accel_raw, target_pga_g=0.45)
+            accel_filt = adapter.scale_to_pga(accel_raw, target_pga_g=target_pga)
             sa_filt = compute_spectral_response(accel_filt, dt_target)
             
             # Fase 40: Amplificación de Suelo E.030 (site-specific)
@@ -106,7 +115,8 @@ def run_research(quartile: str, topic: str, cycles: int):
             # Generar figura SVG para el paper
             try:
                 from tools.plot_spectrum import generate_svg_spectrum
-                svg_out = ROOT / "articles" / "figures" / "spectrum_pisco2007.svg"
+                svg_name = f"spectrum_{Path(seismic_file).stem}.svg"
+                svg_out = ROOT / "articles" / "figures" / svg_name
                 generate_svg_spectrum(sa_raw, sa_filt, svg_out)
                 results["spectral"]["svg_path"] = str(svg_out)
                 with open(cv_out, "w") as f:
@@ -114,20 +124,6 @@ def run_research(quartile: str, topic: str, cycles: int):
             except Exception as svg_err:
                 print(f"   ⚠️ SVG no generado (no crítico): {svg_err}")
             
-            # Fase 39: Comparativa de amortiguamiento Virgen vs. C&DW (Eurocode 8)
-            try:
-                from src.physics.spectral_engine import compare_cdw_vs_virgin, generate_cdw_damping_report
-                cdw_data = compare_cdw_vs_virgin(sa_raw)
-                print(f"   🟢 [FASE 39] C&DW (ζ=7.5%) vs Virgen (ζ=5%): reducción espectral en T*={cdw_data['T_star']:.2f}s = {cdw_data['reduction_pct']}%")
-                results["spectral"]["cdw_damping"] = {
-                    "reduction_pct":  cdw_data["reduction_pct"],
-                    "T_star":         cdw_data["T_star"],
-                    "cdw_report":     generate_cdw_damping_report(cdw_data)
-                }
-                with open(cv_out, "w") as f:
-                    json.dump(results, f, default=lambda x: x.tolist() if hasattr(x, 'tolist') else x)
-            except Exception as cdw_err:
-                print(f"   ⚠️ Comparativa C&DW no generada (no crítico): {cdw_err}")
         else:
             print(f"   ⚠️ Sismo PEER no encontrado en {pisco_at2}. Ejecuta: python3 tools/fetch_benchmark.py")
     except Exception as spec_err:
@@ -135,14 +131,6 @@ def run_research(quartile: str, topic: str, cycles: int):
         
     # 3. Redacción del Paper (Scientific Narrator — multi-dominio)
     print("\n[3/3] Invocando al Scientific Narrator para redaccion IMRaD...")
-
-    import yaml
-    cfg_path = ROOT / "config" / "params.yaml"
-    domain = "structural"
-    if cfg_path.exists():
-        with open(cfg_path) as _f:
-            _cfg = yaml.safe_load(_f)
-            domain = _cfg.get("project", {}).get("domain", "structural")
 
     narrator_path = str(ROOT / "articles" / "scientific_narrator.py")
     subprocess.run([

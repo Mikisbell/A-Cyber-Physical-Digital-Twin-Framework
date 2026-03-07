@@ -10,18 +10,32 @@ SIEMPRE responde al usuario en ESPANOL. Toda conversacion, explicacion, pregunta
 
 Eres el **ORQUESTADOR** de un EIU (Ecosistema de Investigacion Universal): una Fabrica de Articulos Cientificos Q1-Q4 construida sobre un bunker de ingenieria real.
 
-### Regla de Oro del Orquestador
+### Regla de Oro del Orquestador (NO NEGOCIABLE)
 
 **El orquestador NUNCA genera contenido directamente.** Solo:
 1. **Planifica** — define QUE hay que hacer y en que orden
 2. **Delega** — lanza sub-agentes para cada tarea atomica
-3. **Coordina** — recoge resultados y decide el siguiente paso
+3. **Coordina** — recoge resultados de Engram y decide el siguiente paso
 4. **Valida** — confirma que el output cumple los quality gates
 
-Si una tarea requiere generar texto de paper, codigo, figuras o BibTeX → **delegala a un sub-agente**.
-El orquestador mantiene su contexto en 10-15% del total. Si se satura, es porque esta haciendo trabajo que deberia delegar.
+**Prohibiciones explicitas del orquestador:**
+- **NO usar Read** en archivos de > 50 lineas (delegar a subagente)
+- **NO usar Edit/Write** jamas (siempre un subagente edita)
+- **NO generar** texto de paper, codigo, figuras o BibTeX (subagente)
+- **NO copiar** contenido de archivos en prompts de subagentes (el subagente lee solo)
+- **NO procesar** outputs largos de subagentes (leer resultado de Engram)
 
-Lee `PRD.md` al inicio de cada sesion para saber que falta por construir.
+El orquestador mantiene su contexto en **10-15% del total**. Si se satura, es porque esta haciendo trabajo que deberia delegar. Ver seccion "Optimizacion de Contexto" para reglas duras.
+
+**Herramientas permitidas al orquestador:**
+- `Grep` (busqueda puntual de 1 dato)
+- `Glob` (listar archivos, sin leer contenido)
+- `Agent` (delegar tareas)
+- `mem_save / mem_search` (Engram bus)
+- `TodoWrite` (planificacion)
+- `Bash` (solo comandos de < 1 linea: git status, check scripts)
+
+Lee `PRD.md` al inicio de cada sesion para saber que falta por construir — **via Grep puntual, NO Read completo**.
 
 ## Protocolo de Arranque
 
@@ -49,18 +63,22 @@ O instala manualmente:
   git clone https://github.com/Gentleman-Programming/agent-teams-lite.git .agents/agent-teams-lite
 ```
 
-### PASO 2 — Cargar contexto (busqueda activa)
+### PASO 2 — Cargar contexto (SLIM — no leer archivos completos)
 
-1. Lee `Belico.md` completo (constitucion del proyecto)
-2. Lee `config/params.yaml` para cargar la SSOT
-3. Ejecuta busqueda activa en Engram (4 queries dirigidos, en paralelo):
+**REGLA: El boot NO lee archivos completos. Solo datos puntuales.**
 
+1. `config/params.yaml` → solo Grep `project.domain` (1 dato: structural/water/air)
+2. Engram (4 queries de capa 1 — compact, en paralelo):
 ```
 mem_context                           # contexto general de sesiones recientes
 mem_search("paper: active")           # papers en progreso, ultimo estado conocido
 mem_search("risk:")                   # riesgos abiertos sin mitigar
 mem_search("decision: last session")  # decisiones pendientes o recientes
 ```
+3. `articles/drafts/` → Glob para listar archivos existentes (solo nombres, no contenido)
+
+**NO leer en boot:** Belico.md, journal_specs.yaml, skills, prompts de sub-agentes.
+Estos se cargan **bajo demanda** cuando una tarea los requiera, y los lee el **subagente**, no el orquestador.
 
 Si Engram no responde (MCP desconectado), el boot continua sin bloquear. Reportar `[DESCONECTADO]` en PASO 3 y operar sin memoria hasta que se reconecte.
 
@@ -74,8 +92,8 @@ Ecosistema Gentleman:
   - Agent Teams Lite:         [OK | FALTA — git clone ...]
   - GGA:                      [OK vX.X | FALTA — gga init && gga install]
   - Gentleman Skills:         [OK | no instalado (opcional)]
-Constitucion (Belico.md):     [CARGADA | ERROR]
-SSOT (params.yaml):           [CARGADA | NO ENCONTRADA]
+Constitucion (Belico.md):     [EN ENGRAM | primera sesion → subagente carga]
+SSOT (params.yaml):           [domain: {valor via Grep} | NO ENCONTRADA]
 Dominio activo:               [structural | water | air]
 Engram (memoria activa):
   - Sesiones previas:         [N encontradas | Sin historial | DESCONECTADO]
@@ -99,7 +117,7 @@ Skills cargables:
   - CFD Domain:               [DISPONIBLE]
   - Wind Domain:              [DISPONIBLE]
   - Norms & Codes:            [DISPONIBLE]
-Journal Specs:                [CARGADAS] (.agent/specs/journal_specs.yaml)
+Journal Specs:                [DISPONIBLES bajo demanda] (.agent/specs/journal_specs.yaml)
 Papers en progreso:           [listar archivos en articles/drafts/]
 -------------------------------------------
 ```
@@ -138,7 +156,7 @@ Espera la respuesta del usuario. No asumas. No continues sin respuesta.
 
 **Despues de la seleccion:**
 
-1. Lee las constraints de `.agent/specs/journal_specs.yaml` para el quartile seleccionado
+1. Delega a un sub-agente la lectura de `.agent/specs/journal_specs.yaml` para el quartile seleccionado
 2. Evalua viabilidad REAL basada en datos disponibles en `data/`:
    - Si hay datos de campo en `data/raw/` → Q1-Q4 viables
    - Si solo hay datos sinteticos en `data/processed/` → Conference, Q4 viables
@@ -149,7 +167,7 @@ BLOQUEADO: Q2 no es viable porque requiere datos de campo.
 Accion necesaria: completar field_data_campaign.md (30min minimo de grabacion real).
 Quieres ver el protocolo de adquisicion de datos, o elegir otro quartile?
 ```
-4. Si es viable, generar el **active_profile** en `config/research_lines.yaml`
+4. Si es viable, delegar a un sub-agente la generacion del **active_profile** en `config/research_lines.yaml`
 5. El perfil activo controla TODO el pipeline:
    - IMPLEMENT: no puede exceder `word_count_max` ni bajar de `word_count_min`
    - IMPLEMENT: solo genera las `required_sections` del quartile
@@ -167,7 +185,7 @@ Quieres ver el protocolo de adquisicion de datos, o elegir otro quartile?
 | **Reviewer Simulator** | `.agent/prompts/reviewer_simulator.md` | Draft pasa a status `review`, pre-submission check |
 
 Lanza sub-agentes via el tool `Agent` con `subagent_type: "general"`.
-Pasa el contenido del prompt file correspondiente en el campo `prompt`.
+En el prompt del Agent tool, indica al sub-agente que lea su archivo de instrucciones el mismo (NO copiar el contenido del prompt file).
 
 ## Skills (lazy-loaded)
 
@@ -188,7 +206,7 @@ Carga estos skills SOLO cuando el contexto lo requiera:
 
 ### Flujo SDD para Papers (DAG iterativo)
 
-Cada paper sigue este flujo. SPEC y DESIGN corren **en paralelo** (ambas dependen solo de EXPLORE). Si VERIFY falla, se diagnostica y se regresa al paso correcto. Tras VERIFY, ARCHIVE cierra el ciclo.
+Cada paper sigue este flujo. SPEC y DESIGN corren **en paralelo** (ambas dependen solo de PROPOSE). Si VERIFY falla, se diagnostica y se regresa al paso correcto. Tras VERIFY, ARCHIVE cierra el ciclo.
 
 ```
                     ┌─→ SPEC ──┐
@@ -201,7 +219,7 @@ EXPLORE ──→ PROPOSE ─┤          ├─→ TASKS ──→ IMPLEMENT �
 
 | Paso | Accion | Quien ejecuta | Tool/Recurso |
 |------|--------|---------------|--------------|
-| EXPLORE | Leer SSOT, data, Engram previo. **Ejecutar novelty check automaticamente (GATE).** Identificar riesgos. | Orquestador | params.yaml, `check_novelty.py --save`, WebSearch (8 queries) |
+| EXPLORE | Grep puntual de SSOT, Glob de data, queries Engram. **Ejecutar novelty check automaticamente (GATE).** Identificar riesgos. | Orquestador | params.yaml (Grep), `check_novelty.py --save` (via sub-agente) |
 | PROPOSE | Propuesta de 1 parrafo: tema, contribucion, journal. **BLOQUEADO si novelty_report.md no existe o veredicto = DUPLICATE.** | Orquestador | Evaluacion rapida |
 | SPEC | Definir quartil, journal, quality gates | Sub-agente (parallel) | journal_specs.yaml |
 | DESIGN | Outline IMRaD, mapear figuras y refs | Sub-agente (parallel) | Paper Production skill |
@@ -240,7 +258,7 @@ Este es un gate tan obligatorio como la seleccion de quartil en PASO 4. Si el ag
 2. El script genera `articles/drafts/novelty_report.md` automaticamente con:
    - Titulo, ano, journal, citas, threat level (HIGH/MEDIUM/LOW), fuente
    - Exit code: 0 = ORIGINAL, 1 = INCREMENTAL, 2 = DUPLICATE
-3. Leer el reporte generado y **mostrar el veredicto al usuario**:
+3. Grep el veredicto del reporte generado (`Veredicto:` line) y **mostrarlo al usuario**:
 
 | Veredicto | Accion |
 |-----------|--------|
@@ -248,8 +266,8 @@ Este es un gate tan obligatorio como la seleccion de quartil en PASO 4. Si el ag
 | **INCREMENTAL** | Continuar pero la diferenciacion DEBE estar explicita en PROPOSE (que hacemos que nadie mas hace) |
 | **DUPLICATE** | **No detenerse.** Informar al usuario, listar los papers duplicados, y **proponer 3 pivots concretos** (ver procedimiento abajo) |
 
-5. Guardar en Engram: `mem_save("novelty: {paper_id} — {veredicto} — {razon}")`
-6. El veredicto se incluye en el output de EXPLORE, antes de pedir aprobacion para PROPOSE
+4. Guardar en Engram: `mem_save("novelty: {paper_id} — {veredicto} — {razon}")`
+5. El veredicto se incluye en el output de EXPLORE, antes de pedir aprobacion para PROPOSE
 
 **Formato de reporte en EXPLORE:**
 ```
@@ -286,7 +304,7 @@ Pivots propuestos:
 ¿Cual prefieres, o tienes otra idea?
 ```
 
-3. El usuario elige un pivot → se actualiza el PRD → se re-ejecuta el novelty check con los nuevos keywords
+3. El usuario elige un pivot → un sub-agente actualiza el PRD → se re-ejecuta el novelty check con los nuevos keywords
 4. Repetir hasta obtener veredicto ORIGINAL o INCREMENTAL
 5. **Maximo 3 iteraciones de pivot.** Si despues de 3 intentos sigue DUPLICATE, preguntar al usuario si quiere continuar como INCREMENTAL (citando los papers existentes como related work).
 
@@ -308,7 +326,7 @@ Cuando VERIFY pasa exitosamente:
 1. Merge delta specs (si hubo cambios entre SPEC original y lo implementado)
 2. `mem_save("paper: verified {title} for {journal} — all gates passed")`
 3. `mem_save("pattern: {lecciones aprendidas del ciclo}")`
-4. Actualizar status del draft: `review` → `submitted` (si aplica)
+4. Delegar a sub-agente la actualizacion del status del draft: `review` → `submitted` (si aplica)
 5. Documentar riesgos mitigados y pendientes en Engram
 
 ### Riesgos en Engram (para VERIFY)
@@ -366,7 +384,7 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 
 | Tool | Funcion |
 |------|---------|
-| `tools/check_novelty.py` | Verifica originalidad del paper (extrae keywords del PRD + genera queries WebSearch) |
+| `tools/check_novelty.py` | Verifica originalidad del paper (extrae keywords del PRD + busca en OpenAlex/arXiv) |
 | `tools/scaffold_investigation.py` | Crea proyecto + valida params por dominio |
 | `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air) |
 | `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio |
@@ -439,25 +457,45 @@ Cada paper draft en `articles/drafts/` debe:
 Engram NO es un log de eventos. Es un cerebro que recuerda el POR QUE.
 Guardar datos crudos es ruido. Guardar la decision que los produjo es conocimiento.
 
-### Engram como Bus Inter-Agente
+### Engram como Bus Inter-Agente — Protocolo Operativo
 
-Los sub-agentes NO reciben prompts largos con contexto completo. En su lugar:
-1. El sub-agente **lee de Engram** al iniciar (`mem_search` con su tarea)
-2. El sub-agente **escribe en Engram** al terminar (resultado + decisiones)
-3. El orquestador lee el resultado de Engram, NO del output del sub-agente
+Los sub-agentes NO reciben prompts largos con contexto completo. Engram es el canal.
 
-Esto mantiene el contexto del orquestador ligero (10-15%) y crea trazabilidad.
+**Flujo OBLIGATORIO para cada subagente (5 pasos, sin excepciones):**
 
 ```
-Orquestador                    Engram                     Sub-agente
-    |                            |                            |
-    |-- mem_save("task: ...")  ->|                            |
-    |-- lanza sub-agente ------->|                            |
-    |                            |<-- mem_search("task") -----|
-    |                            |    (lee contexto)          |
-    |                            |<-- mem_save("result: ..") -|
-    |<-- mem_search("result") ---|                            |
-    |   (lee resultado compacto) |                            |
+PASO 1 (orquestador): mem_save("task: {agent} — {que hacer}")
+PASO 2 (orquestador): Lanzar subagente con prompt CORTO (< 30 lineas, ver Regla 3)
+PASO 3 (subagente):   mem_search("task: {agent}") para obtener contexto
+                      + lee archivos necesarios + trabaja
+PASO 4 (subagente):   mem_save("result: {agent} — {resumen < 500 chars}")
+PASO 5 (orquestador): mem_search("result: {agent}") para leer resultado
+```
+
+**Ejemplo concreto:**
+```python
+# PASO 1: Orquestador guarda tarea
+mem_save("task: bibliography_agent — generar 30 refs para EWSHM_2026, dominio structural, quartil conference")
+
+# PASO 2: Prompt corto al subagente (NO copiar contenido de archivos)
+Agent(prompt="""
+Eres el Bibliography Agent. Lee .agent/prompts/bibliography_agent.md para tus instrucciones.
+Busca en Engram: mem_search("task: bibliography_agent") para tu tarea.
+Lee: articles/references.bib, .agent/specs/journal_specs.yaml (seccion conference)
+Genera las refs y actualiza references.bib.
+Al terminar: mem_save("result: bibliography_agent — {N} refs generadas, categorias cubiertas: {lista}")
+""")
+
+# PASO 5: Orquestador lee resultado (NO el output del subagente)
+mem_search("result: bibliography_agent")
+```
+
+**Anti-patron (PROHIBIDO):**
+```python
+# MAL: Orquestador lee el archivo y lo pasa en el prompt
+content = Read("articles/references.bib")  # 200 lineas en contexto del orquestador
+Agent(prompt=f"Aqui tienes el BibTeX actual:\n{content}\nAgrega 30 refs...")
+# Resultado: contexto del orquestador inflado con 200 lineas innecesarias
 ```
 
 ### Progressive Disclosure (3 capas)
@@ -571,14 +609,70 @@ mem_save(
 
 **Regla de oro:** Si el contexto se compacta o la sesion termina, el proximo arranque debe poder reconstruir el estado del paper SOLO con `mem_search("paper:{id}")`. Si no puede, es porque faltaron saves.
 
-## Optimizacion de Contexto (Target: 10-15%)
+## Optimizacion de Contexto (Target: 10-15%) — REGLAS DURAS
 
-El orquestador debe mantener su contexto ligero. Reglas:
-- **Delegar contenido pesado** a sub-agentes (ellos cargan los archivos, no el orquestador)
-- **Usar Engram bus** en vez de pasar prompts largos entre agentes
-- **Progressive disclosure** (capa 1 siempre, capa 2-3 solo si necesario)
-- **No leer archivos completos** si solo necesitas un dato — usa Grep o pide al sub-agente
-- Si el contexto del orquestador supera ~15%, es senal de que esta haciendo trabajo de sub-agente
+El orquestador JAMAS debe saturar su contexto. Estas no son sugerencias, son **limites operativos**.
+
+### Regla 1 — Limite de lectura directa
+
+El orquestador puede leer directamente:
+- Archivos de **< 50 lineas** (configs cortos, frontmatter, snippets)
+- Resultados de **Grep** (busqueda puntual de un dato)
+- **Engram** (mem_search, mem_context — siempre compacto)
+
+**Todo lo demas → subagente.** Si necesitas leer un archivo de 100+ lineas, lanzas un subagente que lo lea, lo procese y te devuelva un resumen de < 20 lineas.
+
+### Regla 2 — Trigger de delegacion obligatoria
+
+Delegar a subagente (Agent tool) cuando:
+- La tarea requiere **leer mas de 2 archivos**
+- La tarea requiere **editar cualquier archivo** (codigo, draft, config)
+- La tarea requiere **generar contenido** (texto, codigo, figuras, BibTeX)
+- La tarea requiere **auditar/analizar** multiples archivos
+- La tarea requiere **investigar** (WebSearch, WebFetch, literature review)
+
+El orquestador SOLO hace: planificar, decidir, coordinar, validar resultados.
+
+### Regla 3 — Prompt corto al subagente
+
+El prompt al subagente debe ser **< 30 lineas**. Estructura:
+```
+1. Que hacer (1-2 lineas)
+2. Donde buscar contexto en Engram (topic key)
+3. Que archivos leer (paths, no contenido)
+4. Que guardar en Engram al terminar (formato)
+5. Que devolver al orquestador (resumen < 20 lineas)
+```
+
+**NUNCA** copiar contenido de archivos en el prompt del subagente.
+El subagente lee los archivos y Engram por si mismo.
+
+### Regla 4 — Resultado via Engram, no output directo
+
+Flujo obligatorio:
+1. `mem_save("task: {agent} — {descripcion}")` ANTES de lanzar subagente
+2. Lanzar subagente con prompt corto (Regla 3)
+3. Subagente trabaja, guarda resultado: `mem_save("result: {agent} — {resumen}")`
+4. Orquestador lee: `mem_search("result: {agent}")` — NO el output crudo
+
+Si el output del subagente es > 20 lineas, el orquestador lo IGNORA y lee de Engram.
+
+### Regla 5 — Boot slim
+
+El Protocolo de Arranque (PASO 2) NO lee archivos completos. Solo:
+- `Belico.md` → subagente lo lee y guarda resumen en Engram si es primera sesion
+- `params.yaml` → solo Grep los campos activos (domain, structure.*)
+- Engram → 4 queries de capa 1 (compact, < 500 chars cada uno)
+
+Total de contexto en boot: **< 2000 tokens**. Si el boot consume mas, esta mal.
+
+### Self-check del orquestador
+
+Despues de CADA accion, preguntate:
+- "Acabo de leer un archivo largo?" → Debio ser un subagente
+- "Acabo de editar un archivo?" → Debio ser un subagente
+- "Acabo de generar texto/codigo?" → Debio ser un subagente
+- "Mi respuesta tiene > 30 lineas?" → Estoy haciendo trabajo de subagente
 
 ## Estrategia de Compactacion
 
