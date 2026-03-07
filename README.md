@@ -35,19 +35,42 @@ You choose the paper type. The system handles the rest:
 ### 1. Clone
 
 ```bash
-git clone https://github.com/Mikisbell/belico-stack.git
-cd belico-stack
+git clone https://github.com/Mikisbell/belico-stack.git my-project-name
+cd my-project-name
 ```
 
-### 2. Install dependencies
+> **Tip:** The folder name becomes your default project name. Clone into a descriptive folder (e.g., `bridge-monitor`, `tower-shm`) so each project is unique.
 
-The stack runs on the Gentleman Programming ecosystem. Install it:
+### 2. Bootstrap your project
 
 ```bash
-bash tools/setup_dependencies.sh
+python3 tools/init_project.py
 ```
 
-This installs (via Homebrew or binary download):
+This is the **single entry point** for new projects. It handles everything:
+
+1. **Detects your folder name** as default project name (no two projects look the same)
+2. **Asks only 3 things**: project name, domain (structural/water/air), and author
+3. **Creates the directory structure** (14 required directories)
+4. **Checks and installs dependencies** (Engram, Gentle AI, GGA, Agent Teams Lite)
+5. **Generates config files** with `null` values ready for research:
+   - `config/params.yaml` — SSOT skeleton (parameters to fill during your AI session)
+   - `PRD.md` — research roadmap (to fill with Claude)
+   - `src/firmware/params.h` — C header with placeholders
+   - `src/physics/params.py` — Python constants with `None`
+
+You don't need to know material properties upfront — that's what the research is for. The AI agent will guide you to find and fill the right values during your session.
+
+```bash
+# Options:
+python3 tools/init_project.py              # Full setup (interactive)
+python3 tools/init_project.py --skip-deps  # Skip dependency installation
+python3 tools/init_project.py --reset      # Backup existing config and start fresh
+```
+
+### Dependencies
+
+The bootstrapper checks and installs these automatically. If you prefer manual installation:
 
 | Tool | What it does | Install manually |
 |------|-------------|-----------------|
@@ -57,7 +80,7 @@ This installs (via Homebrew or binary download):
 | [GGA](https://github.com/Gentleman-Programming/gentleman-guardian-angel) | Pre-commit AI code review (Python/Arduino/Shell) | `gga init && gga install` |
 | [Gentleman Skills](https://github.com/Gentleman-Programming/Gentleman-Skills) | Skill library reference (optional) | Cloned to `.agents/Gentleman-Skills/` |
 
-### Keeping dependencies updated
+#### Keeping dependencies updated
 
 ```bash
 bash tools/setup_dependencies.sh --update   # update all to latest
@@ -67,21 +90,7 @@ bash tools/setup_dependencies.sh --check    # check status without changing anyt
 
 Current versions are tracked in `config/dependencies.lock`.
 
-### 3. Bootstrap your project
-
-```bash
-python3 tools/init_project.py
-```
-
-Only asks 3 things: **project name**, **domain** (structural/water/air), and **author**. That's it.
-
-It generates:
-- `PRD.md` — research roadmap skeleton (to fill during your AI session)
-- `config/params.yaml` — parameter skeleton with `null` values (to fill during research)
-
-You don't need to know material properties upfront — that's what the research is for. The AI agent will guide you to find and fill the right values during your session.
-
-### 4. Configure your AI agent
+### 3. Configure your AI agent
 
 ```bash
 # If using Claude Code:
@@ -91,7 +100,7 @@ engram setup claude-code
 gentle-ai
 ```
 
-### 5. Start
+### 4. Start
 
 Open your AI coding agent (Claude Code, OpenCode, Gemini CLI, etc.) and say:
 

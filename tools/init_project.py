@@ -2,17 +2,17 @@
 """
 tools/init_project.py — Project Bootstrapper
 ==============================================
-Minimal setup: asks project name and domain, then generates
-a PRD skeleton and empty params.yaml ready for AI-guided research.
-
-Everything else (material selection, parameters, literature review)
-happens during the Claude session — not here.
+Single entry point for new projects. Detects the current directory,
+asks minimal questions, creates structure, installs deps, and generates
+config files. Everything adapts to the project name automatically.
 
 Usage:
   python3 tools/init_project.py              # New project setup
   python3 tools/init_project.py --reset      # Start fresh (backs up existing)
+  python3 tools/init_project.py --skip-deps  # Skip dependency installation
 """
 
+import os
 import shutil
 import subprocess
 import sys
@@ -25,7 +25,12 @@ ROOT = Path(__file__).resolve().parent.parent
 YAML_PATH = ROOT / "config" / "params.yaml"
 PRD_PATH = ROOT / "PRD.md"
 GENERATOR = ROOT / "tools" / "generate_params.py"
+SETUP_DEPS = ROOT / "tools" / "setup_dependencies.sh"
 
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Utilities
+# ═══════════════════════════════════════════════════════════════════════════
 
 def ask(prompt: str, default=None) -> str:
     suffix = f" [{default}]" if default else ""
@@ -55,6 +60,14 @@ def ask_choice(prompt: str, options: list[dict]) -> dict:
         print(f"    (elige un numero del 1 al {len(options)})")
 
 
+def ask_yn(prompt: str, default: bool = True) -> bool:
+    hint = "S/n" if default else "s/N"
+    raw = input(f"  {prompt} [{hint}]: ").strip().lower()
+    if not raw:
+        return default
+    return raw in ("s", "si", "y", "yes")
+
+
 def banner(text: str):
     w = 55
     print(f"\n{'=' * w}")
@@ -66,7 +79,14 @@ def info(text: str):
     print(f"  >> {text}")
 
 
-# ─── Domain definitions ────────────────────────────────────────────────────
+def detect_project_name() -> str:
+    """Use the current directory name as default project name."""
+    return ROOT.name
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Domain definitions
+# ═══════════════════════════════════════════════════════════════════════════
 
 DOMAINS = [
     {
@@ -92,11 +112,71 @@ DOMAINS = [
     },
 ]
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Directory structure
+# ═══════════════════════════════════════════════════════════════════════════
 
-# ─── Minimal params.yaml skeleton ──────────────────────────────────────────
+REQUIRED_DIRS = [
+    "config",
+    "src/firmware",
+    "src/physics",
+    "src/ai",
+    "data/raw",
+    "data/processed",
+    "data/external",
+    "articles/drafts",
+    "articles/figures",
+    ".agent/prompts",
+    ".agent/skills",
+    ".agent/specs",
+    "tools",
+]
+
+
+def ensure_directories():
+    """Create project directory structure if missing."""
+    created = []
+    for d in REQUIRED_DIRS:
+        path = ROOT / d
+        if not path.exists():
+            path.mkdir(parents=True, exist_ok=True)
+            created.append(d)
+    return created
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Dependency check
+# ═══════════════════════════════════════════════════════════════════════════
+
+def check_dependencies() -> dict:
+    """Check which ecosystem tools are installed."""
+    deps = {}
+    for cmd, name in [("engram", "Engram"), ("gentle-ai", "Gentle AI"),
+                      ("gga", "GGA")]:
+        result = subprocess.run(["which", cmd], capture_output=True)
+        deps[name] = result.returncode == 0
+    # Check cloned repos
+    deps["Agent Teams Lite"] = (ROOT / ".agents" / "agent-teams-lite").exists()
+    return deps
+
+
+def install_dependencies():
+    """Run setup_dependencies.sh if available."""
+    if SETUP_DEPS.exists():
+        info("Instalando dependencias del ecosistema...")
+        subprocess.run(["bash", str(SETUP_DEPS)], cwd=str(ROOT))
+    else:
+        info("setup_dependencies.sh no encontrado — instala manualmente:")
+        print("    brew install gentleman-programming/tap/engram")
+        print("    brew install gentleman-programming/tap/gentle-ai")
+        print("    brew install gentleman-programming/tap/gga")
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# File generators
+# ═══════════════════════════════════════════════════════════════════════════
 
 def generate_skeleton(project_name: str, domain: dict) -> dict:
-    """Generate a minimal params.yaml with nulls — to be filled during research."""
     return {
         "metadata": {
             "project": project_name,
@@ -138,7 +218,7 @@ def generate_skeleton(project_name: str, domain: dict) -> dict:
             "dt_simulation": {"value": 0.01, "units": "s"},
             "max_jitter_ms": {"value": 5, "units": "ms"},
             "buffer_depth": {"value": 10, "units": "packets"},
-            "handshake_token": {"value": f"BELICO_SYNC_{date.today().year}"},
+            "handshake_token": {"value": f"SYNC_{date.today().year}"},
         },
         "signal_processing": {
             "kalman": {
@@ -155,8 +235,6 @@ def generate_skeleton(project_name: str, domain: dict) -> dict:
     }
 
 
-# ─── PRD skeleton ───────────────────────────────────────────────────────────
-
 def generate_prd(project_name: str, domain: dict, author: str) -> str:
     return f"""# PRD — {project_name}
 # Version: 1.0.0 | Autor: {author} | Fecha: {date.today()}
@@ -166,7 +244,6 @@ def generate_prd(project_name: str, domain: dict, author: str) -> str:
 ## 1. Problema
 
 <!-- Describe el problema de investigacion que quieres resolver -->
-<!-- Ejemplo: "No existen datos de campo sobre el comportamiento sismico de..." -->
 
 (Por definir durante la sesion de investigacion)
 
@@ -190,14 +267,11 @@ def generate_prd(project_name: str, domain: dict, author: str) -> str:
 
 ## 4. Alcance del Paper
 
-<!-- Que tipo de paper vas a producir? -->
-
 | Aspecto | Valor |
 |---------|-------|
 | Tipo | (Conference / Q4 / Q3 / Q2 / Q1) |
 | Target journal | (Por definir) |
 | Datos requeridos | (Sinteticos / Campo / Laboratorio) |
-| Estructura | (Por definir durante EXPLORE) |
 
 ---
 
@@ -206,7 +280,7 @@ def generate_prd(project_name: str, domain: dict, author: str) -> str:
 El agente AI te guiara para completar estos parametros durante la sesion:
 
 - **Material**: {domain['research_hint']}
-- **Config**: `config/params.yaml` (actualmente con valores null — se llenara con la investigacion)
+- **Config**: `config/params.yaml` (valores null = pendiente de investigacion)
 - **Propagacion**: `python3 tools/generate_params.py`
 
 ---
@@ -235,28 +309,30 @@ data/raw/               data/processed/
 
 ## 7. Siguiente Paso
 
-Abre Claude Code en este directorio y di:
-
-```
-Engram conecto
-```
-
-El sistema cargara este PRD, identificara los parametros faltantes,
-y te guiara para investigar y completar la configuracion.
+Abre Claude Code en este directorio y di: `Engram conecto`
 """
 
 
-# ─── Main ──────────────────────────────────────────────────────────────────
+# ═══════════════════════════════════════════════════════════════════════════
+# Main
+# ═══════════════════════════════════════════════════════════════════════════
 
 def main():
     import argparse
-    parser = argparse.ArgumentParser(description="Belico Stack — Project Bootstrap")
+    parser = argparse.ArgumentParser(
+        description="Project Bootstrapper — configures a new research project")
     parser.add_argument("--reset", action="store_true",
                         help="Backup existing config and start fresh")
+    parser.add_argument("--skip-deps", action="store_true",
+                        help="Skip dependency installation")
     args = parser.parse_args()
 
-    banner("BELICO STACK — NUEVO PROYECTO")
-    print("  Solo necesito 2 cosas. El resto lo investigamos juntos en Claude.")
+    # Detect project context
+    default_name = detect_project_name()
+
+    banner(f"NUEVO PROYECTO — {default_name}")
+    print(f"  Directorio: {ROOT}")
+    print(f"  Solo necesito 3 cosas. El resto lo investigamos juntos en Claude.")
 
     # Backup if needed
     if args.reset:
@@ -266,22 +342,51 @@ def main():
                 shutil.copy2(f, backup)
                 info(f"Backup: {backup.name}")
 
-    # ── 1. Project name ──
+    # ── 1. Project name (default = folder name) ──
     banner("NOMBRE DEL PROYECTO")
-    project_name = ask("Como se llama tu proyecto?", "mi-proyecto")
+    project_name = ask("Como se llama tu proyecto?", default_name)
 
     # ── 2. Domain ──
     banner("DOMINIO")
     domain = ask_choice("En que area trabajas?", DOMAINS)
     info(f"Dominio: {domain['key']} ({domain['solver']})")
 
-    # ── 3. Author (optional) ──
+    # ── 3. Author ──
     author = ask("Tu nombre (autor)", "")
 
-    # ── Generate files ──
+    # ── 4. Create directory structure ──
+    banner("ESTRUCTURA DE DIRECTORIOS")
+    created = ensure_directories()
+    if created:
+        for d in created:
+            info(f"Creado: {d}/")
+    else:
+        info("Estructura completa (todos los directorios existen)")
+
+    # ── 5. Dependencies ──
+    if not args.skip_deps:
+        banner("DEPENDENCIAS")
+        deps = check_dependencies()
+        all_ok = True
+        for name, installed in deps.items():
+            status = "OK" if installed else "FALTA"
+            print(f"    {name}: {status}")
+            if not installed:
+                all_ok = False
+
+        if not all_ok:
+            if ask_yn("Instalar dependencias faltantes?"):
+                install_dependencies()
+            else:
+                info("Saltando instalacion. Puedes correr despues:")
+                print("    bash tools/setup_dependencies.sh")
+        else:
+            info("Todas las dependencias instaladas")
+
+    # ── 6. Generate config files ──
     banner("GENERANDO ARCHIVOS")
 
-    # params.yaml skeleton (all nulls — to be filled during research)
+    # params.yaml
     YAML_PATH.parent.mkdir(parents=True, exist_ok=True)
     cfg = generate_skeleton(project_name, domain)
     cfg["metadata"]["author"] = author
@@ -307,15 +412,15 @@ def main():
         f.write("# Regenerar derivados: python3 tools/generate_params.py\n\n")
         yaml.dump(cfg, f, Dumper=CustomDumper, default_flow_style=False,
                   allow_unicode=True, sort_keys=False)
-    info(f"config/params.yaml (esqueleto con nulls)")
+    info("config/params.yaml (esqueleto con nulls)")
 
-    # PRD skeleton
+    # PRD
     prd_content = generate_prd(project_name, domain, author)
     with open(PRD_PATH, "w") as f:
         f.write(prd_content)
-    info(f"PRD.md (plantilla lista para investigar)")
+    info("PRD.md (plantilla lista para investigar)")
 
-    # Propagate (will work with nulls — generate_params handles them)
+    # Propagate
     if GENERATOR.exists():
         result = subprocess.run(
             [sys.executable, str(GENERATOR)],
@@ -326,22 +431,25 @@ def main():
             info("Propagacion pendiente (params.yaml tiene valores null)")
 
     # ── Done ──
-    banner("LISTO")
+    banner(f"PROYECTO LISTO: {project_name}")
     print(f"""
   Proyecto:  {project_name}
   Dominio:   {domain['key']} ({domain['solver']})
-  PRD:       PRD.md
-  Config:    config/params.yaml (valores pendientes de investigacion)
+  Directorio: {ROOT}
+
+  Archivos generados:
+    config/params.yaml  — SSOT (valores pendientes de investigacion)
+    PRD.md              — Roadmap del paper (por llenar con Claude)
+    src/firmware/params.h  — Header C (con placeholders)
+    src/physics/params.py  — Constantes Python (con None)
 
   SIGUIENTE PASO:
   Abre Claude Code en este directorio y di:
 
     Engram conecto
 
-  Claude leera el PRD, identificara que parametros faltan,
-  y te guiara para investigarlos y completar la configuracion.
-  No necesitas saber los valores de antemano — eso es parte
-  del proceso de investigacion.
+  El sistema te preguntara que tipo de articulo quieres desarrollar
+  (Conference/Q4/Q3/Q2/Q1) y te guiara con la investigacion.
 """)
 
 
