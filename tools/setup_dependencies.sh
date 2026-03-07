@@ -278,6 +278,16 @@ main() {
       check_component "$name" "$brew_formula" "$gh_repo" "$required"
     done
     echo ""
+    # Check Python deps
+    echo "  Python packages:"
+    for pkg in yake yaml numpy scipy matplotlib; do
+      if python3 -c "import $pkg" 2>/dev/null; then
+        echo -e "  ${GREEN}[OK]${NC} $pkg"
+      else
+        echo -e "  ${RED}[MISSING]${NC} $pkg — pip install $pkg"
+      fi
+    done
+    echo ""
     return 0
   fi
 
@@ -354,6 +364,16 @@ main() {
 
   # Post-install: configure Engram
   setup_engram
+
+  # Python dependencies
+  echo -e "\n${CYAN}Installing Python dependencies...${NC}"
+  if [[ -f "$ROOT/requirements.txt" ]]; then
+    pip install -r "$ROOT/requirements.txt" 2>/dev/null || \
+    pip3 install -r "$ROOT/requirements.txt" 2>/dev/null || \
+    python3 -m pip install -r "$ROOT/requirements.txt" 2>/dev/null || {
+      echo -e "${YELLOW}  pip install failed. Run manually: pip install -r requirements.txt${NC}"
+    }
+  fi
 
   # Save lockfile with installed versions
   echo ""
