@@ -13,6 +13,7 @@ Usage:
 """
 
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -82,6 +83,55 @@ def info(text: str):
 def detect_project_name() -> str:
     """Use the current directory name as default project name."""
     return ROOT.name
+
+
+def detect_keywords_from_name(project_name: str) -> str:
+    """Extract research keywords from the project folder name.
+
+    'A-Cyber-Physical-Digital-Twin-Framework' → 'cyber-physical, digital twin, framework'
+    'bridge-shm-monitoring' → 'bridge, shm, monitoring'
+    """
+    # Common filler words that aren't research keywords
+    filler = {"a", "an", "the", "of", "for", "and", "in", "on", "with", "to",
+              "based", "using", "via", "new", "novel", "towards", "project"}
+
+    # Split by hyphens/underscores, lowercase
+    parts = re.sub(r'[_\s]+', '-', project_name).lower().split('-')
+    parts = [p.strip() for p in parts if p.strip() and p.strip() not in filler]
+
+    if not parts:
+        return ""
+
+    # Try to rejoin known compound terms
+    compounds = {
+        ("digital", "twin"): "digital twin",
+        ("cyber", "physical"): "cyber-physical",
+        ("structural", "health"): "structural health monitoring",
+        ("health", "monitoring"): None,  # absorbed by structural health monitoring
+        ("machine", "learning"): "machine learning",
+        ("deep", "learning"): "deep learning",
+        ("reinforced", "concrete"): "reinforced concrete",
+        ("finite", "element"): "finite element",
+        ("acoustic", "emission"): "acoustic emission",
+    }
+
+    keywords = []
+    skip_next = False
+    for i, part in enumerate(parts):
+        if skip_next:
+            skip_next = False
+            continue
+        if i + 1 < len(parts):
+            pair = (part, parts[i + 1])
+            if pair in compounds:
+                compound = compounds[pair]
+                if compound:
+                    keywords.append(compound)
+                skip_next = True
+                continue
+        keywords.append(part)
+
+    return ", ".join(keywords)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -361,11 +411,17 @@ def main():
     domain = ask_choice("En que area trabajas?", DOMAINS)
     info(f"Dominio: {domain['key']} ({domain['solver']})")
 
-    # ── 3. Research keywords ──
+    # ── 3. Research keywords (auto-detected from folder name) ──
     banner("TEMA DE INVESTIGACION")
-    print("  Escribe las keywords de tu investigacion separadas por comas.")
-    print("  Ejemplo: digital twin, seismic, reinforced concrete, SHM")
-    research_keywords = ask("Keywords de investigacion")
+    detected_kw = detect_keywords_from_name(project_name)
+    if detected_kw:
+        print(f"  Detectadas del nombre del proyecto: {detected_kw}")
+        print("  Presiona Enter para aceptar, o escribe otras separadas por comas.")
+        research_keywords = ask("Keywords de investigacion", detected_kw)
+    else:
+        print("  Escribe las keywords de tu investigacion separadas por comas.")
+        print("  Ejemplo: digital twin, seismic, reinforced concrete, SHM")
+        research_keywords = ask("Keywords de investigacion")
 
     # ── 4. Author ──
     author = ask("Tu nombre (autor)", "")
