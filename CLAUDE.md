@@ -247,7 +247,7 @@ Este es un gate tan obligatorio como la seleccion de quartil en PASO 4. Si el ag
 |-----------|--------|
 | **ORIGINAL** | Continuar a PROPOSE. Documentar en que es unico. |
 | **INCREMENTAL** | Continuar pero la diferenciacion DEBE estar explicita en PROPOSE (que hacemos que nadie mas hace) |
-| **DUPLICATE** | **BLOQUEAR PROPOSE.** Informar al usuario, listar los papers duplicados, y proponer pivot del tema |
+| **DUPLICATE** | **No detenerse.** Informar al usuario, listar los papers duplicados, y **proponer 3 pivots concretos** (ver procedimiento abajo) |
 
 5. Guardar en Engram: `mem_save("novelty: {paper_id} — {veredicto} — {razon}")`
 6. El veredicto se incluye en el output de EXPLORE, antes de pedir aprobacion para PROPOSE
@@ -264,6 +264,32 @@ Diferenciacion: [que hacemos que nadie mas hace]
 Reporte completo: articles/drafts/novelty_report.md
 ---
 ```
+
+**Si el veredicto es DUPLICATE — Procedimiento de Pivot (NO detenerse):**
+
+El objetivo es no perder tiempo. Si el tema ya existe, el agente propone alternativas inmediatamente:
+
+1. Identificar el **gap especifico** que los papers existentes NO cubren:
+   - ¿Usan otro solver? → Nuestro angle: OpenSeesPy + SSOT governance
+   - ¿No tienen DT? → Nuestro angle: cyber-physical con gemelo digital
+   - ¿No validan con datos reales? → Nuestro angle: framework para validacion de campo
+   - ¿No combinan las N tecnicas juntas? → Nuestro angle: integracion multi-capa
+
+2. Proponer **3 pivots concretos** al usuario:
+```
+DUPLICATE detectado. Papers existentes: [listar top 3 con titulos y anos]
+
+Pivots propuestos:
+  1. [Cambiar enfoque]: En vez de [X], enfocarnos en [Y] que nadie ha hecho
+  2. [Cambiar metodo]: Usar [metodo diferente] que los papers existentes no usan
+  3. [Cambiar dominio]: Aplicar la misma idea a [dominio/material/estructura] no explorado
+
+¿Cual prefieres, o tienes otra idea?
+```
+
+3. El usuario elige un pivot → se actualiza el PRD → se re-ejecuta el novelty check con los nuevos keywords
+4. Repetir hasta obtener veredicto ORIGINAL o INCREMENTAL
+5. **Maximo 3 iteraciones de pivot.** Si despues de 3 intentos sigue DUPLICATE, preguntar al usuario si quiere continuar como INCREMENTAL (citando los papers existentes como related work).
 
 ### Seleccion de Modelo por Fase
 
