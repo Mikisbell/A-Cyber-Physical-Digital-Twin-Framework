@@ -67,6 +67,22 @@ Q1:
     - "field_data OR lab_data (real measurements mandatory)"
     - "min 2 structures or test specimens"
     - "statistical significance (p < 0.05 or CI reported)"
+  normative_framework:
+    # LAW: Reviewers are international. Local codes alone = reject.
+    primary:
+      - "Eurocode 8 (seismic design spectrum, damping correction)"
+      - "ASCE 7-22 (loads, SDS/SD1, site amplification)"
+      - "ACI 318-19 (concrete design, capacity factors)"
+    secondary:
+      - "fib Model Code 2010 (material models, creep, shrinkage)"
+      - "ISO 13822 (structural assessment)"
+    local_codes_role: "case_study_only"
+    local_codes_note: >
+      E.030 (Peru), NTC (Mexico), NCh433 (Chile), etc. may be CITED as
+      the local regulatory context for the case study, but the paper MUST
+      frame methodology and validation against international codes.
+      A Q1 paper using ONLY E.030 will be rejected as 'too local'.
+    minimum_international_codes: 2
   novelty_gate: true
   comparison_methods: 2
   review_rounds_expected: 2-3
@@ -187,6 +203,17 @@ Q2:
   data_requirements:
     - "field_data OR lab_data OR validated_synthetic"
     - "min 1 structure or test specimen"
+  normative_framework:
+    # LAW: At least 1 international code required alongside local code.
+    primary:
+      - "Eurocode 8 OR ASCE 7-22 (seismic/loads)"
+      - "ACI 318-19 OR fib Model Code (concrete)"
+    local_codes_role: "regional_context"
+    local_codes_note: >
+      E.030, NTC, NCh433, etc. can appear as the design code for the
+      studied structure, but validation must reference at least 1
+      international standard for the methodology to be generalizable.
+    minimum_international_codes: 1
   novelty_gate: true
   comparison_methods: 1
   review_rounds_expected: 1-2
@@ -284,6 +311,18 @@ Q3:
     - "Conflicts of Interest"
   data_requirements:
     - "field_data OR validated_synthetic"
+  normative_framework:
+    # LAW: International context recommended but local codes acceptable as primary.
+    primary:
+      - "Eurocode 8 OR ASCE 7-22 OR local seismic code"
+    local_codes_role: "acceptable_as_primary"
+    local_codes_note: >
+      Q3 journals (especially MDPI) accept regionally-focused papers.
+      E.030 can be the primary code IF the paper contextualizes it:
+      'E.030 specifies ζ=5%, analogous to Eurocode 8 clause 3.2.2.2'.
+      At least mention the international equivalent.
+    minimum_international_codes: 0
+    recommended_international_codes: 1
   novelty_gate: false
   comparison_methods: 1
   review_rounds_expected: 1-2
@@ -364,6 +403,16 @@ Q4:
     - "Conflicts of Interest"
   data_requirements:
     - "synthetic_data acceptable with validation"
+  normative_framework:
+    # LAW: Local codes fully acceptable. Just state which code you used.
+    primary:
+      - "Any applicable code (E.030, Eurocode 8, ASCE 7, local codes)"
+    local_codes_role: "fully_valid"
+    local_codes_note: >
+      Q4 journals accept local code frameworks without international
+      comparison. Simply state 'designed per E.030 (Peru seismic code)'.
+      Adding a brief equivalence note strengthens the paper but is optional.
+    minimum_international_codes: 0
   novelty_gate: false
   comparison_methods: 0
   review_rounds_expected: 1
@@ -435,6 +484,16 @@ conference:
     - Conclusion
   data_requirements:
     - "synthetic_data with physics-based justification"
+  normative_framework:
+    # LAW: Conferences welcome local case studies. Any code is valid.
+    primary:
+      - "Any applicable code"
+    local_codes_role: "fully_valid"
+    local_codes_note: >
+      Conference papers are ideal for presenting local case studies.
+      'SHM framework validated against E.030 seismic demands in Peru'
+      is a perfectly valid framing. WCEE especially welcomes regional work.
+    minimum_international_codes: 0
   novelty_gate: false
   comparison_methods: 0
   review_rounds_expected: 1

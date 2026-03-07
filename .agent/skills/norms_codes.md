@@ -92,9 +92,23 @@ TD <= T:         Sd = ag*S*2.5/q*(TC*TD/T^2)
 5. Check period bounds: T_code vs T_model (within 20%)
 6. Site amplification: soil type matches field conditions
 
+## Normative Framework by Quartile (LAW — enforced by validate_submission.py)
+
+| Quartile | Local code role | Min. international codes | Example framing |
+|----------|----------------|------------------------|-----------------|
+| **Q1** | Case study only | 2 (e.g., Eurocode 8 + ASCE 7) | "The structure, designed per E.030, was analyzed using the Eurocode 8 damping correction and ASCE 7 site amplification" |
+| **Q2** | Regional context | 1 | "E.030 governs the design; methodology follows ASCE 7-22 Ch.11" |
+| **Q3** | Primary OK | 0 (1 recommended) | "Designed per E.030, analogous to Eurocode 8 clause 3.2.2.2" |
+| **Q4** | Fully valid | 0 | "Designed per E.030 (Peru seismic code)" |
+| **Conf** | Fully valid | 0 | "SHM framework validated against E.030 demands" |
+
+**Source of truth**: `.agent/specs/journal_specs.yaml` → `normative_framework` per quartile.
+
 ## Anti-Patterns
 
 - Mixing code editions (e.g., ASCE 7-16 factors with ASCE 7-22 provisions)
 - Using E.030 outside Peru without noting it as reference-only
 - Hardcoding Z, S, or R factors instead of reading from SSOT
 - Applying damping correction without stating the xi value used
+- **Using ONLY local codes in Q1/Q2 papers** — reviewers will reject as "too local"
+- **Not contextualizing local codes** — always state the international equivalent
