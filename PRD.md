@@ -170,44 +170,85 @@ Estas son las reglas operativas del EIU. No son sugerencias — son requisitos a
 
 ## 6. Flujo End-to-End
 
+El sistema opera como una cadena de 3 fases secuenciales. Cada fase transforma datos
+y los deposita en un directorio especifico. Si una fase falla, el pipeline se detiene
+y diagnostica — nunca avanza con datos corruptos.
+
 ```
-Sensor (Arduino)
-  |
-  v
-bridge.py --- Handshake SSOT --- Guardian Angel --- Kalman --- Watchdog
-  |                                  |
-  |  [SHUTDOWN si viola fisica] <----+
-  v
-OpenSeesPy (torture_chamber.py) --- Red Lines (Abort si diverge)
-  |
-  v
-cross_validation.py --- spectral_engine.py --- peer_adapter.py
-  |
-  v
-lstm_predictor.py / pgnn_surrogate.py
-  |
-  v
-research_director.py --- scientific_narrator.py --- bibliography_engine.py
-  |
-  v
-validate_submission.py --diagnose (9 checks + journal specs + DAG loop-back)
-  |
-  v [PASS]                        [FAIL] --> loop back al paso indicado
-compile_paper.sh --> PDF (IEEE / Elsevier / Conference)
-  |
-  v
-generate_cover_letter.py --> Cover letter + reviewer response template
-  |
-  v
-Paper Q1-Q4 listo para submission
+FASE 1: EL MUSCULO                FASE 2: EL CEREBRO              FASE 3: LA VOZ
+(Adquisicion + Sellado)           (Simulacion + Validacion)        (Paper Q1-Q4)
+
+Sensor Arduino                    torture_chamber.py               research_director.py
+  | serial/LoRa                     | OpenSeesPy P-Delta             | orquesta todo
+  v                                 v                                v
+bridge.py ──┐                    cross_validation.py              scientific_narrator.py
+  |         |                       | A/B test analitico             | IMRaD multi-dominio
+  | Handshake SSOT (hash match)     v                                v
+  | Kalman 1D (filtro ruido)     spectral_engine.py              validate_submission.py
+  | Guardian Angel (4 gates)        | Sa(T,z) Duhamel real           | 9 checks + journal specs
+  | Watchdog (jitter < 10ms)        | + E.030 site amplif.           |
+  v                                 v                              [FAIL] → loop al paso SDD
+data/raw/ (sagrado)              data/processed/                  [PASS] → compile_paper.sh
+                                    | cv_results.json                | → PDF (IEEE/Elsevier)
+                 RED LINES:         | spectral_report                v
+                 RL-1: jitter       | peer .AT2 parseado          generate_cover_letter.py
+                 RL-2: stress                                        |
+                 RL-3: diverge    lstm_predictor.py (TTF)            v
+                 → ABORT          pgnn_surrogate.py (Seq2Seq)     Paper listo para submission
 ```
 
-**ESTADO REAL DEL FLUJO (post-fix B1-B6):**
-- torture_chamber lee SSOT correctamente (valores del proyecto)
-- bridge.py usa model_props de torture_chamber (masa, inercia, seccion)
-- cross_validation usa parametros SSOT (erfc para FP, k_term para Saltelli)
-- Datos sinteticos LSTM regenerados
-- PENDIENTE: LSTM aun no entrenado, Engram sin registros reales, datos de campo no adquiridos
+### Fase 1 — El Musculo: Sensor → `data/raw/`
+
+**Entrada:** Senal fisica del sensor (aceleracion, desplazamiento).
+**Proceso:** `bridge.py` abre puerto serial, ejecuta handshake SSOT (compara SHA-256
+de `params.yaml` con el hash en el firmware). Si no coinciden, aborta — garantiza que
+fisico y digital usan los mismos parametros. Cada paquete pasa por Kalman 1D (filtro
+de ruido) y Guardian Angel (4 gates: rigidez estructural, temperatura, gradiente
+anomalo, bateria). Si un gate falla, el paquete se descarta y se registra en Engram.
+El Watchdog monitorea jitter entre relojes Arduino/Linux; si 3 paquetes consecutivos
+exceden 10ms de desviacion (RL-1), el pipeline se suspende.
+**Salida:** Paquetes validados en `data/raw/` (solo el sensor escribe aqui).
+**Fallo:** Cualquier Red Line (RL-1/2/3) → AbortController detiene todo y registra
+la causa en Engram. No hay modo degradado — o el dato es confiable, o no existe.
+
+### Fase 2 — El Cerebro: `data/raw/` → `data/processed/`
+
+**Entrada:** Datos crudos validados + registros sismicos de `data/external/peer_berkeley/`.
+**Proceso:** `torture_chamber.py` construye el modelo OpenSeesPy (lee E, fy, rho, m, k,
+xi de SSOT) y ejecuta analisis P-Delta no-lineal. `cross_validation.py` corre tests A/B
+(tasa de falsos positivos via erfc, sensibilidad via Saltelli). `spectral_engine.py`
+calcula espectros Sa(T,z) con Duhamel real y aplica amplificacion de sitio E.030.
+`peer_adapter.py` parsea registros .AT2 y los reescala al PGA objetivo. Los resultados
+se guardan como JSON en `data/processed/` (cv_results, spectral_report).
+`lstm_predictor.py` estima tiempo-a-fallo (TTF) si hay modelo entrenado.
+**Salida:** Resultados numericos trazables en `data/processed/`.
+**Fallo:** Si OpenSeesPy no converge en <10 iteraciones (RL-3) → abort. Si cross_validation
+detecta tasa de falsos positivos inaceptable → se recalibran parametros en SSOT.
+
+### Fase 3 — La Voz: `data/processed/` → Paper PDF
+
+**Entrada:** Resultados de Fase 2 + quality gates de `.agent/specs/journal_specs.yaml`.
+**Proceso:** Sigue el flujo SDD (ver CLAUDE.md para detalle completo):
+
+1. **EXPLORE** — Novelty check automatico (`check_novelty.py`). Si DUPLICATE, pivotea.
+2. **PROPOSE** — Propuesta de 1 parrafo: tema, contribucion, journal objetivo.
+3. **SPEC + DESIGN** (paralelo) — Specs del quartil + outline IMRaD con figuras mapeadas.
+4. **TASKS** — Descomposicion en 4 batches (Methodology → Results → Discussion → Abstract).
+5. **IMPLEMENT** — Sub-agentes generan draft por batches. Cada batch pasa VERIFY parcial.
+6. **VERIFY** — `validate_submission.py --diagnose` (9 checks). Si falla, loop al paso indicado.
+7. **ARCHIVE** — Merge specs, lecciones a Engram, status `review`.
+8. **PUBLISH** — `compile_paper.sh` genera PDF + `generate_cover_letter.py`.
+
+**Salida:** PDF compilado en `articles/compiled/`, cover letter lista.
+**Fallo:** `validate_submission.py` retorna diagnostico con el paso SDD exacto al cual
+regresar (ej: "refs insuficientes → volver a IMPLEMENT batch 4"). No se compila PDF
+hasta que todos los checks pasen.
+
+### Estado actual del flujo
+
+- Fase 1: Firmware funcional, bridge operativo. **Pendiente:** datos de campo reales.
+- Fase 2: Solver y spectral engine verificados. **Pendiente:** LSTM sin entrenar.
+- Fase 3: Pipeline completo E2E. **Pendiente:** primer paper real en produccion.
 
 ---
 
