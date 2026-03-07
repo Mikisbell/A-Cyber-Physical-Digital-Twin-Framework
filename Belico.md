@@ -63,7 +63,7 @@ La fábrica soporta **tres dominios** de gemelos digitales. El dominio activo se
 
 | Dominio | Solver | Descripción |
 |---------|--------|-------------|
-| `structural` | OpenSeesPy | Sísmica, SHM, P-Delta, C&DW |
+| `structural` | OpenSeesPy | Sísmica, SHM, P-Delta, elementos finitos |
 | `water` | FEniCSx | Navier-Stokes, hidráulica, presas, tuberías |
 | `air` | FEniCSx/SU2 | Carga de viento, aerodinámica, ventilación |
 
@@ -218,7 +218,7 @@ Arduino → bridge.py → [Handshake SSOT] → [Watchdog Jitter] → ops.analyze
 > _La misión no termina con la simulación. Termina cuando el Verifier firma el reporte de validacion (via `validate_submission.py`), garantizando que cada dato en el borrador coincide con la persistencia de Engram._
 
 1. **Atribucion de IA:** Cualquier parrafo generado por sub-agentes o `scientific_narrator.py` debe estar marcado con un comentario oculto `<!-- AI_Assist -->`.
-2. **Validacion Humana (HV):** Antes de pasar de `draft` a `review`, el Investigador (Mikisbell) debe marcar cada seccion como `<!-- HV: [Iniciales] -->`.
+2. **Validacion Humana (HV):** Antes de pasar de `draft` a `review`, el investigador debe marcar cada seccion como `<!-- HV: [Iniciales] -->`.
 3. **Inmutabilidad de Resultados:** Los datos en `data/processed/` no pueden ser editados manualmente. Solo scripts autorizados del pipeline pueden inyectarlos en el borrador.
 
 El Verifier actuara como Auditor ("Data-Driven Peer Review"). Compara el draft del articulo contra `Engram` y bloquea si el estudiante o la IA afirma exito pero hay jitter consecutivo > `max_jitter_ms` (definido en SSOT: `config/params.yaml`).

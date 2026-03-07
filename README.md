@@ -13,8 +13,8 @@ An AI-powered research system that transforms raw sensor data into publication-r
 ```
 belico-stack (template — this repo)
     │
-    ├── clone → bridge-shm/          → Conference EWSHM 2026
-    ├── clone → cdw-fatigue/          → Q3 JCSHM
+    ├── clone → bridge-shm/          → Conference SHM 2026
+    ├── clone → material-fatigue/      → Q3 JCSHM
     ├── clone → tower-monitoring/     → Q1 Engineering Structures
     └── clone → ...as many as needed
 ```
@@ -58,7 +58,7 @@ You choose the paper type. The system handles the rest:
 ### 1. Clone
 
 ```bash
-git clone https://github.com/Mikisbell/belico-stack.git my-project-name
+git clone https://github.com/your-username/belico-stack.git my-project-name
 cd my-project-name
 ```
 
@@ -119,7 +119,7 @@ If you created your project by copying belico-stack (not cloning), add the upstr
 
 ```bash
 cd ~/PROYECTOS/your-project
-git remote add belico https://github.com/Mikisbell/belico-stack.git
+git remote add belico https://github.com/your-username/belico-stack.git
 git fetch belico
 git merge belico/main --allow-unrelated-histories
 ```

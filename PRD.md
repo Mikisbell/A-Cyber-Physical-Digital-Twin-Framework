@@ -1,5 +1,5 @@
 # PRD — Belico Stack: Ecosistema de Investigacion Universal (EIU)
-# Version: 4.0.0 | Autor: Mikisbell | Fecha: 2026-03-06
+# Version: 4.0.0 | Autor: [Tu nombre] | Fecha: 2026-03-06
 # AUDITADO: Cada estado fue verificado leyendo el codigo fuente linea a linea.
 # UPDATE 4.0: Orchestrator-delegator, batched IMPLEMENT, ARCHIVE phase, Engram bus, progressive disclosure
 
@@ -28,9 +28,9 @@ Belico Stack es una **Fabrica de Articulos Cientificos Q1-Q4** construida sobre 
 
 ## 3. Usuario
 
-**Mikisbell (Mateo)** — Investigador en ingenieria estructural sismica.
-- Trabaja con estructuras de concreto reciclado (C&DW) en La Presa del Norte.
-- Necesita publicar en journals Q1-Q4 y conferencias (EWSHM, SHMII, IMAC).
+**[Investigador]** — Ingeniero civil/estructural que necesita publicar papers.
+- Trabaja con estructuras que requieren monitoreo de integridad.
+- Necesita publicar en journals Q1-Q4 y conferencias del dominio.
 - Opera con hardware de bajo costo (Arduino, ~$30/nodo).
 - Supervisa el sistema; no escribe codigo ni papers desde cero.
 
@@ -100,7 +100,7 @@ El EIU se construye sobre el ecosistema open-source de Gentleman Programming. Es
 | Adaptador PEER | `src/physics/peer_adapter.py` | FUNCIONAL | Parser .AT2, resampling con scipy, scale_to_pga. 133 lineas, verificado. |
 | Boveda Sismica | `data/external/peer_berkeley/` | 3 REGISTROS | Pisco 2007, Loma Prieta, Sintetico extremo. |
 | LSTM Predictor | `src/ai/lstm_predictor.py` | CODIGO OK / INOPERABLE | Arquitectura correcta (2-layer LSTM + MC Dropout). Pero: datos de entrenamiento borrados, modelo no existe, scalers no existen. |
-| Generador Sintetico | `tools/generate_cdw_degradation.py` | FUNCIONAL | Wiener process + estacionalidad. Lee fn y k_term de SSOT. Dataset regenerado: 47,417 muestras. |
+| Generador Sintetico | `tools/generate_degradation.py` | FUNCIONAL | Wiener process + estacionalidad. Lee fn y k_term de SSOT. |
 | PgNN Surrogate | `src/ai/pgnn_surrogate.py` | FUNCIONAL | Bridge a Hybrid-Twin, namespace isolation, 10-story Seq2Seq, ~2ms. Verificado end-to-end. |
 
 ### 5.3 La Voz (Q-Factory — Publicacion Automatizada)
@@ -203,10 +203,10 @@ Paper Q1-Q4 listo para submission
 ```
 
 **ESTADO REAL DEL FLUJO (post-fix B1-B6):**
-- torture_chamber lee SSOT correctamente (C&DW 20GPa, m=1000kg)
+- torture_chamber lee SSOT correctamente (valores del proyecto)
 - bridge.py usa model_props de torture_chamber (masa, inercia, seccion)
 - cross_validation usa parametros SSOT (erfc para FP, k_term para Saltelli)
-- Datos sinteticos LSTM regenerados (47,417 muestras)
+- Datos sinteticos LSTM regenerados
 - PENDIENTE: LSTM aun no entrenado, Engram sin registros reales, datos de campo no adquiridos
 
 ---
@@ -219,7 +219,7 @@ Paper Q1-Q4 listo para submission
 | B2 | `bridge.py` hardcodeaba mass=5000kg | CORREGIDO | `inject_and_analyze()` ahora recibe `model_props` dict de torture_chamber. |
 | B3 | `cross_validation.py` retornaba valores inventados | CORREGIDO | Reescrito: FP rate via `math.erfc()`, PGA sweep parametrico, Saltelli con k_term de SSOT. |
 | B4 | Dos modelos OpenSeesPy en conflicto | CORREGIDO | `models/params.py` ya no auto-ejecuta `init_model()`. Bridge usa torture_chamber como modelo principal. |
-| B5 | LSTM sin datos sinteticos | CORREGIDO | `generate_cdw_degradation.py` reescrito para leer SSOT. Regenerado: 47,417 muestras en `data/synthetic/`. |
+| B5 | LSTM sin datos sinteticos | CORREGIDO | `generate_degradation.py` reescrito para leer SSOT. Datos regenerados en `data/synthetic/`. |
 | B6 | Engram vacio | VERIFICADO | Schema completo (15 tablas, FTS). Se llenara con uso real del sistema. No es bug de codigo. |
 | B7 | `transparency_dashboard.py` fy_mpa=250 (acero) | CORREGIDO | Lee fy de SSOT (20 MPa concreto) y stress_ratio de guardrails. |
 | B8 | `bridge.py` referencia `worst_case.py` inexistente | CORREGIDO | Funcion limpiada como placeholder con TODO documentado. |
@@ -227,7 +227,7 @@ Paper Q1-Q4 listo para submission
 | B10 | `scientific_narrator.py` rutas relativas `models/lstm/` | CORREGIDO | Rutas absolutas via `Path(__file__).resolve().parent.parent`. |
 | B11 | 3 scripts test hardcodean FS=100 | CORREGIDO | Importan `SAMPLE_RATE_HZ` de `src.physics.params`. |
 | B12 | `belico.yaml` rutas `.agent/teams/` vs `.agents/` | CORREGIDO | Paths actualizados a estructura real. |
-| B13 | `Presa_del_Norte/belico.yaml` dominio agua + Navier-Stokes | CORREGIDO | Reescrito como proyecto structural C&DW. |
+| B13 | `proyecto ejemplo/belico.yaml` dominio agua + Navier-Stokes | CORREGIDO | Reescrito como proyecto structural. |
 | B14 | `init_investigation.sh` referencia `.env.example` inexistente | CORREGIDO | Eliminada referencia, paths corregidos. |
 
 ---
@@ -298,9 +298,9 @@ Paper Q1-Q4 listo para submission
 - [ ] Todos los datos en el paper son trazables a `data/processed/` o Engram
 
 ### V1 (Primera publicacion):
-- [ ] Paper conference enviado a SHMII-14 (deadline: Sep 30, 2026)
+- [ ] Paper conference enviado a conferencia del dominio
 - [ ] Datos de campo S1 adquiridos y procesados
-- [ ] Verifier firma el `export_manifest.json`
+- [ ] Verifier firma el `validate_submission.py`
 
 ### V2 (Q3/Q4 Journal):
 - [ ] 30+ minutos de datos reales de campo
@@ -320,7 +320,7 @@ Paper Q1-Q4 listo para submission
 - Belico Stack **NO** es un producto comercial ni un SaaS
 - Belico Stack **NO** reemplaza al investigador — es su herramienta
 - El PgNN Surrogate (Hybrid-Digital-Twin) es un proyecto separado que se integra como modulo opcional
-- La estructura de C&DW en La Presa es un **caso de uso**, no la identidad del stack
+- La estructura monitoreada es un **caso de uso**, no la identidad del stack
 - El stack es transferible a cualquier estructura y cualquier material
 
 ---

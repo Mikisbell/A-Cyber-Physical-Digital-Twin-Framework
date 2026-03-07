@@ -130,8 +130,8 @@ Este paso es **OBLIGATORIO** en cada sesion. SIEMPRE pregunta esto antes de hace
 
 ```
 Papers en progreso:
-  1. conference_EWSHM_2026.md  [status: draft, 3200 words, 25 refs]
-  2. paper_Q1_Seismic_xxx.md   [status: draft, 1200 words, 12 refs]
+  1. conference_example.md     [status: draft, 3200 words, 25 refs]
+  2. paper_Q1_example.md       [status: draft, 1200 words, 12 refs]
 
 Quieres continuar con uno de estos o iniciar uno nuevo?
 ```
@@ -337,9 +337,9 @@ mem_save("risk: {paper_id} — {descripcion del riesgo}")
 ```
 
 Ejemplos:
-- `"risk: EWSHM_2026 — datos sinteticos sin validacion experimental"`
-- `"risk: EWSHM_2026 — solo 25 refs, conference acepta pero Q3 no"`
-- `"risk: EWSHM_2026 — fn=8.095Hz medida en un solo punto"`
+- `"risk: {paper_id} — datos sinteticos sin validacion experimental"`
+- `"risk: {paper_id} — refs insuficientes para el quartil"`
+- `"risk: {paper_id} — frecuencia medida en un solo punto"`
 
 En VERIFY, el Reviewer Simulator lee estos riesgos (`mem_search("risk: {paper_id}")`) y los ataca directamente.
 
@@ -399,7 +399,6 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 |------|---------|
 | `tools/init_project.py` | Bootstrap de proyecto nuevo (3 preguntas + dirs + deps + config) |
 | `tools/fetch_benchmark.py` | Descarga registros sismicos PEER para data/external/ |
-| `tools/plot_conference_figures.py` | Figuras matplotlib especificas para conference papers |
 | `tools/plot_spectrum.py` | Graficas SVG de espectro Sa(T) comparativo |
 | `tools/lora_at_config.py` | Configurador AT del modulo LoRa E32-915T30D |
 | `tools/audit_bunker.py` | Auditoria de integridad de archivos del proyecto |
@@ -475,7 +474,7 @@ PASO 5 (orquestador): mem_search("result: {agent}") para leer resultado
 **Ejemplo concreto:**
 ```python
 # PASO 1: Orquestador guarda tarea
-mem_save("task: bibliography_agent — generar 30 refs para EWSHM_2026, dominio structural, quartil conference")
+mem_save("task: bibliography_agent — generar 30 refs para {paper_id}, dominio structural, quartil conference")
 
 # PASO 2: Prompt corto al subagente (NO copiar contenido de archivos)
 Agent(prompt="""
@@ -517,10 +516,10 @@ Regla: empezar SIEMPRE por capa 1. Solo bajar a capa 2-3 si la informacion es in
 | **Decision** | `decision: {que} because {por que}` | `"decision: chose Eurocode 8 damping because E.030 no cubre xi < 5%"` |
 | **Error+Fix** | `error: {problema} → fix: {solucion}` | `"error: narrator crashed water → fix: added DOMAIN_SECTIONS fallback"` |
 | **Pattern** | `pattern: {cuando} → {entonces}` | `"pattern: mesh > 50k elements → use iterative solver"` |
-| **Paper event** | `paper: {status} {title} for {journal}` | `"paper: submitted EWSHM_2026 for EWSHM"` |
-| **Calibracion** | `calibration: {param} {old}→{new} because {razon}` | `"calibration: damping 0.05→0.02 because C&DW"` |
-| **Riesgo** | `risk: {paper_id} — {descripcion}` | `"risk: EWSHM_2026 — datos sinteticos sin validacion experimental"` |
-| **Task (bus)** | `task: {agent} — {descripcion}` | `"task: bibliography_agent — generar refs para EWSHM_2026"` |
+| **Paper event** | `paper: {status} {title} for {journal}` | `"paper: submitted {paper_id} for {journal}"` |
+| **Calibracion** | `calibration: {param} {old}→{new} because {razon}` | `"calibration: damping 0.05→0.02 because field data showed lower value"` |
+| **Riesgo** | `risk: {paper_id} — {descripcion}` | `"risk: {paper_id} — datos sinteticos sin validacion experimental"` |
+| **Task (bus)** | `task: {agent} — {descripcion}` | `"task: bibliography_agent — generar refs para {paper_id}"` |
 | **Result (bus)** | `result: {agent} — {resumen}` | `"result: bibliography_agent — 25 refs OK, falta category 'cfd'"` |
 
 ### Que NO guardar

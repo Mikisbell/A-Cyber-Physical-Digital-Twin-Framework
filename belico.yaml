@@ -3,7 +3,7 @@
 
 project_metadata:
   name: "Belico Stack EIU"
-  author: "Ing. Mateo"
+  author: ""
   status: "factory_ready"
 
 # Memory (Engram)
@@ -16,6 +16,9 @@ memory:
 agents:
   verifier: ".agent/prompts/verifier.md"
   physical_critic: ".agent/prompts/physical_critic.md"
+  bibliography_agent: ".agent/prompts/bibliography_agent.md"
+  figure_agent: ".agent/prompts/figure_agent.md"
+  reviewer_simulator: ".agent/prompts/reviewer_simulator.md"
 
 # External repos (cloned into .agents/)
 external:
@@ -26,6 +29,11 @@ external:
 # Skills
 skills:
   signal_processing: ".agent/skills/signal_processing.md"
+  paper_production: ".agent/skills/paper_production.md"
+  literature_review: ".agent/skills/literature_review.md"
+  cfd_domain: ".agent/skills/cfd_domain.md"
+  wind_domain: ".agent/skills/wind_domain.md"
+  norms_codes: ".agent/skills/norms_codes.md"
 
 # Workspace
 workspace:

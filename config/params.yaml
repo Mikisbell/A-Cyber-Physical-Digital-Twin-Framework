@@ -25,9 +25,9 @@ project:
 # PROPIEDADES DEL MATERIAL
 # ─────────────────────────────────────────────────
 material:
-  name: "Concreto Liviano Reciclado C&DW"
+  name: ""  # Fill with your material name
   elastic_modulus_E:
-    value: 20e9        # Pa (20 GPa) estimado para concreto liviano 20MPa
+    value: 20e9        # Pa — fill with your material's elastic modulus
     units: "Pa"
     symbol: "E"
   yield_strength_fy:
@@ -54,7 +54,7 @@ material:
 # Al iniciar un proyecto, el usuario DEBE proveer estos datos de laboratorio o literatura.
 # ─────────────────────────────────────────────────
 nonlinear:
-  # Concreto C&DW — modelo Concrete02 (Kent-Scott-Park modificado)
+  # Concrete material model (Concrete02 Kent-Scott-Park)
   concrete:
     epsc0:
       value: null        # Deformación al pico de compresión (typ. 0.002)
@@ -67,7 +67,7 @@ nonlinear:
       desc: "Residual/peak stress ratio (fpcu = fpcu_ratio * fc)"
       required: true
     epsU:
-      value: null        # Deformación última de aplastamiento (typ. 0.005-0.008 para C&DW)
+      value: null        # Deformación última de aplastamiento (typ. 0.005-0.008)
       units: "-"
       desc: "Ultimate crushing strain"
       required: true
@@ -344,7 +344,7 @@ firmware:
 
   edge_alarms:
     nominal_fn_hz:
-      value: 8.095        # Hz — frecuencia baseline de campo (La Presa)
+      value: null          # Hz — fill with measured baseline frequency from field
       units: "Hz"
       source: "config/field_baseline.yaml"
     fn_drop_warn_ratio:

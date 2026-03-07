@@ -52,24 +52,22 @@ research_lines:
       Q3: false              # needs field data (30min+ recording)
       Q2: false              # needs field + lab
       Q1: false              # needs field + lab + 2 structures
-    papers_planned:
-      - articles/drafts/Q1_roadmap.md
+    papers_planned: []
     papers_published: []
 
-  cdw_materials:
+  material_properties:
     domain: structural
-    name: "C&DW Recycled Concrete Properties"
-    description: "Material-specific damping corrections and degradation modeling for construction & demolition waste concrete"
+    name: "Material-Specific Properties"
+    description: "Material-specific damping corrections and degradation modeling"
     keywords:
-      - "recycled concrete"
-      - "C&DW"
+      - "recycled materials"
       - "damping ratio"
       - "Eurocode 8"
       - "material degradation"
     stack_capabilities:
       - openseespy_sdof
       - spectral_engine
-      - cdw_degradation_model
+      - degradation_model
     available_data:
       synthetic: true        # degradation curves, Eurocode corrections
       field: false
@@ -77,7 +75,7 @@ research_lines:
     viable_quartiles:
       conference: true
       Q4: true
-      Q3: false              # needs lab data (E_cdw, xi_cdw measured)
+      Q3: false              # needs lab data (E, xi measured)
       Q2: false
       Q1: false
     papers_planned: []
@@ -158,8 +156,7 @@ research_lines:
       Q3: false              # combined claims need stronger evidence
       Q2: false
       Q1: false              # the ultimate Q1 (needs everything)
-    papers_planned:
-      - articles/drafts/Q1_roadmap.md
+    papers_planned: []
     papers_published: []
 
   # ════════════════════════════════════════════════════════════════

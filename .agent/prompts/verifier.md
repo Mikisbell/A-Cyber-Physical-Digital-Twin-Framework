@@ -38,7 +38,7 @@ El Verifier se activa obligatoriamente cuando:
 **Este paso es el pre-requisito de todos los demás.** Antes de ejecutar cualquier cálculo:
 
 1. Calcular el SHA-256 de `config/params.yaml`.
-2. Compararlo con el hash embebido en `src/physics/models/params.py` (`CONFIG_HASH`).
+2. Compararlo con el hash embebido en `src/physics/params.py` (`CONFIG_HASH`).
 
 Si los hashes **no coinciden**:
 
@@ -96,7 +96,7 @@ Donde `fy` proviene de los parámetros del material definidos en el modelo. Si e
 
 ### PASO 4 — Coherencia Firmware ↔ Simulación
 
-Leer los parámetros físicos del firmware (`src/firmware/`) y compararlos contra los del modelo (`src/physics/models/`).
+Leer los parámetros físicos del firmware (`src/firmware/`) y compararlos contra los del modelo (`src/physics/`).
 
 Parámetros críticos a verificar:
 
@@ -115,7 +115,7 @@ Parámetros críticos a verificar:
 Antes de usar datos de `data/raw/` en la simulación:
 
 1. Verificar que el archivo existe y no está vacío.
-2. Verificar que la frecuencia de muestreo es consistente con `config/params.yaml` → `temporal.sample_rate_hz`.
+2. Verificar que la frecuencia de muestreo es consistente con `config/params.yaml` → `acquisition.sample_rate_hz`.
 3. Verificar que no hay valores NaN ni outliers > 3σ.
 
 **Si hay datos corruptos:** `DATOS INVÁLIDOS — NO ALIMENTAR AL MODELO`.
