@@ -5,7 +5,8 @@ tools/check_novelty.py — Deep Novelty Checker for the Paper Factory
 Searches OpenAlex (250M+ works) and arXiv to verify that the proposed
 paper topic is original. Generates a structured novelty report.
 
-No API key required. No MCP server needed. Runs standalone.
+No MCP server needed. Runs standalone.
+Reads OPENALEX_API_KEY from .env or environment (optional, improves rate limits).
 
 Usage:
   python3 tools/check_novelty.py --keywords "acoustic emission, PINNs, bolted connections"
@@ -19,6 +20,7 @@ Sources:
 """
 
 import argparse
+import os
 import re
 import sys
 import time
@@ -33,12 +35,29 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 PRD_PATH = ROOT / "PRD.md"
 REPORT_PATH = ROOT / "articles" / "drafts" / "novelty_report.md"
+ENV_PATH = ROOT / ".env"
 
 OPENALEX_BASE = "https://api.openalex.org/works"
 ARXIV_BASE = "http://export.arxiv.org/api/query"
 
 # Contact email for polite pool (OpenAlex recommends it for faster responses)
 MAILTO = "mailto:belico-stack@research.local"
+
+
+def _load_api_key() -> str | None:
+    """Load OpenAlex API key from env var or .env file."""
+    key = os.environ.get("OPENALEX_API_KEY")
+    if key:
+        return key
+    if ENV_PATH.exists():
+        for line in ENV_PATH.read_text().splitlines():
+            line = line.strip()
+            if line.startswith("OPENALEX_API_KEY=") and not line.startswith("#"):
+                return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return None
+
+
+OPENALEX_API_KEY = _load_api_key()
 
 # Noise filter for PRD keyword extraction
 STOPWORDS = {
@@ -71,10 +90,16 @@ def _get_json(url: str, retries: int = 2) -> dict | None:
                 return None
 
 
+def _openalex_url(params: str) -> str:
+    """Build OpenAlex URL with API key if available."""
+    key_param = f"&api_key={OPENALEX_API_KEY}" if OPENALEX_API_KEY else ""
+    return f"{OPENALEX_BASE}?{params}{key_param}"
+
+
 def search_openalex(query: str, per_page: int = 10) -> list[dict]:
     """Search OpenAlex for works matching the query."""
     encoded = urllib.parse.quote(query)
-    url = f"{OPENALEX_BASE}?search={encoded}&per_page={per_page}&sort=relevance_score:desc"
+    url = _openalex_url(f"search={encoded}&per_page={per_page}&sort=relevance_score:desc")
     data = _get_json(url)
     if not data or "results" not in data:
         return []
@@ -128,7 +153,7 @@ def search_arxiv(query: str, max_results: int = 5) -> list[dict]:
 
 def get_citing_works(openalex_id: str, per_page: int = 5) -> list[dict]:
     """Get works that cite a given OpenAlex work (citation network)."""
-    url = f"{OPENALEX_BASE}?filter=cites:{openalex_id}&per_page={per_page}&sort=relevance_score:desc"
+    url = _openalex_url(f"filter=cites:{openalex_id}&per_page={per_page}&sort=relevance_score:desc")
     data = _get_json(url)
     if not data or "results" not in data:
         return []
@@ -334,6 +359,10 @@ def main():
     print("=" * 60)
     print("  NOVELTY CHECKER — Deep Academic Search")
     print("  Sources: OpenAlex (250M+ works) + arXiv")
+    if OPENALEX_API_KEY:
+        print(f"  OpenAlex API key: ...{OPENALEX_API_KEY[-6:]} (authenticated)")
+    else:
+        print("  OpenAlex API key: not set (using free tier)")
     print("=" * 60)
 
     # ── Keywords ──
@@ -382,7 +411,7 @@ def main():
         if top_paper and top_paper.get("doi"):
             # Extract OpenAlex ID from first result
             encoded = urllib.parse.quote(top_paper["title"][:50])
-            lookup = _get_json(f"{OPENALEX_BASE}?search={encoded}&per_page=1")
+            lookup = _get_json(_openalex_url(f"search={encoded}&per_page=1"))
             if lookup and lookup.get("results"):
                 oa_id = lookup["results"][0].get("id", "").split("/")[-1]
                 if oa_id:
