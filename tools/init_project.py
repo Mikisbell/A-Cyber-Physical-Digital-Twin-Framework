@@ -93,7 +93,9 @@ def detect_keywords_from_name(project_name: str) -> str:
     """
     # Common filler words that aren't research keywords
     filler = {"a", "an", "the", "of", "for", "and", "in", "on", "with", "to",
-              "based", "using", "via", "new", "novel", "towards", "project"}
+              "based", "using", "via", "new", "novel", "towards", "project",
+              "modeling", "modelling", "method", "approach", "study",
+              "system", "assessment", "evaluation", "review"}
 
     # Split by hyphens/underscores, lowercase
     parts = re.sub(r'[_\s]+', '-', project_name).lower().split('-')
@@ -102,34 +104,92 @@ def detect_keywords_from_name(project_name: str) -> str:
     if not parts:
         return ""
 
-    # Try to rejoin known compound terms
+    # Try to rejoin known compound terms (engineering + science)
     compounds = {
+        # Digital / AI
         ("digital", "twin"): "digital twin",
         ("cyber", "physical"): "cyber-physical",
-        ("structural", "health"): "structural health monitoring",
-        ("health", "monitoring"): None,  # absorbed by structural health monitoring
         ("machine", "learning"): "machine learning",
         ("deep", "learning"): "deep learning",
+        ("transfer", "learning"): "transfer learning",
+        ("neural", "network"): "neural network",
+        ("physics", "informed"): "physics-informed",
+        ("data", "driven"): "data-driven",
+        ("real", "time"): "real-time",
+        ("time", "series"): "time series",
+        ("edge", "computing"): "edge computing",
+        ("sensor", "network"): "sensor network",
+        ("internet", "things"): "IoT",
+        ("predictive", "maintenance"): "predictive maintenance",
+        # Structural / Civil
+        ("structural", "health"): "structural health monitoring",
+        ("health", "monitoring"): None,  # absorbed by "structural health"
         ("reinforced", "concrete"): "reinforced concrete",
         ("finite", "element"): "finite element",
         ("acoustic", "emission"): "acoustic emission",
+        ("damage", "detection"): "damage detection",
+        ("crack", "detection"): "crack detection",
+        ("model", "updating"): "model updating",
+        ("modal", "analysis"): "modal analysis",
+        ("dynamic", "analysis"): "dynamic analysis",
+        ("nonlinear", "analysis"): "nonlinear analysis",
+        ("fatigue", "analysis"): "fatigue analysis",
+        ("condition", "monitoring"): "condition monitoring",
+        ("vibration", "based"): "vibration-based",
+        ("bolted", "connections"): "bolted connections",
+        ("base", "isolation"): "base isolation",
+        ("energy", "dissipation"): "energy dissipation",
+        ("response", "spectrum"): "response spectrum",
+        ("seismic", "response"): "seismic response",
+        ("earthquake", "engineering"): "earthquake engineering",
+        ("signal", "processing"): "signal processing",
+        ("frequency", "response"): "frequency response",
+        # Fluid / Wind / CFD
+        ("fluid", "dynamics"): "fluid dynamics",
+        ("computational", "fluid"): "computational fluid dynamics",
+        ("wind", "loading"): "wind loading",
+        ("wind", "tunnel"): "wind tunnel",
+        ("flow", "control"): "flow control",
+        ("heat", "transfer"): "heat transfer",
+        ("pressure", "drop"): "pressure drop",
+        # Statistics / Uncertainty
+        ("uncertainty", "quantification"): "uncertainty quantification",
+        ("monte", "carlo"): "Monte Carlo",
+        ("bayesian", "updating"): "Bayesian updating",
+        ("bayesian", "inference"): "Bayesian inference",
+        # BIM / Construction
+        ("building", "information"): "BIM",
+        ("information", "modeling"): None,  # absorbed by "building information"
+        ("information", "modelling"): None,  # British spelling
+        ("point", "cloud"): "point cloud",
+        ("life", "cycle"): "life-cycle",
+        ("supply", "chain"): "supply chain",
     }
 
     keywords = []
-    skip_next = False
-    for i, part in enumerate(parts):
-        if skip_next:
-            skip_next = False
-            continue
+    i = 0
+    while i < len(parts):
+        matched = False
         if i + 1 < len(parts):
-            pair = (part, parts[i + 1])
+            pair = (parts[i], parts[i + 1])
             if pair in compounds:
                 compound = compounds[pair]
                 if compound:
                     keywords.append(compound)
-                skip_next = True
-                continue
-        keywords.append(part)
+                i += 2
+                matched = True
+        if not matched:
+            keywords.append(parts[i])
+            i += 1
+
+    # Remove single words already contained in a compound keyword
+    compound_words = set()
+    for kw in keywords:
+        if " " in kw or "-" in kw:
+            for w in re.split(r'[\s-]+', kw):
+                compound_words.add(w.lower())
+    keywords = [kw for kw in keywords if " " in kw or "-" in kw
+                or kw.lower() not in compound_words]
 
     return ", ".join(keywords)
 
