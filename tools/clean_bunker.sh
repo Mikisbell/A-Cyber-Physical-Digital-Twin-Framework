@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 # tools/clean_bunker.sh - Higiene Bélica: Restauración de la Arquitectura Pura
 # ============================================================================
 # Uso: bash tools/clean_bunker.sh [--dry-run]
@@ -30,13 +31,11 @@ done
 
 # ── 2. Aislar Proyectos Específicos (Mantener Plantilla Universal) ─────────────
 echo ""
-echo "📁 [PASO 2] Aislando casos de estudio específicos..."
-if [ -d "Presa_del_Norte" ]; then
-    run "mkdir -p projects"
-    run "mv Presa_del_Norte projects/"
-    echo "   → 'Presa_del_Norte' movido a /projects/ (el Búnker vuelve a ser agnóstico)."
+echo "📁 [PASO 2] Verificando que no hay proyectos específicos en la plantilla..."
+if ls -d */ 2>/dev/null | grep -qv -e "src/" -e "config/" -e "tools/" -e "articles/" -e "data/" -e ".agent/" -e ".agents/"; then
+    echo "   ⚠️  Hay carpetas que podrían ser proyectos específicos. Revisa manualmente."
 else
-    echo "   → No se detectó carpeta 'Presa_del_Norte'. Nada que mover."
+    echo "   → Plantilla limpia. Sin proyectos específicos detectados."
 fi
 
 # ── 3. Eliminar Scripts de Entrada Redundantes (Principio DRY) ────────────────

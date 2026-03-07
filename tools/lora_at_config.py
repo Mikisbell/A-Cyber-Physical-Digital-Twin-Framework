@@ -2,7 +2,7 @@
 """
 tools/lora_at_config.py — Configurador Automático Ebyte E32-915T30D
 ═══════════════════════════════════════════════════════════════════════════
-Configura el módulo LoRa para el despliegue en campo (Presa del Norte).
+Configura el módulo LoRa para el despliegue en campo (field deployment).
 
 REQUISITO DE HARDWARE (antes de ejecutar):
   • M0 = HIGH (3.3V)   → Pin M0 del E32 a VCC 3.3V
@@ -30,13 +30,13 @@ import serial
 from pathlib import Path
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Parámetros Objetivo para el Despliegue Field (Presa del Norte)
+# Parámetros Objetivo para el Despliegue Field (field deployment)
 # ─────────────────────────────────────────────────────────────────────────────
 TARGET_CONFIG = {
     "address":      0x0000,   # Dirección del módulo (ajustar por nodo en red multi-nodo)
     "uart_baud":    0b011,    # 011 = 9600 bps (compatible con Nicla UART)
     "uart_parity":  0b00,     # 00  = 8N1
-    "air_data_rate":0b011,    # 011 = 4.8 kbps (máx sensibilidad para 30dBm en C&DW)
+    "air_data_rate":0b011,    # 011 = 4.8 kbps (max sensitivity for 30dBm)
     "channel":      0x0D,     # 13  = 902 + 13 = 915 MHz ✅ (Banda ISM Perú/Americas)
     "tx_power":     0b00,     # 00  = 30 dBm (1W, máximo alcance)
     "fixed_mode":   False,    # False = Modo Transparente (compatible con bridge.py)

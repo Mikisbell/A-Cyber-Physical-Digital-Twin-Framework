@@ -17,7 +17,7 @@ import yaml
 # Standardized output paths (relative to project root)
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 MODEL_DIR = PROJECT_ROOT / "models" / "lstm"
-SYNTHETIC_DATA = PROJECT_ROOT / "data" / "synthetic" / "cdw_degradation_history.csv"
+SYNTHETIC_DATA = PROJECT_ROOT / "data" / "synthetic" / "degradation_history.csv"
 
 # Training hyperparameters (factory defaults)
 SEQ_LENGTH = 30
@@ -104,7 +104,7 @@ def train_lstm(csv_path=None, epochs=15, batch_size=256):
     csv_path = Path(csv_path)
     if not csv_path.exists():
         print(f"[LSTM] ERROR: Dataset {csv_path} not found. "
-              "Run: python tools/generate_cdw_degradation.py")
+              "Run: python tools/generate_degradation.py")
         return None
 
     cfg = _load_ssot()
@@ -158,7 +158,7 @@ def train_lstm(csv_path=None, epochs=15, batch_size=256):
               f"Train: {train_loss:.6f} | Val: {test_loss:.6f}")
 
     # Save model weights
-    model_path = MODEL_DIR / "cdw_lstm_v1.pth"
+    model_path = MODEL_DIR / "lstm_v1.pth"
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
     torch.save(model.state_dict(), model_path)
     print(f"[LSTM] Model saved: {model_path}")
@@ -173,7 +173,7 @@ def predict_ttf_with_uncertainty(model_path=None, x_tensor=None,
     Runs n_passes with dropout active to generate predictive distribution.
     """
     if model_path is None:
-        model_path = MODEL_DIR / "cdw_lstm_v1.pth"
+        model_path = MODEL_DIR / "lstm_v1.pth"
     if scaler_y is None:
         with open(MODEL_DIR / "scaler_y.pkl", "rb") as f:
             scaler_y = pickle.load(f)

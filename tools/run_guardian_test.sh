@@ -7,13 +7,19 @@
 #
 # Ataques simulados:
 #  S-1: fn sube de 8.0 Hz a 11.0 Hz (rigidez mágica)
-#  S-2: temperatura de 500°C (imposible en C&DW no incendiado)
+#  S-2: temperatura de 500°C (imposible en structural material)
 #  S-3: salto brusco de 22°C a 60°C en un solo paquete (ΔT=38°C)
 # ─────────────────────────────────────────────────────────────────────────────
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
-source .venv/bin/activate
+if [[ -n "${VIRTUAL_ENV:-}" ]]; then
+  echo "Using active virtualenv: $VIRTUAL_ENV"
+elif [[ -f .venv/bin/activate ]]; then
+  source .venv/bin/activate
+else
+  echo "⚠️  No virtualenv found (.venv/ or \$VIRTUAL_ENV). Running with system Python."
+fi
 
 python3 - <<'EOF'
 import sys

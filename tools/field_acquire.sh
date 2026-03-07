@@ -20,7 +20,7 @@ SESSION="S1"
 DURATION_S=1800       # 30 min default
 PORT=""               # auto-detect
 MODE="lora"           # lora | usb
-SITE="La Presa del Norte"
+SITE="${SITE:-""}"
 OBSERVER=""
 RESET_BASELINE=false
 
@@ -40,6 +40,12 @@ while [[ $# -gt 0 ]]; do
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
+
+# ── Validate SITE ────────────────────────────────────────
+if [[ -z "$SITE" ]]; then
+    echo "[FIELD] ERROR: No site name specified. Use --site 'Your Site Name' or export SITE='Your Site Name'"
+    exit 1
+fi
 
 # ── Paths ─────────────────────────────────────────────────
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -122,7 +128,7 @@ duration_target_s: $DURATION_S
 site: "$SITE"
 gps: ""
 element: ""
-material: "C&DW"
+material: ""
 node_id: ""
 firmware: "$(if [[ $MODE == "usb" ]]; then echo 'nano33_belico.ino'; else echo 'nicla_edge_field.ino'; fi)"
 config_hash: "$CONFIG_HASH"
@@ -215,5 +221,5 @@ echo ""
 echo " Next steps:"
 echo "   1. Fill GPS, element, weather in $META_YAML"
 echo "   2. cp $RAW_CSV data/processed/"
-echo "   3. python3 tools/plot_conference_figures.py"
+echo "   3. python3 tools/plot_figures.py  # generate figures from processed data"
 echo "=============================================="

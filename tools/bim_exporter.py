@@ -2,27 +2,34 @@ import argparse
 import json
 from pathlib import Path
 import datetime
+import yaml
 
 # Constantes de Estado Visual BIM (RGB Hex)
 COLOR_HEALTHY  = "#2ecc71" # Verde (Módulo Seguro: > 24 meses TTF)
-COLOR_WARNING  = "#f1c40f" # Amarillo (Vigilancia C&DW: 6 a 24 meses TTF)
+COLOR_WARNING  = "#f1c40f" # Amarillo (Vigilancia: 6 a 24 meses TTF)
 COLOR_CRITICAL = "#e74c3c" # Rojo/Burdeos (Fallo Inminente: < 6 meses TTF)
 
-def generate_bim_metadata(module_id: str, ttf_months: float, fn_current: float, k_term: float, latencia_lora: float):
+def generate_bim_metadata(module_id: str, ttf_months: float, fn_current: float,
+                          k_term: float, latencia_lora: float,
+                          ttf_critical_months: float = 6.0,
+                          ttf_warning_months: float = 24.0):
     """
     Genera el Objeto Metadata compatible con los paneles de propiedades
     de plataformas BIM (Speckle, Autodesk Forge, o WebGL Three.js Custom).
+
+    TTF thresholds (ttf_critical_months, ttf_warning_months) can be overridden
+    from SSOT via caller. Defaults are conservative engineering values.
     """
-    
+
     # 1. Determinar el Nivel de Estrés Visual (Heatmap 3D)
-    if ttf_months < 6.0:
+    if ttf_months < ttf_critical_months:
         status_color = COLOR_CRITICAL
         risk_level = "CRITICAL"
         intervention_action = "Evacuación Inmediata y Refuerzo Estructural (Mantenimiento Clase A)"
-    elif ttf_months < 24.0:
+    elif ttf_months < ttf_warning_months:
         status_color = COLOR_WARNING
         risk_level = "WARNING"
-        intervention_action = "Inspección Técnica Programada (Revision de capilaridad C&DW)"
+        intervention_action = "Inspección Técnica Programada"
     else:
         status_color = COLOR_HEALTHY
         risk_level = "ACTIVE_MONITORING"
@@ -32,7 +39,7 @@ def generate_bim_metadata(module_id: str, ttf_months: float, fn_current: float, 
     bim_object = {
         "id": f"BIM-ELEM-{module_id}",
         "type": "ModularHousingUnit",
-        "material": "Recycled Concrete (C&DW 75%)",
+        "material": "Structural Material",
         "properties": {
             "Structural_Health": {
                 "LSTM_Prediction_TTF_Months": round(ttf_months, 2),
@@ -73,11 +80,19 @@ def export_to_json(bim_object, output_dir="data/processed/bim_exports"):
     return full_path
 
 if __name__ == "__main__":
+    # Load defaults from SSOT
+    _params_path = Path(__file__).resolve().parent.parent / "config" / "params.yaml"
+    _cfg = yaml.safe_load(_params_path.read_text()) if _params_path.exists() else {}
+    _mat = _cfg.get("material", {})
+    _stru = _cfg.get("structure", {})
+    _default_fn = _stru.get("nominal_fn_hz", {}).get("value") or 5.0
+    _default_kterm = _mat.get("thermal_conductivity", {}).get("value") or 0.51
+
     parser = argparse.ArgumentParser(description="Exportador BÉLICO AI -> BIM 3D (Speckle/WebGL)")
     parser.add_argument("--module_id", type=str, required=True, help="Identificador del Modulo Habitacional")
     parser.add_argument("--ttf", type=float, required=True, help="Time To Failure predicho por el LSTM (meses)")
-    parser.add_argument("--fn", type=float, default=5.0, help="Frecuencia Natural actual (Hz)")
-    parser.add_argument("--kterm", type=float, default=0.51, help="Conductividad Térmica (W/m·K)")
+    parser.add_argument("--fn", type=float, default=_default_fn, help="Frecuencia Natural actual (Hz)")
+    parser.add_argument("--kterm", type=float, default=_default_kterm, help="Conductividad Térmica (W/m·K)")
     parser.add_argument("--lag", type=float, default=0.2, help="Watchdog LoRa Latency (segundos)")
     
     args = parser.parse_args()

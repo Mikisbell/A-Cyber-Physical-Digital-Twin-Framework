@@ -6,7 +6,7 @@ Genera la figura comparativa del Espectro de Pseudo-Aceleración Sa(T, ζ=5%)
 para el paper científico:
   - Línea Azul: Registro crudo PEER/CISMID (sismo real sin filtrar)
   - Línea Verde: Registro filtrado por el Guardian Angel (escalado a 0.45g)
-  - Banda Roja: Periodos de peligro para C&DW (T* ≈ 0.28s)
+  - Banda Roja: Periodos de peligro para study material
 
 El SVG se incrusta directamente en el Draft Markdown del paper.
 """
@@ -172,13 +172,32 @@ def generate_svg_spectrum(sa_raw: dict, sa_filt: dict, out_path: Path) -> str:
 
 
 if __name__ == "__main__":
-    dt_target = 0.01
-    adapter = PeerAdapter(target_frequency_hz=100.0)
-    pisco = ROOT / "data" / "external" / "peer_berkeley" / "PISCO_2007_ICA_EW.AT2"
+    import yaml
+    import argparse
 
-    raw_dict   = adapter.read_at2_file(pisco)
+    _params_path = ROOT / "config" / "params.yaml"
+    if not _params_path.exists():
+        raise FileNotFoundError(f"SSOT not found: {_params_path}")
+    _cfg = yaml.safe_load(_params_path.read_text())
+    dt_target = _cfg["temporal"]["dt_simulation"]["value"]
+
+    _soil_path = ROOT / "config" / "soil_params.yaml"
+    _soil = yaml.safe_load(_soil_path.read_text()) if _soil_path.exists() else {}
+    design_pga = _soil.get("design", {}).get("Z", None)
+    if design_pga is None:
+        raise ValueError("design.Z not found in config/soil_params.yaml — set PGA before plotting")
+
+    ap = argparse.ArgumentParser(description="Plot response spectrum SVG")
+    ap.add_argument("--record", type=str, default=str(ROOT / "data" / "external" / "peer_berkeley" / "PISCO_2007_ICA_EW.AT2"),
+                    help="Path to .AT2 ground motion record")
+    args = ap.parse_args()
+
+    adapter = PeerAdapter(target_frequency_hz=100.0)
+    record_path = Path(args.record)
+
+    raw_dict   = adapter.read_at2_file(record_path)
     accel_raw  = adapter.normalize_and_resample(raw_dict)
-    accel_filt = adapter.scale_to_pga(accel_raw, target_pga_g=0.45)
+    accel_filt = adapter.scale_to_pga(accel_raw, target_pga_g=design_pga)
 
     print("⚡ Calculando Sa crudo...")
     sa_raw  = compute_spectral_response(accel_raw,  dt_target)

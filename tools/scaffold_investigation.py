@@ -15,9 +15,9 @@ Usage:
   python3 tools/scaffold_investigation.py --check [domain]
 
 Examples:
-  python3 tools/scaffold_investigation.py Presa_Sur structural
-  python3 tools/scaffold_investigation.py Tanque_Norte water
-  python3 tools/scaffold_investigation.py Torre_Viento air
+  python3 tools/scaffold_investigation.py Bridge_Alpha structural
+  python3 tools/scaffold_investigation.py Tank_Beta water
+  python3 tools/scaffold_investigation.py Tower_Gamma air
   python3 tools/scaffold_investigation.py --check           # checks current domain
   python3 tools/scaffold_investigation.py --check water     # checks water params
 """

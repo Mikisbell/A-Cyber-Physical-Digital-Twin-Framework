@@ -22,7 +22,7 @@ def load_config() -> dict:
     with open(PARAMS_PATH, "r") as f:
         return yaml.safe_load(f)
 
-def run_emulator(chaos_mode="resonance", f_hz=5.2):
+def run_emulator(chaos_mode="resonance", f_hz=None):
     """
     Crea un PTY (Pseudo-Terminal) y actúa como el Arduino.
     Imprime el nombre del puerto que el bridge.py debe escuchar.
@@ -33,7 +33,12 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
     cfg = load_config()
     with open(PARAMS_PATH, 'rb') as f:
         master_hash = hashlib.sha256(f.read()).hexdigest()
-        
+
+    # Load nominal fn from SSOT if not provided via CLI
+    if f_hz is None:
+        _fw = cfg.get("firmware", {}).get("edge_alarms", {})
+        f_hz = _fw.get("nominal_fn_hz", {}).get("value") or 5.2
+
     token = cfg["temporal"]["handshake_token"]["value"]
     dt_ms = int(cfg["temporal"]["dt_simulation"]["value"] * 1000)
     
@@ -88,7 +93,7 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
                 elif chaos_mode == "sano":
                     # Estructura SANA: vibración de servicio nominal (baseline)
                     # Frecuencia natural alta, amplitudes pequeñas, sin deriva.
-                    fn = f_hz if f_hz != 5.2 else 8.0  # fn alta = estructura rígida
+                    fn = f_hz  # fn alta = estructura rígida
                     accel  = 0.05 * math.sin(2 * math.pi * fn * elapsed)
                     accel += 0.02 * math.sin(2 * math.pi * 2 * fn * elapsed)  # armónico
                     accel += random.normalvariate(0, 0.01)  # Ruido sensor mínimo
@@ -96,7 +101,7 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
                 elif chaos_mode == "dano_leve":
                     # MICRO-DAÑO LEVE: rigidez degradada ~10% → fn cae ~5%
                     # Simula: micro-fisura en zona de máximo momento flector.
-                    fn_nominal = f_hz if f_hz != 5.2 else 8.0
+                    fn_nominal = f_hz
                     fn_danada  = fn_nominal * math.sqrt(0.90)  # k-10% → fn * sqrt(0.9)
                     accel  = 0.10 * math.sin(2 * math.pi * fn_danada * elapsed)
                     # Ruido de impacto leve (aceleración de tapping)
@@ -108,7 +113,7 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
                     # DAÑO CRÍTICO: rigidez degradada ~40% → fn cae ~37%
                     # Simula: fallo por fatiga progresivo en perno / soldadura.
                     # La amplitud crece porque la amortiguación también cae.
-                    fn_nominal = f_hz if f_hz != 5.2 else 8.0
+                    fn_nominal = f_hz
                     fn_danada  = fn_nominal * math.sqrt(0.60)  # k-40%
                     amplitude  = 0.15 + elapsed * 0.02  # Amplitud creciente
                     accel  = amplitude * math.sin(2 * math.pi * fn_danada * elapsed)
@@ -118,8 +123,8 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
                     accel += random.normalvariate(0, 0.025)
 
                 elif chaos_mode == "presa":
-                    # PRESA DEL NORTE: perfil sísmico tipo Kanai-Tajimi
-                    # Simula la excitación basal que recibe la corona de una presa
+                    # SEISMIC PROFILE: perfil sísmico tipo Kanai-Tajimi
+                    # Simula la excitación basal que recibe la estructura
                     # durante un sismo de baja frecuencia dominante (2-4 Hz).
                     # Los largos periodos son característicos de suelos blandos.
                     fg    = 2.5     # Hz - frecuencia predominante del suelo
@@ -127,7 +132,7 @@ def run_emulator(chaos_mode="resonance", f_hz=5.2):
                     scale = min(0.8, elapsed * 0.05)  # Acelerogramas crescentes
                     # Componente de fondo (ruido estocástico de baja frec)
                     base  = scale * random.normalvariate(0, 0.2)
-                    # Componente harmónica de la presa (modi Kanai-Tajimi simplif.)
+                    # Componente harmónica de la estructura (modi Kanai-Tajimi simplif.)
                     accel = (base
                              + scale * 0.4 * math.sin(2 * math.pi * fg * elapsed)
                              + scale * 0.2 * math.sin(2 * math.pi * fg * 1.5 * elapsed)
