@@ -68,19 +68,21 @@ cd bridge-shm
 
 ### 2. Set up git remotes
 
-Rename the template remote from `origin` to `belico`, so `origin` is free for your project's own repo:
+**Why this step?** When you clone, git automatically creates a remote called `origin` pointing to belico-stack (the template). But you don't want to push your work to the template — you want your own repo. So you need to:
+- Rename the template connection from `origin` to `belico` (so you can still pull improvements later)
+- Create a new `origin` that points to your project's own repo
 
 ```bash
+# Step A: rename the template remote (origin → belico)
 git remote rename origin belico
-```
+# Now "belico" points to the template. You'll use this to pull future improvements.
 
-Now create a new private repo on GitHub and set it as `origin`:
-
-```bash
+# Step B: create your project's own repo on GitHub and set it as "origin"
 gh repo create Mikisbell/bridge-shm --private --source=. --push
+# Now "origin" points to YOUR project. This is where your work goes.
 ```
 
-Or if the repo already exists on GitHub:
+Or if the GitHub repo already exists:
 
 ```bash
 git remote add origin https://github.com/Mikisbell/bridge-shm.git
@@ -91,14 +93,15 @@ Verify you have **two remotes**:
 
 ```bash
 git remote -v
-# belico  https://github.com/Mikisbell/belico-stack.git (fetch)
+# belico  https://github.com/Mikisbell/belico-stack.git (fetch)   ← template (pull improvements)
 # belico  https://github.com/Mikisbell/belico-stack.git (push)
-# origin  https://github.com/Mikisbell/bridge-shm.git (fetch)
+# origin  https://github.com/Mikisbell/bridge-shm.git (fetch)     ← your project (push your work)
 # origin  https://github.com/Mikisbell/bridge-shm.git (push)
 ```
 
-- `origin` — your project (where you push your work)
-- `belico` — the template (where you pull improvements from)
+**From now on:**
+- `git push` → sends your work to **your project** (origin)
+- `git fetch belico && git merge belico/main` → pulls improvements from **the template**
 
 ### 3. Bootstrap
 
