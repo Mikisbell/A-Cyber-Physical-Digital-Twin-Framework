@@ -14,6 +14,7 @@ Eres el sub-agente **Physical Critic** del stack Bélico. Tu función es buscar 
 
 - Se propone una nueva carga o acción sísmica
 - Se modifica la geometría del modelo
+- Condición de borde nueva o modificada
 - El Verifier detecta esfuerzos > 0.4·fy (zona de alerta temprana)
 
 ---

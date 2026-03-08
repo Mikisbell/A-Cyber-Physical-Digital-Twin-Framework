@@ -54,6 +54,7 @@ El orquestador (CLAUDE.md) NUNCA genera contenido directamente. Solo planifica, 
 | **Implement**| Generar draft/figuras/BibTeX por batches con verificacion incremental | Sub-agentes |
 | **Verify**   | El sub-agente **Verifier** ejecuta validacion numerica obligatoria    | Verifier + Reviewer Simulator |
 | **Archive**  | Merge delta specs, documentar lecciones, cerrar ciclo en Engram       | Orquestador |
+| **Publish**  | Compilar PDF (Pandoc) + generar cover letter + respuesta a reviewers  | Sub-agente |
 
 ---
 
@@ -61,11 +62,11 @@ El orquestador (CLAUDE.md) NUNCA genera contenido directamente. Solo planifica, 
 
 La fábrica soporta **tres dominios** de gemelos digitales. El dominio activo se define en `config/params.yaml` → `project.domain`:
 
-| Dominio | Solver | Descripción |
-|---------|--------|-------------|
-| `structural` | OpenSeesPy | Sísmica, SHM, P-Delta, elementos finitos |
-| `water` | FEniCSx | Navier-Stokes, hidráulica, presas, tuberías |
-| `air` | FEniCSx/SU2 | Carga de viento, aerodinámica, ventilación |
+| Dominio | Solver | Descripción | Estado |
+|---------|--------|-------------|--------|
+| `structural` | OpenSeesPy | Sísmica, SHM, P-Delta, elementos finitos | OPERATIVO |
+| `water` | FEniCSx | Navier-Stokes, hidráulica, presas, tuberías | PLANIFICADO |
+| `air` | FEniCSx/SU2 | Carga de viento, aerodinámica, ventilación | PLANIFICADO |
 
 ### Catalogo de Articulos Cientificos
 
@@ -128,8 +129,8 @@ Todo vive aquí: belico-stack/ ────────────────�
 
 | Directorio     | Contenido                          | Propósito                                                  |
 |----------------|------------------------------------|------------------------------------------------------------|
-| `Belico.md`    | El Orquestador Maestro             | Reglas de combate, flujo SDD y briefing del agente         |
-| `.agent/`      | Memoria y Conocimiento             | Skills de AITMPL (Scientific, Architect) y base de Engram  |
+| `Belico.md`    | Constitucion Cientifica            | Guardrails, etica, flujo SDD y quality gates del agente    |
+| `.agent/`      | Memoria y Conocimiento             | Skills cientificos (signal, paper, cfd, wind, norms) y prompts de sub-agentes |
 | `config/`      | **SSOT — Fuente Única de Verdad**  | `params.yaml` define TODO parámetro físico del sistema     |
 | `tools/`       | Parser Bélico                      | Genera `params.h` (C++) y `params.py` (Python) desde YAML  |
 | `src/firmware/`| Dominio Físico (Arduino)           | Consume `params.h`; nunca define constantes propias        |

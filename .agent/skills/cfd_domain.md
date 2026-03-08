@@ -31,14 +31,25 @@ The water domain uses FEniCSx for:
 All water domain params live in `config/params.yaml` under `fluid:`:
 ```yaml
 fluid:
-  density_rho: null      # kg/m3
-  viscosity_mu: null     # Pa·s
-  velocity_inlet: null   # m/s
-  reynolds_number: null  # dimensionless
-  mesh_refinement: null  # levels
-  time_step_dt: null     # seconds
-  turbulence_model: null # laminar|k-epsilon|LES
+  properties:
+    viscosity_mu: null       # Pa.s (typ. 1e-3 for water)
+    density_rho: null        # kg/m3 (typ. 1000)
+  geometry:
+    length: null             # m — simulation domain length
+    height: null             # m — domain height
+    width: null              # m — domain width (0 for 2D)
+  boundary:
+    inlet_velocity: null     # m/s — inlet velocity
+    outlet_pressure: null    # Pa — outlet pressure (gauge)
+  mesh:
+    resolution: null         # elem/m — mesh resolution
+  analysis:
+    time_step: null          # s — transient time step
+    total_time: null         # s — total simulation time
 ```
+
+> **Note:** `reynolds_number` and `turbulence_model` are not in the SSOT.
+> Planned — add to `params.yaml` when implementing turbulence selection.
 
 ### FEniCSx Mesh Generation
 

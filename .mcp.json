@@ -3,6 +3,9 @@
     "engram": {
       "command": "engram",
       "args": ["mcp", "--tools=agent"]
+    },
+    "semanticscholar": {
+      "command": "semanticscholar-mcp-server"
     }
   }
 }

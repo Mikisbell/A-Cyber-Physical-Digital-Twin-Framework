@@ -296,16 +296,16 @@ guardrails:
     value: 0.6         # σ_max ≤ 0.6·fy (Verifier Gate 3)
     description: "Fracción de fy que activa la alerta de fallo inminente"
   convergence_tolerance:
-    value: 1.0e-6      # Residual de equilibrio máximo aceptado
+    value: 1.0e-6      # Residual de equilibrio máximo aceptado  # planned — not yet enforced programmatically
     description: "Tolerancia numérica de OpenSeesPy (Verifier Gate 1)"
   max_slenderness:
-    value: 120         # λ = L/r — Physical Critic Gate (pandeo)
+    value: 120         # λ = L/r — Physical Critic Gate (pandeo)  # planned — not yet enforced programmatically
     description: "Relación de esbeltez máxima para acero"
   eccentricity_ratio:
-    value: 0.10        # e/b — Physical Critic Gate (torsión)
+    value: 0.10        # e/b — Physical Critic Gate (torsión)  # planned — not yet enforced programmatically
     description: "Excentricidad máxima relativa al ancho del edificio"
   mass_participation_min:
-    value: 0.90        # 90% mínimo en los primeros 3 modos
+    value: 0.90        # 90% mínimo en los primeros 3 modos  # planned — not yet enforced programmatically
     description: "Participación mínima de masa modal"
   max_sensor_outlier_sigma:
     value: 3.0         # Outliers > 3σ → datos inválidos

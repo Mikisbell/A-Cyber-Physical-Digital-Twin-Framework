@@ -1,16 +1,11 @@
+# REFERENCIA MANUAL — Este archivo es consultado por el orquestador (agente IA)
+# via Grep puntual durante EXPLORE/PROPOSE. No tiene consumidor programático.
+# El active_profile se define aquí y el orquestador lo usa para decisiones de pipeline.
+#
 # config/research_lines.yaml — Research Lines & Active Paper Profile
 # ==================================================================
 # Defines WHAT the stack can produce papers about, and constrains
 # the active paper to its quartile specs throughout the pipeline.
-#
-# USAGE:
-#   1. User selects a research line + quartile
-#   2. System generates an active_profile (bottom of this file)
-#   3. All SDD phases read the active_profile as constraint
-#   4. validate_submission.py enforces the profile gates
-#
-# This file is the SSOT for "what papers can we write?"
-# journal_specs.yaml is the SSOT for "what does each quartile require?"
 #
 # DOMAINS: structural (seismic), water (hydraulics), air (wind/CFD)
 # The stack produces papers for ALL civil engineering domains.

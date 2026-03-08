@@ -130,8 +130,7 @@ Este paso es **OBLIGATORIO** en cada sesion. SIEMPRE pregunta esto antes de hace
 
 ```
 Papers en progreso:
-  1. conference_example.md     [status: draft, 3200 words, 25 refs]
-  2. paper_Q1_example.md       [status: draft, 1200 words, 12 refs]
+  [lista dinamica de archivos encontrados en articles/drafts/ con su frontmatter]
 
 Quieres continuar con uno de estos o iniciar uno nuevo?
 ```
@@ -159,7 +158,7 @@ Espera la respuesta del usuario. No asumas. No continues sin respuesta.
 1. Delega a un sub-agente la lectura de `.agent/specs/journal_specs.yaml` para el quartile seleccionado
 2. Evalua viabilidad REAL basada en datos disponibles en `data/`:
    - Si hay datos de campo en `data/raw/` → Q1-Q4 viables
-   - Si solo hay datos sinteticos en `data/processed/` → Conference, Q4 viables
+   - Si solo hay datos sinteticos en `data/processed/` → Conference, Q4, Q3 (con validacion contra baseline) viables
    - Si no hay datos → Conference viable (se generan durante la investigacion)
 3. Si el quartile NO es viable, BLOQUEAR y explicar:
 ```
@@ -179,7 +178,7 @@ Quieres ver el protocolo de adquisicion de datos, o elegir otro quartile?
 | Agente | Prompt | Activa cuando |
 |--------|--------|---------------|
 | **Verifier** | `.agent/prompts/verifier.md` | Cambio en `src/physics/models/`, nueva condicion de borde/carga, alerta de Physical Critic, o resultado para `articles/drafts/` |
-| **Physical Critic** | `.agent/prompts/physical_critic.md` | Nueva carga, condicion de borde, geometria modificada, o esfuerzo > 0.4 fy |
+| **Physical Critic** | `.agent/prompts/physical_critic.md` | Nueva carga, condicion de borde nueva/modificada, geometria modificada, o alerta del Verifier por esfuerzo > 0.4 fy |
 | **Bibliography Agent** | `.agent/prompts/bibliography_agent.md` | Preparando refs para un draft, cambio de dominio |
 | **Figure Agent** | `.agent/prompts/figure_agent.md` | Generando/validando figuras para un draft |
 | **Reviewer Simulator** | `.agent/prompts/reviewer_simulator.md` | Draft pasa a status `review`, pre-submission check |
@@ -345,6 +344,8 @@ En VERIFY, el Reviewer Simulator lee estos riesgos (`mem_search("risk: {paper_id
 
 ### Pipeline de Tools
 
+> **Nota:** Las flechas representan flujo de datos (via archivos en `data/` y `articles/`), no dependencias de imports directos. Cada tool lee/escribe archivos independientemente.
+
 ```
 check_novelty.py           (verifica originalidad ANTES de empezar)
          |
@@ -372,11 +373,11 @@ generate_cover_letter.py   (cover letter + reviewer response)
 
 ### Dominios soportados
 
-| Dominio | Solver | Params en SSOT |
-|---------|--------|----------------|
-| `structural` | OpenSeesPy | `nonlinear.*`, `structure.*`, `damping.*` |
-| `water` | FEniCSx | `fluid.*` |
-| `air` | FEniCSx/SU2 | `air.*` |
+| Dominio | Solver | Params en SSOT | Estado |
+|---------|--------|----------------|--------|
+| `structural` | OpenSeesPy | `nonlinear.*`, `structure.*`, `damping.*` | OPERATIVO |
+| `water` | FEniCSx | `fluid.*` | PLANIFICADO |
+| `air` | FEniCSx/SU2 | `air.*` | PLANIFICADO |
 
 El dominio activo se define en `config/params.yaml` → `project.domain`.
 
@@ -388,7 +389,7 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | `tools/scaffold_investigation.py` | Crea proyecto + valida params por dominio |
 | `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air) |
 | `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio |
-| `tools/generate_bibtex.py` | BibTeX desde vault (65 entradas, 12 categorias) |
+| `tools/generate_bibtex.py` | BibTeX desde vault (53 entradas, 12 categorias) |
 | `tools/validate_submission.py` | Pre-check: marcadores, refs, figuras, word count, TODOs |
 | `tools/compile_paper.sh` | Pandoc+citeproc → PDF (IEEE/Elsevier/Conference/Plain) |
 | `tools/generate_cover_letter.py` | Cover letter parametrica + respuesta a reviewers |
@@ -405,6 +406,26 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | `tools/blind_comparative_test.py` | Test ciego de soberania del dato (FFT) |
 | `tools/shadow_audit_sweep.py` | Certificacion metrologica con barrido de frecuencias |
 | `tools/synthetic_fft_audit.py` | Validacion aislada del algoritmo FFT |
+| `tools/generate_degradation.py` | Generador de datos sinteticos de degradacion (Wiener process + estacionalidad) |
+| `tools/generate_params.py` | Propaga SSOT: params.yaml → params.h (C++) + params.py (Python) |
+| `tools/arduino_emu.py` | Emulador Arduino USB via PTY (6 modos: sano, resonancia, dano, presa, dropout) |
+| `tools/baseline_calibration.py` | Calibrador baseline: estadisticas 3-sigma sobre paquetes LoRa |
+| `tools/lora_emu.py` | Emulador LoRa via PTY (6 modos: sano, lag_attack, dano, paradoja, peer) |
+| `tools/bim_exporter.py` | Exportador JSON Speckle-compatible con heatmap de riesgo |
+| `tools/bibliography_engine.py` | Motor de citas: 53 refs en 12 categorias con CITATION_VAULT |
+
+### Shell Scripts
+
+| Script | Funcion |
+|--------|---------|
+| `tools/setup_dependencies.sh` | Instalador del ecosistema Gentleman (Engram, Gentle AI, ATL, GGA, Skills) |
+| `tools/boot_engram.sh` | Carga contexto inicial de Engram (queries de arranque) |
+| `tools/run_battle.sh` | Orquestador de combate: lanza emulador + bridge simultaneamente |
+| `tools/run_battle_freq.sh` | Wrapper parametrico para barrido de frecuencias |
+| `tools/run_lora_test.sh` | Lanza test de comunicacion LoRa con emulador |
+| `tools/run_guardian_test.sh` | Test de los 4 gates del Guardian Angel sin hardware |
+| `tools/field_acquire.sh` | Launcher automatizado de campanas de campo |
+| `tools/clean_bunker.sh` | Higiene del proyecto: limpia logs, PIDs y archivos temporales |
 
 ### Reglas de drafts
 
@@ -429,7 +450,7 @@ Cada paper draft en `articles/drafts/` debe:
 - `data/processed/` — Datos procesados para el paper
 - `articles/drafts/` — Papers en progreso (con YAML frontmatter)
 - `articles/figures/` — Figuras PDF/PNG numeradas por dominio
-- `articles/references.bib` — BibTeX auto-generado (65 entradas)
+- `articles/references.bib` — BibTeX auto-generado (55 entradas)
 - `.agent/prompts/` — Sub-agentes (verifier, physical_critic, bibliography, figure, reviewer_simulator)
 - `.agent/skills/` — Skills lazy-loaded (signal_processing, paper_production, cfd, wind, norms)
 - `.agent/specs/` — Quality gates por journal/quartil (journal_specs.yaml)

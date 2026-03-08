@@ -32,14 +32,27 @@ The air domain uses FEniCSx or SU2 for:
 All air domain params live in `config/params.yaml` under `air:`:
 ```yaml
 air:
-  wind_speed: null         # m/s (reference at 10m height)
-  air_density: null        # kg/m3 (typically 1.225)
-  kinematic_viscosity: null # m2/s
-  turbulence_intensity: null # %
-  roughness_length: null   # m (terrain category)
-  reference_height: null   # m
-  exposure_category: null  # A|B|C|D (ASCE 7)
+  properties:
+    viscosity_mu: null           # Pa.s (typ. 1.8e-5 at 20°C)
+    density_rho: null            # kg/m3 (typ. 1.225 at sea level)
+  geometry:
+    length: null                 # m — wind tunnel / domain length
+    height: null                 # m — domain height
+    width: null                  # m — domain width (0 for 2D)
+    obstacle_width: null         # m — building/obstacle width
+    obstacle_height: null        # m — building/obstacle height
+  boundary:
+    inlet_velocity: null         # m/s — wind speed at inlet
+    turbulence_intensity: null   # dimensionless (typ. 0.1-0.2)
+  mesh:
+    resolution: null             # elem/m — mesh resolution
+  analysis:
+    time_step: null              # s — time step
+    total_time: null             # s — total simulation time
 ```
+
+> **Note:** `roughness_length`, `reference_height`, `exposure_category`, and `kinematic_viscosity`
+> are not yet in the SSOT. Planned — add to `params.yaml` when implementing ABL profile generation.
 
 ### Wind Profile (ABL)
 

@@ -115,7 +115,7 @@ El EIU se construye sobre el ecosistema open-source de Gentleman Programming. Es
 | Research Director | `tools/research_director.py` | FUNCIONAL (con datos falsos) | Orquesta: generate_params -> CrossValidation -> Spectral -> Narrator. Pipeline ejecuta, datos de cross_validation son simulacro. |
 | Scientific Narrator | `articles/scientific_narrator.py` | FUNCIONAL (multi-dominio) | Genera IMRaD por dominio (structural/water/air). Fallback "Zero-Trust Cold Start". |
 | Motor de Citas | `tools/bibliography_engine.py` | FUNCIONAL | 53 refs en 12 categorias (incluye cfd, hydraulics, wind). |
-| Generador BibTeX | `tools/generate_bibtex.py` | FUNCIONAL | Vault → .bib para Pandoc --citeproc. 65 entradas. |
+| Generador BibTeX | `tools/generate_bibtex.py` | FUNCIONAL | Vault → .bib para Pandoc --citeproc. 55 entradas en references.bib. |
 | Compilador PDF | `tools/compile_paper.sh` | FUNCIONAL | Pandoc + XeLaTeX + citeproc: IEEE, Elsevier, Conference, Plain. |
 | Generador de Figuras | `tools/plot_figures.py` | FUNCIONAL (multi-dominio) | Figuras numeradas PDF+PNG. Structural: 4 figs. Water/Air: placeholders. |
 | Validador Pre-Submission | `tools/validate_submission.py` | FUNCIONAL (verificado E2E) | 9 checks + journal specs + modo --diagnose (DAG loop-back). |
@@ -289,7 +289,7 @@ hasta que todos los checks pasen.
 | LSTM: pipeline validable pero sin proyecto | Se entrena cuando haya un proyecto real | Pipeline listo (datos sinteticos + arquitectura). Entrenar es paso de PRODUCCION, no de fabrica. |
 | ~~Engram MCP tools no cargan~~ | ~~RESUELTO~~ | Engram MCP operativo (DB unificada en ~/.engram/engram.db) |
 | Boveda sismica con solo 3 registros | Limitado para analisis estadistico | Expandir con PEER NGA-West2 |
-| ~~Bibliografia en 42 refs~~ | ~~RESUELTO~~ | Expandida a 53 refs en 12 categorias + BibTeX generator (65 entradas) |
+| ~~Bibliografia en 42 refs~~ | ~~RESUELTO~~ | Expandida a 53 refs en 12 categorias + BibTeX generator (55 entradas en .bib) |
 
 ### Menor (puede esperar):
 | Gap | Impacto | Accion |
@@ -317,8 +317,9 @@ hasta que todos los checks pasen.
 | Nivel | Target | Requisitos de Datos | Refs | Estado |
 |-------|--------|-------------------|------|--------|
 | Conference | EWSHM, SHMII, IMAC | Datos sinteticos + framework | 10-30 | FABRICA LISTA (pipeline E2E verificado, falta producir draft real) |
-| Q3/Q4 | Journals regionales | Datos de campo (30min) + 2 metodos | 25-60 | PENDIENTE campo |
-| Q2 | Journals intermedios | Campo + laboratorio + fragilidad | 30-80 | PENDIENTE lab |
+| Q4 | Infrastructures, Sensors, Vibration (MDPI) | Datos sinteticos validados contra baseline | 15-40 | FABRICA LISTA |
+| Q3 | JCSHM, Buildings, Applied Sciences | Datos de campo O sinteticos validados + 1 metodo comparativo | 25-60 | PENDIENTE campo (recomendado) |
+| Q2 | SHM (SAGE), ASCE J.Struct.Eng., Structures | Campo o laboratorio + min 1 estructura + 1 metodo comparativo | 30-80 | PENDIENTE lab |
 | Q1 | Engineering Structures, SHM (SAGE) | 2+ estructuras + contribucion teorica | 40-120 | PENDIENTE datos |
 
 ---

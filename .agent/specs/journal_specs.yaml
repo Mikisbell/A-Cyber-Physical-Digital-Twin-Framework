@@ -54,6 +54,7 @@ Q1:
     min: 3
     max: 7
     source: "EESD max 6, SDEE 1-7, Eng. Structures 4-8"
+  # Some Q1 journals merge Literature Review into Introduction — adjust per target journal
   required_sections:
     - Abstract
     - Introduction
@@ -299,6 +300,7 @@ Q3:
     - Methodology
     - Results
     - Conclusion
+  # validate_submission.py uses required_sections by default. Use mdpi_required_sections when targeting MDPI journals (Sensors, Buildings, Materials)
   mdpi_required_sections:
     - Abstract
     - Introduction
@@ -391,6 +393,7 @@ Q4:
     - Methodology
     - Results
     - Conclusion
+  # validate_submission.py uses required_sections by default. Use mdpi_required_sections when targeting MDPI journals (Sensors, Buildings, Materials)
   mdpi_required_sections:
     - Abstract
     - Introduction

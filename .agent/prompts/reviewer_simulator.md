@@ -97,7 +97,7 @@ ACCIONES RECOMENDADAS ANTES DE SUBMISSION:
 ### PASO 6 — Reportar a Engram (obligatorio)
 ```
 mem_save("result: reviewer_simulator — {paper} predicted {decision}, {N} majors, {M} minors")
-mem_save("paper: review_simulation for {title} — predicted {decision}")
+mem_save("paper: reviewed {title} for {journal} — predicted {decision}")
 ```
 
 ## Reglas
