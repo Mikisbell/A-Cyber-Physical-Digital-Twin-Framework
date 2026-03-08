@@ -256,7 +256,17 @@ git commit -m "merge: integrate GitHub-initialized repo with template clone"
 git push -u origin main
 ```
 
-**Pro tip:** To avoid this entirely, create the GitHub repo **without** initializing it (no README, no LICENSE, no .gitignore). The template already has all of these.
+**"You have not concluded your merge (MERGE_HEAD exists)"**
+
+A previous merge is still open. Finish it first:
+
+```bash
+git add -A && git commit -m "merge: resolve pending merge"
+```
+
+Then retry whatever command failed.
+
+**Pro tip:** To avoid most of these issues, create the GitHub repo **without** initializing it (no README, no LICENSE, no .gitignore). The template already has all of these.
 
 **First merge after cloning asks for `--allow-unrelated-histories`**
 
