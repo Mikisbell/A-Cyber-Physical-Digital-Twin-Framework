@@ -208,7 +208,7 @@ def cmd_status(do_verify: bool = False):
         sys.exit(2)
 
     source = manifest.get("excitation", {}).get("source", "NGA-West2")
-    quartile = manifest.get("excitation", {}).get("quartile", "unknown")
+    quartile = manifest.get("quartile", "unknown")
 
     present_files = scan_records()
     present_names = {f.name for f in present_files}

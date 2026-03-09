@@ -45,9 +45,9 @@ structural engineering papers.
    run it to get a list of RSN (Record Sequence Numbers):
    ```bash
    python3 tools/select_ground_motions.py \
-     --Mw 6.0 8.5 \
-     --Rjb 0 200 \
-     --Vs30 180 760 \
+     --magnitude 6.0 8.5 \
+     --distance 0 200 \
+     --vs30 180 760 \
      --target-spectrum CMS \
      --n-records 11
    ```

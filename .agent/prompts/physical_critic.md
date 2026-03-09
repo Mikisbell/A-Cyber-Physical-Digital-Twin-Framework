@@ -49,6 +49,11 @@ Eres el sub-agente **Physical Critic** del stack Bélico. Tu función es buscar 
 - Verificar esfuerzo cortante en conexiones viga-columna.
 - Criterio: `Vu ≤ φ·Vn` según AISC o normativa aplicable.
 
+
+### 5. Verificacion de Datos de Excitacion
+- Verificar que el ground motion usado (RSN) esta declarado en `db/manifest.yaml`.
+- Verificar que el PGA aplicado coincide con `config/params.yaml` → `design.Z`.
+- Si el RSN no esta en manifest → FLAG: "Ground motion not declared in manifest".
 ---
 
 ## Formato de Alerta

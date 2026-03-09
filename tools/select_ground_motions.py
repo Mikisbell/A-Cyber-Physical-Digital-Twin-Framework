@@ -54,13 +54,15 @@ def _load_yaml(path: Path) -> dict:
 
 
 def _dump_yaml(data: dict, path: Path) -> None:
-    """Write *data* as YAML. Uses PyYAML when available, else manual."""
+    """Write *data* as YAML. Uses PyYAML when available, else manual fallback."""
     path.parent.mkdir(parents=True, exist_ok=True)
     try:
         import yaml
         with open(path, "w") as fh:
             yaml.dump(data, fh, default_flow_style=False, sort_keys=False)
     except ImportError:
+        print("  WARNING: PyYAML not installed. Using fallback YAML writer.")
+        print("  For best results: pip install pyyaml")
         with open(path, "w") as fh:
             _write_yaml_manual(fh, data, indent=0)
 

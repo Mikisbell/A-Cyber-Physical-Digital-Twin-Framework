@@ -252,6 +252,10 @@ Batch 4: Abstract + Intro + Refs         → VERIFY completo (validate_submissio
 Cada batch debe pasar su verificacion parcial antes de avanzar al siguiente.
 Si un batch falla, se corrige **ese batch**, no se avanza.
 
+Cada batch debe actualizar `db/manifest.yaml` → `traceability` con la cadena:
+claim del paper → figura → archivo de datos → fuente (RSN/campo/benchmark).
+Usar `python3 tools/validate_submission.py --suggest-trace` para generar sugerencias.
+
 ### Novelty Check (GATE BLOQUEANTE — NO OMITIR)
 
 **REGLA: El orquestador ejecuta el novelty check AUTOMATICAMENTE durante EXPLORE. No se pide al usuario. No se salta. No se pospone. Sin novelty report completado, PROPOSE no arranca.**

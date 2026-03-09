@@ -202,6 +202,14 @@ def check_data_traceability(content: str, frontmatter: str, issues: list[dict]):
     """
     quartile = _extract_quartile(frontmatter).lower()
 
+    if not quartile:
+        issues.append({
+            "severity": "ERROR", "check": "data_traceability",
+            "msg": "Paper missing 'quartile' field in frontmatter. "
+                   "Data traceability cannot be verified."
+        })
+        return
+
     # Quartile requirements matrix: section -> set of quartiles that REQUIRE it
     quartile_requires = {
         "excitation":   {"conference", "q4", "q3", "q2", "q1"},
@@ -252,6 +260,15 @@ def check_data_traceability(content: str, frontmatter: str, issues: list[dict]):
                 "msg": f"Quartile '{quartile}' requires: {', '.join(needed)}"
             })
         return
+
+    # Check 1.5: Quartile mismatch between paper and manifest
+    manifest_quartile = manifest.get("quartile", "").lower()
+    if manifest_quartile and quartile and manifest_quartile != quartile:
+        issues.append({
+            "severity": "WARN", "check": "data_traceability",
+            "msg": f"Quartile mismatch: paper says '{quartile}', manifest says "
+                   f"'{manifest_quartile}'. Update db/manifest.yaml to match."
+        })
 
     # Check 2: Excitation (ALL quartiles)
     excitation = manifest.get("excitation", {})
@@ -575,11 +592,19 @@ def diagnose(draft_path: Path, issues: list[dict]):
 
 def main():
     diagnose_mode = "--diagnose" in sys.argv
+    suggest_mode = "--suggest-trace" in sys.argv
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
 
     if not args:
-        print("Usage: python3 tools/validate_submission.py <draft.md> [--diagnose]")
+        print("Usage: python3 tools/validate_submission.py <draft.md> [--diagnose] [--suggest-trace]")
         sys.exit(1)
+
+    if suggest_mode:
+        for arg in args:
+            path = Path(arg)
+            if path.exists():
+                suggest_traceability(path)
+        sys.exit(0)
 
     all_pass = True
     for arg in args:
@@ -597,6 +622,60 @@ def main():
 
     sys.exit(0 if all_pass else 1)
 
+
+
+def suggest_traceability(draft_path: Path):
+    """Scan a draft and suggest traceability entries for manifest.yaml.
+
+    Looks for RSN numbers, figure references, and quantitative claims.
+    Prints suggested entries in YAML format for copy-paste into manifest.
+    """
+    text = draft_path.read_text(encoding="utf-8")
+
+    # Find RSN patterns
+    rsns = sorted(set(re.findall(r"RSN\s*(\d+)", text, re.IGNORECASE)))
+
+    # Find figure patterns
+    figs = sorted(set(re.findall(r"(?:Fig\.?|Figure)\s*(\d+)", text, re.IGNORECASE)))
+
+    # Find quantitative claims (number + unit)
+    claims = re.findall(
+        r"(\d+\.?\d*)\s*(%|mm|cm|m/s|Hz|MPa|kPa|kN|g\b|rad|deg)", text
+    )
+
+    print(f"{'='*60}")
+    print(f"  TRACEABILITY SUGGESTIONS: {draft_path.name}")
+    print(f"{'='*60}")
+
+    if rsns:
+        print(f"\n  RSNs found: {', '.join('RSN' + r for r in rsns)}")
+    else:
+        print("\n  RSNs found: NONE — paper must reference PEER records")
+
+    if figs:
+        print(f"  Figures found: {', '.join('Fig. ' + f for f in figs)}")
+    else:
+        print("  Figures found: NONE")
+
+    if claims:
+        unique_claims = sorted(set(f"{v} {u}" for v, u in claims))[:10]
+        print(f"  Quantitative claims: {', '.join(unique_claims)}")
+
+    print(f"\n  Suggested YAML for db/manifest.yaml traceability section:\n")
+    print("  traceability:")
+    for i, rsn in enumerate(rsns):
+        fig = figs[i] if i < len(figs) else "X"
+        print(f'    - claim: "[VERIFY] Result from RSN{rsn}"')
+        print(f'      figure: "Fig. {fig}"')
+        print(f"      data_file: \"\"")
+        print(f'      source: "RSN{rsn}"')
+    if not rsns:
+        print('    - claim: "[FILL] No RSNs detected — add manually"')
+        print('      figure: ""')
+        print('      data_file: ""')
+        print('      source: ""')
+
+    print(f"\n{'='*60}")
 
 if __name__ == "__main__":
     main()
