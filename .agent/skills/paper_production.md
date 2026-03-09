@@ -135,6 +135,68 @@ mem_save("error: {check} failed → fix: {action}")
 | Compile PDF | `tools/compile_paper.sh` | `draft.md --template ieee\|conference\|elsevier` |
 | Cover letter | `tools/generate_cover_letter.py` | `cover --draft draft.md` |
 
+## Writing Style — Anti-AI Enforcement
+
+**Every sub-agent generating paper text MUST follow these rules. Violations cause VERIFY to fail.**
+
+### Blacklisted Phrases (from Belico.md Red Line)
+
+These phrases are BANNED in any draft. `validate_submission.py` scans for them automatically:
+
+- "It is worth noting", "It is important to note", "It should be noted"
+- "Furthermore", "Moreover", "Additionally" as sentence starters
+- "In this study, we", "This paper presents", "This work proposes"
+- "delve into", "delve deeper", "shed light on"
+- "leveraging", "utilizing", "harnessing" (use "using")
+- "novel framework", "novel approach", "novel methodology" (without evidence)
+- "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art" (without citation)
+- "plays a crucial role", "has gained significant attention"
+- "In recent years", "In the last decade"
+- "paradigm shift", "game-changer", "groundbreaking", "revolutionary"
+- "a myriad of", "a plethora of", "a multitude of"
+- "In conclusion, this study has demonstrated"
+- "paving the way for future research"
+
+### BAD vs GOOD Examples
+
+```
+BAD:  "Furthermore, the novel framework leverages state-of-the-art PINNs to comprehensively address the problem."
+GOOD: "The framework uses PINNs to locate damage sources without a predefined mesh."
+
+BAD:  "It is worth noting that the results clearly demonstrate a significant improvement."
+GOOD: "Localization error dropped from 12.3% to 3.1% after adding the Helmholtz constraint (Table 2)."
+
+BAD:  "In recent years, structural health monitoring has gained significant attention."
+GOOD: "Bolt fatigue causes 23% of steel connection failures in seismic zones (Swanson, 2020)."
+```
+
+### The Specificity Rule
+
+Every sentence must contain at least ONE of:
+- (a) a number or measurement
+- (b) a citation
+- (c) a method name
+- (d) a specific technical detail
+
+Generic prose = AI prose. If a sentence could appear in any paper from any field, it is too generic. Rewrite it with domain-specific content.
+
+### Structural Rules
+
+- Never start 2 consecutive paragraphs with the same word
+- Never start 3 consecutive sentences with "The"
+- Maximum 1 semicolon per paragraph
+- No sentences longer than 40 words
+- Active voice: "We model..." not "The model was developed..."
+- Specific verbs: "measured", "computed", "observed", "recorded" — not "obtained", "performed", "conducted"
+- Vary sentence length: mix short (8-12 words) with medium (15-25 words)
+
+### Tone
+
+- Write like an engineer explaining to a colleague
+- Be direct: what you did, what you found, what it means
+- Uncertainty is honest: "The results suggest..." > "The results clearly demonstrate..."
+- Acknowledge limitations explicitly
+
 ## Anti-Patterns
 
 - Orchestrator generating paper content directly (MUST delegate)

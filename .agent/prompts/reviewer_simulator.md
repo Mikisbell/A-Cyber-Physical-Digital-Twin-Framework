@@ -24,6 +24,40 @@ Activa cuando:
 2. `mem_search("task: reviewer_simulator")` — buscar tarea asignada
 3. Estos riesgos son tus **blancos prioritarios**. Atacalos directamente.
 
+### Gate 0: AI Prose Detection (before all other checks)
+
+**This gate runs FIRST. If it fails, do NOT proceed to content review.**
+
+Scan the entire draft for:
+1. Any phrase from the blacklist in Belico.md Red Line: Anti-AI Prose
+2. More than 2 paragraphs starting with the same word
+3. More than 3 consecutive sentences starting with "The"
+4. Sentences longer than 40 words
+5. Paragraphs with 0 citations or data references
+6. "Furthermore/Moreover/Additionally" used more than once in the paper
+
+If ANY of these are found:
+- REJECT the draft immediately
+- List every violation with line number
+- Do NOT proceed to content review until prose is fixed
+
+Format: `AI_PROSE_VIOLATION: [phrase] found in [section] — rewrite required`
+
+**Blacklisted phrases (complete list):**
+- "It is worth noting", "It is important to note", "It should be noted"
+- "Furthermore", "Moreover", "Additionally" as sentence starters
+- "In this study, we", "This paper presents", "This work proposes"
+- "delve into", "delve deeper", "shed light on"
+- "leveraging", "utilizing", "harnessing"
+- "novel framework", "novel approach", "novel methodology"
+- "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art" (without citation)
+- "plays a crucial role", "has gained significant attention"
+- "In recent years", "In the last decade"
+- "paradigm shift", "game-changer", "groundbreaking", "revolutionary"
+- "a myriad of", "a plethora of", "a multitude of"
+- "In conclusion, this study has demonstrated"
+- "paving the way for future research"
+
 ### PASO 1 — Solidez Tecnica
 Leer el draft completo y verificar:
 1. **Claims vs Evidencia**: Toda afirmacion debe estar soportada por datos, cita o derivacion

@@ -5,6 +5,7 @@ tools/validate_submission.py — Pre-Submission Validator for EIU Papers
 Checks that a draft meets all requirements before submission to a journal.
 
 Checks:
+  0. AI prose detection (blacklisted phrases, structural patterns)
   1. YAML frontmatter present and complete
   2. AI_Assist markers in all AI-generated sections
   3. HV (Human Validation) markers with initials
@@ -38,6 +39,50 @@ SPECS_PATH = ROOT / ".agent" / "specs" / "journal_specs.yaml"
 IMRAD_SECTIONS = ["Abstract", "Introduction", "Methodology", "Results",
                   "Discussion", "Conclusion"]
 
+# Anti-AI blacklisted phrases — instant rejection if found in draft
+AI_BLACKLISTED_PHRASES = [
+    "it is worth noting",
+    "it is important to note",
+    "it should be noted",
+    "delve into",
+    "delve deeper",
+    "shed light on",
+    "leveraging",
+    "utilizing",
+    "harnessing",
+    "novel framework",
+    "novel approach",
+    "novel methodology",
+    "plays a crucial role",
+    "has gained significant attention",
+    "in recent years",
+    "in the last decade",
+    "paradigm shift",
+    "game-changer",
+    "groundbreaking",
+    "revolutionary",
+    "a myriad of",
+    "a plethora of",
+    "a multitude of",
+    "in conclusion, this study has demonstrated",
+    "paving the way for future research",
+    "comprehensive",
+    "robust",
+    "seamless",
+    "cutting-edge",
+    "state-of-the-art",
+]
+
+# Phrases that are only banned as sentence starters
+AI_BLACKLISTED_STARTERS = [
+    "furthermore,",
+    "moreover,",
+    "additionally,",
+    "in this study, we",
+    "this paper presents",
+    "this work proposes",
+]
+
 
 def _load_journal_specs() -> dict:
     """Load journal quality gates from specs file."""
@@ -53,11 +98,101 @@ def _extract_quartile(text: str) -> str:
     return m.group(1) if m else ""
 
 
+def check_ai_prose(text: str, lines: list[str]) -> list[dict]:
+    """Check draft for AI-generated prose patterns. Returns list of issues."""
+    issues = []
+    text_lower = text.lower()
+
+    # Strip frontmatter before checking
+    body_start = 0
+    if text.startswith("---"):
+        fm_end = text.find("---", 3)
+        if fm_end != -1:
+            body_start = fm_end + 3
+
+    body = text[body_start:]
+    body_lower = body.lower()
+    body_lines = body.split("\n")
+
+    # 1. Check blacklisted phrases
+    for phrase in AI_BLACKLISTED_PHRASES:
+        # Find all occurrences with line numbers
+        for i, line in enumerate(lines):
+            if phrase in line.lower():
+                issues.append({
+                    "severity": "ERROR", "check": "ai_prose",
+                    "msg": f"Blacklisted phrase '{phrase}' at line {i + 1}"
+                })
+
+    # 2. Check blacklisted sentence starters
+    for starter in AI_BLACKLISTED_STARTERS:
+        for i, line in enumerate(lines):
+            stripped = line.strip().lower()
+            if stripped.startswith(starter):
+                issues.append({
+                    "severity": "ERROR", "check": "ai_prose",
+                    "msg": f"Blacklisted sentence starter '{starter}' at line {i + 1}"
+                })
+
+    # 3. Check sentences longer than 40 words
+    # Split body into sentences (rough but effective)
+    sentences = re.split(r'(?<=[.!?])\s+', body)
+    for sent in sentences:
+        word_count = len(sent.split())
+        if word_count > 40:
+            # Find line number of this sentence
+            snippet = sent[:60].strip()
+            for i, line in enumerate(lines):
+                if snippet[:30] in line:
+                    issues.append({
+                        "severity": "WARN", "check": "ai_prose",
+                        "msg": f"Sentence > 40 words ({word_count}w) at line {i + 1}: '{snippet}...'"
+                    })
+                    break
+
+    # 4. Check consecutive paragraphs starting with same word
+    paragraphs = re.split(r'\n\s*\n', body)
+    para_starters = []
+    for para in paragraphs:
+        first_line = para.strip().split('\n')[0].strip()
+        if first_line and not first_line.startswith('#') and not first_line.startswith('!'):
+            first_word = re.split(r'\s+', first_line)[0].lower().strip('*_')
+            if first_word:
+                para_starters.append(first_word)
+
+    for i in range(len(para_starters) - 1):
+        if para_starters[i] == para_starters[i + 1]:
+            issues.append({
+                "severity": "WARN", "check": "ai_prose",
+                "msg": f"Consecutive paragraphs start with '{para_starters[i]}' — vary openers"
+            })
+
+    # 5. Check 3+ consecutive sentences starting with "The"
+    the_streak = 0
+    for sent in sentences:
+        stripped = sent.strip()
+        if stripped.lower().startswith("the "):
+            the_streak += 1
+            if the_streak >= 3:
+                issues.append({
+                    "severity": "WARN", "check": "ai_prose",
+                    "msg": f"{the_streak} consecutive sentences start with 'The' — vary structure"
+                })
+        else:
+            the_streak = 0
+
+    return issues
+
+
 def validate_draft(draft_path: Path) -> list[dict]:
     """Validate a single draft. Returns list of issues."""
     issues = []
     text = draft_path.read_text(encoding="utf-8")
     lines = text.split("\n")
+
+    # 0. AI Prose Detection (first check — blocks everything if fails)
+    ai_issues = check_ai_prose(text, lines)
+    issues.extend(ai_issues)
 
     # 1. YAML frontmatter
     if not text.startswith("---"):
@@ -229,6 +364,7 @@ def print_report(draft_path: Path, issues: list[dict]):
 def diagnose(draft_path: Path, issues: list[dict]):
     """DAG diagnostic: map each failure to a fix action and pipeline step."""
     fix_map = {
+        "ai_prose": "Rewrite flagged sentences to remove AI patterns → IMPLEMENT step",
         "frontmatter": "Edit draft YAML header → loop back to DESIGN step",
         "ai_markers": "Add <!-- AI_Assist --> to AI-generated paragraphs → IMPLEMENT step",
         "hv_markers": "Request human validation from the researcher → VERIFY step (blocked)",

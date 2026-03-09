@@ -226,6 +226,48 @@ El Verifier actuara como Auditor ("Data-Driven Peer Review"). Compara el draft d
 
 ---
 
+## 🛑 Red Line: Anti-AI Prose (NO NEGOCIABLE)
+
+Every sentence generated for a paper draft MUST pass the "human author test": if a reviewer or AI detector flags it as machine-generated, the paper is DEAD.
+
+**BLACKLISTED phrases (instant rejection — NEVER use these):**
+- "It is worth noting", "It is important to note", "It should be noted"
+- "Furthermore", "Moreover", "Additionally" as sentence starters
+- "In this study, we", "This paper presents", "This work proposes" (opener clichés)
+- "delve into", "delve deeper", "shed light on"
+- "leveraging", "utilizing", "harnessing" (use "using")
+- "novel framework", "novel approach", "novel methodology" (unless proving novelty with evidence)
+- "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art" (without citation)
+- "plays a crucial role", "has gained significant attention"
+- "In recent years", "In the last decade" (lazy openers)
+- "paradigm shift", "game-changer", "groundbreaking", "revolutionary"
+- "a myriad of", "a plethora of", "a multitude of"
+- "In conclusion, this study has demonstrated"
+- "paving the way for future research"
+
+**STRUCTURAL rules:**
+- Never start 2 consecutive paragraphs with the same word
+- Never start 3 consecutive sentences with "The"
+- Maximum 1 semicolon per paragraph
+- No sentences longer than 40 words (split them)
+- Use active voice: "We model..." not "The model was developed..."
+- Use specific verbs: "measured", "computed", "observed", "recorded" — not "obtained", "performed", "conducted"
+- Every claim needs a citation or data reference. No floating assertions.
+- Vary sentence length: mix short (8-12 words) with medium (15-25 words). Monotone length = AI signature.
+
+**TONE rules:**
+- Write like an engineer explaining to a colleague, not a marketing brochure
+- Be direct. Say what you did, what you found, what it means.
+- Uncertainty is OK: "The results suggest..." is better than "The results clearly demonstrate..."
+- Imperfection is human: acknowledge limitations explicitly, don't bury them
+
+**ENFORCEMENT:**
+- Reviewer Simulator checks for blacklisted phrases as first pass
+- validate_submission.py scans for blacklisted phrases automatically
+- ANY blacklisted phrase found = VERIFY fails, batch rejected
+
+---
+
 ## 🛑 PROTOCOLO DE ABORTO (RED LINE)
 
 > _"El fallo controlado es un resultado. El fallo no controlado es un accidente."_
