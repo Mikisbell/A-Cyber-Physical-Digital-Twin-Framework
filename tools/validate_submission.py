@@ -41,13 +41,17 @@ IMRAD_SECTIONS = ["Abstract", "Introduction", "Methodology", "Results",
 
 # Anti-AI blacklisted phrases — instant rejection if found in draft
 AI_BLACKLISTED_PHRASES = [
+    "it is worth mentioning",
     "it is worth noting",
     "it is important to note",
     "it should be noted",
+    "intricacies",
     "delve into",
     "delve deeper",
     "shed light on",
+    "leverages",
     "leveraging",
+    "noteworthy",
     "utilizing",
     "harnessing",
     "novel framework",
@@ -66,11 +70,13 @@ AI_BLACKLISTED_PHRASES = [
     "a multitude of",
     "in conclusion, this study has demonstrated",
     "paving the way for future research",
-    "comprehensive",
-    "robust",
     "seamless",
+    "straightforward",
     "cutting-edge",
-    "state-of-the-art",
+    # NOTE: "comprehensive", "robust", and "state-of-the-art" are NOT banned here.
+    # Per Belico.md they are only banned "without citation", which requires context
+    # analysis. The Reviewer Simulator sub-agent enforces this rule during VERIFY
+    # since it can check whether a supporting citation accompanies the term.
 ]
 
 # Phrases that are only banned as sentence starters
@@ -124,15 +130,18 @@ def check_ai_prose(text: str, lines: list[str]) -> list[dict]:
                     "msg": f"Blacklisted phrase '{phrase}' at line {i + 1}"
                 })
 
-    # 2. Check blacklisted sentence starters
+    # 2. Check blacklisted sentence starters (including mid-line after ". ")
     for starter in AI_BLACKLISTED_STARTERS:
         for i, line in enumerate(lines):
-            stripped = line.strip().lower()
-            if stripped.startswith(starter):
-                issues.append({
-                    "severity": "ERROR", "check": "ai_prose",
-                    "msg": f"Blacklisted sentence starter '{starter}' at line {i + 1}"
-                })
+            # Split line into sentences to catch mid-line starters
+            sentences = line.strip().split(". ")
+            for sent in sentences:
+                if sent.strip().lower().startswith(starter):
+                    issues.append({
+                        "severity": "ERROR", "check": "ai_prose",
+                        "msg": f"Blacklisted sentence starter '{starter}' at line {i + 1}"
+                    })
+                    break  # one match per line per starter is enough
 
     # 3. Check sentences longer than 40 words
     # Split body into sentences (rough but effective)

@@ -23,7 +23,7 @@ metadata:
 ## Prerequisites
 
 - Semantic Scholar MCP server configured in `.mcp.json`
-- Tools available: `search_semantic_scholar`, `get_paper_details`, `get_citations_and_references`, `get_author_details`
+- Tools available: `search_semantic_scholar`, `get_semantic_scholar_paper_details`, `get_semantic_scholar_citations_and_references`, `get_semantic_scholar_author_details`
 
 ## Workflow
 
@@ -64,13 +64,13 @@ For each query, use the MCP tools:
    - Year >= 2019 (prefer last 5 years, allow seminal older works)
    - Citation count > 10 (quality signal)
    - Open access preferred (reproducibility)
-3. For top candidates: `get_paper_details(paper_id)` — get abstract, authors, venue, citation count
+3. For top candidates: `get_semantic_scholar_paper_details(paper_id)` — get abstract, authors, venue, citation count
 
 ### Phase 3: Citation Network Analysis
 
 For the 5-10 strongest papers:
 
-1. `get_citations_and_references(paper_id)` — find shared references
+1. `get_semantic_scholar_citations_and_references(paper_id)` — find shared references
 2. Identify "hub papers" cited by multiple results (these are foundational)
 3. Check for very recent papers (< 1 year) citing the same hubs (emerging work)
 
@@ -114,7 +114,7 @@ Structure the section by research themes (NOT chronologically):
 
 ### Phase 6: Validate and Export
 
-1. Verify every cited paper exists via `get_paper_details`
+1. Verify every cited paper exists via `get_semantic_scholar_paper_details`
 2. Extract BibTeX-ready metadata (title, authors, year, venue, DOI)
 3. Flag any reference that cannot be verified (potential hallucination)
 4. Update `tools/bibliography_engine.py` with new verified references (sub-agent executes this edit)

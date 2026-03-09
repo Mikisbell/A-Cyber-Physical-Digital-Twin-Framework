@@ -261,10 +261,12 @@ Every sentence generated for a paper draft MUST pass the "human author test": if
 - Uncertainty is OK: "The results suggest..." is better than "The results clearly demonstrate..."
 - Imperfection is human: acknowledge limitations explicitly, don't bury them
 
-**ENFORCEMENT:**
-- Reviewer Simulator checks for blacklisted phrases as first pass
-- validate_submission.py scans for blacklisted phrases automatically
-- ANY blacklisted phrase found = VERIFY fails, batch rejected
+**ENFORCEMENT (4 layers, all mandatory):**
+1. **Belico.md Red Line** — blacklist + structural/tone rules (this section)
+2. **paper_production.md Style Calibration** — Style Card per venue (voice, transitions, citation density, sentence length) ensures draft mimics real published authors
+3. **reviewer_simulator.md Gate 0** — AI prose detection as instant rejection before any content review
+4. **validate_submission.py** — automated scan for blacklisted phrases and structural violations
+- ANY blacklisted phrase found at ANY layer = VERIFY fails, batch rejected
 
 ---
 

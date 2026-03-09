@@ -181,7 +181,7 @@ Quieres ver el protocolo de adquisicion de datos, o elegir otro quartile?
 | **Physical Critic** | `.agent/prompts/physical_critic.md` | Nueva carga, condicion de borde nueva/modificada, geometria modificada, o alerta del Verifier por esfuerzo > 0.4 fy |
 | **Bibliography Agent** | `.agent/prompts/bibliography_agent.md` | Preparando refs para un draft, cambio de dominio |
 | **Figure Agent** | `.agent/prompts/figure_agent.md` | Generando/validando figuras para un draft |
-| **Reviewer Simulator** | `.agent/prompts/reviewer_simulator.md` | Draft pasa a status `review`, pre-submission check |
+| **Reviewer Simulator** | `.agent/prompts/reviewer_simulator.md` | Draft pasa a status `review`, pre-submission check, Gate 0: AI prose detection |
 
 Lanza sub-agentes via el tool `Agent` con `subagent_type: "general"`.
 En el prompt del Agent tool, indica al sub-agente que lea su archivo de instrucciones el mismo (NO copiar el contenido del prompt file).
@@ -400,7 +400,7 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air) |
 | `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio |
 | `tools/generate_bibtex.py` | BibTeX desde vault (53 entradas, 12 categorias) |
-| `tools/validate_submission.py` | Pre-check: marcadores, refs, figuras, word count, TODOs |
+| `tools/validate_submission.py` | Pre-check: AI prose (Gate 0), marcadores, refs, figuras, word count, TODOs |
 | `tools/compile_paper.sh` | Pandoc+citeproc → PDF (IEEE/Elsevier/Conference/Plain) |
 | `tools/generate_cover_letter.py` | Cover letter parametrica + respuesta a reviewers |
 
@@ -552,6 +552,7 @@ Regla: empezar SIEMPRE por capa 1. Solo bajar a capa 2-3 si la informacion es in
 | **Riesgo** | `risk: {paper_id} — {descripcion}` | `"risk: {paper_id} — datos sinteticos sin validacion experimental"` |
 | **Task (bus)** | `task: {agent} — {descripcion}` | `"task: bibliography_agent — generar refs para {paper_id}"` |
 | **Result (bus)** | `result: {agent} — {resumen}` | `"result: bibliography_agent — 25 refs OK, falta category 'cfd'"` |
+| **Style Card** | `style: {paper_id} — venue={venue}, voice={voice}, citation_density={N}` | `"style: icr-shm-ae — venue=EWSHM, voice=passive_third, citation_density=2.1/para"` |
 
 ### Que NO guardar
 - Contenido completo de archivos (eso esta en git)

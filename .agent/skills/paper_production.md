@@ -67,7 +67,7 @@ Before writing ANY section, the narrator must have a **style reference** from re
 
 **Procedure (runs once per paper, before Batch 1):**
 
-1. **Search target venue**: Use Semantic Scholar MCP to find 3-5 recent papers (last 3 years) from the exact target journal/conference (e.g., "EWSHM 2024", "Engineering Structures 2023")
+1. **Search target venue**: Use `search_semantic_scholar` to find 3-5 recent papers (last 3 years) from the exact target journal/conference (e.g., "EWSHM 2024", "Engineering Structures 2023"), then `get_semantic_scholar_paper_details` to fetch abstracts
 2. **Extract style patterns** from abstracts and introductions:
    - How do authors open their Introduction? (with a problem statement? a statistic? a question?)
    - How do they transition between paragraphs? (explicit connectors? implicit flow?)
