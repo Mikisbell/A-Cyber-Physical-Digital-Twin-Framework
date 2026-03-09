@@ -218,7 +218,7 @@ EXPLORE ──→ PROPOSE ─┤          ├─→ TASKS ──→ IMPLEMENT �
 
 | Paso | Accion | Quien ejecuta | Tool/Recurso |
 |------|--------|---------------|--------------|
-| EXPLORE | Grep puntual de SSOT, Glob de data, queries Engram. **Ejecutar novelty check automaticamente (GATE).** Identificar riesgos. | Orquestador | params.yaml (Grep), `check_novelty.py --save` (via sub-agente) |
+| EXPLORE | Grep puntual de SSOT, Glob de data, queries Engram. **Ejecutar novelty check automaticamente (GATE).** Ejecutar `select_ground_motions.py` para identificar registros necesarios en `db/`. Identificar riesgos. | Orquestador | params.yaml (Grep), `check_novelty.py --save` (via sub-agente), `select_ground_motions.py` |
 | PROPOSE | Propuesta de 1 parrafo: tema, contribucion, journal. **BLOQUEADO si novelty_report.md no existe o veredicto = DUPLICATE.** | Orquestador | Evaluacion rapida |
 | SPEC | Definir quartil, journal, quality gates | Sub-agente (parallel) | journal_specs.yaml |
 | DESIGN | Outline IMRaD, mapear figuras y refs | Sub-agente (parallel) | Paper Production skill |
@@ -468,7 +468,12 @@ Cada paper draft en `articles/drafts/` debe:
 - `.agents/` — Repos externos (engram, agent-teams-lite)
 - `AGENTS.md` — Reglas de code review para GGA (11 reglas Python/Arduino/Shell)
 - `.gga` — Configuracion de GGA (provider, patterns, timeout)
-- `db/` — Base de datos de referencia (excitation, benchmarks, calibration, validation)
+- `db/` — Base de datos de referencia (gobernanza de datos)
+  - `excitation/` — Ground motions PEER (flatfiles, records, selections)
+  - `benchmarks/` — Datasets publicados de validacion (LANL, Z24, IASC-ASCE)
+  - `calibration/` — Datos especificos del sitio (material, suelo, planos)
+  - `validation/` — Mediciones independientes (campo, laboratorio)
+  - `manifest.yaml` — Trazabilidad: claims del paper → datos → fuentes
 - `tools/` — Scripts de generacion, validacion y exportacion
 
 ## Guardrails (Reglas de Oro)

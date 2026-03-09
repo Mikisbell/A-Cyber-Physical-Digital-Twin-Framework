@@ -99,6 +99,7 @@ El EIU se construye sobre el ecosistema open-source de Gentleman Programming. Es
 | Cross Validation | `src/physics/cross_validation.py` | FUNCIONAL (analitico) | FP rate via erfc(), PGA sweep parametrico, Saltelli con k_term de SSOT. Documentado como estimacion analitica, no simulacion. |
 | Adaptador PEER | `src/physics/peer_adapter.py` | FUNCIONAL | Parser .AT2, resampling con scipy, scale_to_pga. 133 lineas, verificado. |
 | Boveda Sismica | `db/excitation/records/` | 3 REGISTROS | Pisco 2007, Loma Prieta, Sintetico extremo. |
+| Data Governance | `db/` + `db/manifest.yaml` | FUNCIONAL | Every paper must pass data traceability validation. `db/manifest.yaml` maps claims to sources. Requirements scale by quartile: excitation ALL, benchmarks Q3+, calibration Q2+, validation Q2+. Subfolders: `excitation/` (PEER NGA-West2), `benchmarks/` (LANL, Z24), `calibration/` (site-specific), `validation/` (field/lab). |
 | LSTM Predictor | `src/ai/lstm_predictor.py` | CODIGO OK / INOPERABLE | Arquitectura correcta (2-layer LSTM + MC Dropout). Pero: datos de entrenamiento borrados, modelo no existe, scalers no existen. |
 | Generador Sintetico | `tools/generate_degradation.py` | FUNCIONAL | Wiener process + estacionalidad. Lee fn y k_term de SSOT. |
 | PgNN Surrogate | `src/ai/pgnn_surrogate.py` | FUNCIONAL | Bridge a Hybrid-Twin, namespace isolation, 10-story Seq2Seq, ~2ms. Verificado end-to-end. |

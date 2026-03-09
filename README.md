@@ -331,6 +331,37 @@ belico-stack/
 
 ---
 
+## Data Governance (`db/`)
+
+Every number in your paper must trace back to a real data source. The `db/` folder organizes evidence by role:
+
+| Folder | Role | Required for |
+|--------|------|-------------|
+| `db/excitation/` | Ground motions (PEER NGA-West2, NGA-Sub) | ALL quartiles |
+| `db/benchmarks/` | Published reference datasets (LANL, Z24) | Q3+ |
+| `db/calibration/` | Site-specific data (soil, materials) | Q2+ |
+| `db/validation/` | Independent measurements (field, lab) | Q2+ |
+
+### Quick workflow
+
+```bash
+# 1. Select ground motions based on site conditions
+python3 tools/select_ground_motions.py
+
+# 2. Download .AT2 files from ngawest2.berkeley.edu (manual — no API)
+#    Place them in db/excitation/records/
+
+# 3. Verify downloads against manifest
+python3 tools/fetch_benchmark.py --verify
+
+# 4. validate_submission.py checks data traceability automatically
+python3 tools/validate_submission.py articles/drafts/your_paper.md
+```
+
+See `db/README.md` for detailed download instructions (PEER, NGA-Sub, CISMID, LANL).
+
+---
+
 ## Paper Production Pipeline (SDD)
 
 Every paper follows a Spec-Driven Development flow as a DAG (not waterfall). SPEC and DESIGN run in parallel. IMPLEMENT executes in batches with incremental verification. ARCHIVE closes each cycle.
