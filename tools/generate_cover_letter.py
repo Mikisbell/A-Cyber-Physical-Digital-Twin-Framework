@@ -52,6 +52,7 @@ def generate_cover_letter(draft_path: Path = None, journal: str = "",
             "Q2": "Structural Control and Health Monitoring",
             "Q3": "Journal of Civil Structural Health Monitoring",
             "Q4": "Infrastructures",
+            "conference": "Conference Proceedings",
         }.get(quartile, "[JOURNAL NAME]")
 
     if not editor:

@@ -78,7 +78,8 @@ Before evaluating scientific merit, verify the evidence chain:
 - "delve into", "delve deeper", "shed light on"
 - "leveraging", "utilizing", "harnessing"
 - "novel framework", "novel approach", "novel methodology"
-- "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art" (without citation)
+- "seamless", "cutting-edge"
+- For context-dependent phrases ("comprehensive", "robust", "state-of-the-art"): only flag if NO supporting citation [@...] appears in the same sentence. If a citation accompanies the phrase, it is acceptable.
 - "plays a crucial role", "has gained significant attention"
 - "In recent years", "In the last decade"
 - "paradigm shift", "game-changer", "groundbreaking", "revolutionary"

@@ -481,11 +481,14 @@ def validate_draft(draft_path: Path) -> list[dict]:
         issues.append({"severity": "INFO", "check": "word_count",
                         "msg": f"Word count: {words} (no spec or target available)"})
 
-    # 7. IMRaD sections
-    for section in IMRAD_SECTIONS:
+    # 7. IMRaD sections — prefer journal_specs required_sections if available
+    spec_sections = spec.get("required_sections", []) if spec else []
+    sections_to_check = spec_sections if spec_sections else IMRAD_SECTIONS
+    for section in sections_to_check:
         if section.lower() not in text.lower():
+            source = "journal_spec" if spec_sections else "IMRaD default"
             issues.append({"severity": "WARN", "check": "structure",
-                            "msg": f"Missing IMRaD section: {section}"})
+                            "msg": f"Missing section ({source}): {section}"})
 
     # 7.5. Abstract word count (against journal_specs abstract.max_words)
     abstract_match = re.search(

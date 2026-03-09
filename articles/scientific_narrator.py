@@ -129,7 +129,7 @@ word_count_target: {_word_count_target(quartile)}
 
 
 def _word_count_target(quartile: str) -> int:
-    return {"Q1": 10000, "Q2": 8000, "Q3": 6000, "Q4": 5000}.get(quartile, 6000)
+    return {"Q1": 10000, "Q2": 8000, "Q3": 6000, "Q4": 5000, "conference": 4000}.get(quartile, 6000)
 
 
 # ═══════════════════════════════════════════════════════════════

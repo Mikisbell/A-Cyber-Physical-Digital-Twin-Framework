@@ -16,11 +16,20 @@
 #   elsevier  -> Elsevier (1 columna, 12pt, Computer Modern)
 #   plain     -> Reporte técnico simple (sin plantilla LaTeX externa)
 
-set -e
+set -euo pipefail
 cd "$(dirname "$0")/.."
 
-DRAFT="${1:-}"
-TEMPLATE="${2:-plain}"
+# Parse arguments: supports both positional and flags
+DRAFT=""
+TEMPLATE="plain"
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --template|-t) TEMPLATE="$2"; shift 2 ;;
+        --help|-h) echo "Usage: ./tools/compile_paper.sh <draft.md> [--template ieee|elsevier|conference|plain]"; exit 0 ;;
+        *) DRAFT="$1"; shift ;;
+    esac
+done
+
 OUT_DIR="articles/compiled"
 BIB_FILE="articles/references.bib"
 
@@ -50,6 +59,12 @@ fi
 if [ ! -f "$DRAFT" ]; then
   echo -e "${RED}[ERROR] Archivo no encontrado: $DRAFT${NC}"
   exit 1
+fi
+
+# Pre-validate draft
+if command -v python3 &>/dev/null && [ -f "tools/validate_submission.py" ]; then
+    echo "Running pre-validation..."
+    python3 tools/validate_submission.py "$DRAFT" || echo "WARNING: Validation issues found. Continuing compilation..."
 fi
 
 mkdir -p "$OUT_DIR"

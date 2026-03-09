@@ -17,8 +17,30 @@ import argparse
 import json
 from pathlib import Path
 
+import yaml
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+
+# Load SSOT params for figure labels/annotations
+_SSOT_PARAMS = {}
+_PARAMS_PATH = ROOT / "config" / "params.yaml"
+if _PARAMS_PATH.exists():
+    try:
+        with open(_PARAMS_PATH, encoding="utf-8") as _f:
+            _SSOT_PARAMS = yaml.safe_load(_f) or {}
+    except Exception:
+        pass
+
+def _get_ssot_structural_labels() -> dict:
+    """Extract structural params from SSOT for figure annotations."""
+    structure = _SSOT_PARAMS.get("structure", {})
+    damping = _SSOT_PARAMS.get("damping", {})
+    return {
+        "mass_kg": structure.get("mass_m", {}).get("value", "N/A"),
+        "stiffness_N_m": structure.get("stiffness_k", {}).get("value", "N/A"),
+        "damping_ratio": damping.get("ratio_xi", {}).get("value", "N/A"),
+    }
 
 FIG_DIR = ROOT / "articles" / "figures"
 
@@ -92,6 +114,13 @@ def fig_architecture(plt):
     ax.set_xlim(0, 1)
     ax.set_ylim(0, 1)
     ax.axis("off")
+    # Annotate with SSOT structural params if available
+    ssot = _get_ssot_structural_labels()
+    if ssot["mass_kg"] != "N/A":
+        ax.text(0.5, 0.02,
+                f"SSOT: m={ssot['mass_kg']} kg, k={ssot['stiffness_N_m']} N/m, "
+                f"ξ={ssot['damping_ratio']}",
+                ha="center", fontsize=7, style="italic", color="gray")
     ax.set_title("Fig. 1 -- System Architecture: Belico Stack EIU")
     _save_figure(plt, "fig_01_architecture", "System Architecture")
 
