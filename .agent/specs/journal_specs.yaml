@@ -299,6 +299,7 @@ Q3:
     - Introduction
     - Methodology
     - Results
+    - Discussion
     - Conclusion
   # validate_submission.py uses required_sections by default. Use mdpi_required_sections when targeting MDPI journals (Sensors, Buildings, Materials)
   mdpi_required_sections:
