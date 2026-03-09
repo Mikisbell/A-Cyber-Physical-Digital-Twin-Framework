@@ -61,6 +61,44 @@ EXPLORE --> PROPOSE -|          |-> TASKS --> IMPLEMENT --> VERIFY --> ARCHIVE -
   - Batch 4: Abstract + Intro + Refs
 - Each batch has: input data, output sections, validation criteria
 
+### Style Calibration (pre-IMPLEMENT — mandatory)
+
+Before writing ANY section, the narrator must have a **style reference** from real published papers in the target venue. This is NOT optional.
+
+**Procedure (runs once per paper, before Batch 1):**
+
+1. **Search target venue**: Use Semantic Scholar MCP to find 3-5 recent papers (last 3 years) from the exact target journal/conference (e.g., "EWSHM 2024", "Engineering Structures 2023")
+2. **Extract style patterns** from abstracts and introductions:
+   - How do authors open their Introduction? (with a problem statement? a statistic? a question?)
+   - How do they transition between paragraphs? (explicit connectors? implicit flow?)
+   - What is their citation density per paragraph? (1-2? 3-5?)
+   - Do they use first person ("We") or passive voice ("was measured")?
+   - Average sentence length?
+   - How do they introduce their contribution? (explicitly? embedded in context?)
+3. **Create a Style Card** saved to Engram:
+   ```
+   mem_save("style: {paper_id} — venue={venue}, voice={active/passive/mixed},
+   citation_density={N per paragraph}, avg_sentence_length={N words},
+   opener_pattern={description}, contribution_intro={description}")
+   ```
+4. **Every batch narrator** reads the Style Card from Engram before writing
+5. **Reviewer Simulator** compares draft style against the Style Card during VERIFY
+
+**Style Card example:**
+```
+Venue: EWSHM 2024
+Voice: Mixed (active for methods, passive for results)
+Citation density: 2-3 per paragraph in Intro, 1-2 in Methods, 0-1 in Results
+Avg sentence length: 18 words
+Opener pattern: Start with specific problem + statistic ("Fatigue cracking accounts for 23% of...")
+Contribution intro: Explicit statement at end of Introduction ("This paper proposes...")
+Transition style: No "Furthermore/Moreover". Use topical flow (last sentence of P1 introduces topic of P2)
+```
+
+**Anti-pattern:**
+- Writing without a Style Card = writing blind = AI-detectable prose
+- Using ChatGPT-style connectors instead of venue-appropriate transitions
+
 ### 6. IMPLEMENT (Sub-agents, batched)
 - Execute one batch at a time via delegated sub-agents
 - Each batch must pass partial VERIFY before advancing

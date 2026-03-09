@@ -232,6 +232,16 @@ EXPLORE ──→ PROPOSE ─┤          ├─→ TASKS ──→ IMPLEMENT �
 
 IMPLEMENT no se ejecuta de golpe. Se divide en batches secuenciales:
 
+### Pre-Batch: Style Calibration (mandatory, runs once)
+
+Before Batch 1, a sub-agent executes Style Calibration:
+1. Searches Semantic Scholar for 3-5 papers from the target venue
+2. Extracts writing patterns (voice, transitions, citation density, sentence length)
+3. Saves a Style Card to Engram
+4. All batch narrators read the Style Card before writing
+
+This ensures the draft mimics the voice of real published authors, not AI-generated prose.
+
 ```
 Batch 1: Methodology + Fig_methodology  → VERIFY parcial (estructura OK?)
 Batch 2: Results + Fig_results           → VERIFY parcial (datos trazables?)

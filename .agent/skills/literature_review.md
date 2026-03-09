@@ -27,6 +27,22 @@ metadata:
 
 ## Workflow
 
+### Phase 0: Style Extraction (before literature search)
+
+Before searching for content references, extract the WRITING STYLE of the target venue.
+
+1. Search Semantic Scholar for 3-5 papers from the target venue (use venue name as query, filter by year >= 2022)
+2. For each paper found, get its abstract via `get_semantic_scholar_paper_details`
+3. Analyze the abstracts for:
+   - Sentence starters (what words do real authors use?)
+   - Passive vs active voice ratio
+   - How they state contributions
+   - Citation patterns within text
+4. Save a Style Card to Engram with key findings
+5. This Style Card is consumed by the narrator in IMPLEMENT
+
+This phase uses the SAME Semantic Scholar MCP tools as the literature search — no new infrastructure needed.
+
 ### Phase 1: Keyword Extraction
 
 From the paper's abstract or research question, extract 3-5 search queries:
