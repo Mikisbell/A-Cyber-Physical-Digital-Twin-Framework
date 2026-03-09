@@ -41,6 +41,7 @@ IMRAD_SECTIONS = ["Abstract", "Introduction", "Methodology", "Results",
                   "Discussion", "Conclusion"]
 
 # Anti-AI blacklisted phrases — instant rejection if found in draft
+# SSOT: Belico.md — keep synced
 AI_BLACKLISTED_PHRASES = [
     "it is worth mentioning",
     "it is worth noting",
@@ -442,26 +443,94 @@ def validate_draft(draft_path: Path) -> list[dict]:
     clean = re.sub(r"\$.*?\$", "MATH", clean)
     words = len(clean.split())
 
-    # Get target from frontmatter
-    target_match = re.search(r"word_count_target:\s*(\d+)", text)
-    target = int(target_match.group(1)) if target_match else 6000
-    pct = (words / target) * 100 if target else 0
+    # Primary check: journal_specs wc_min/wc_max (when quartile is known)
+    quartile_for_wc = _extract_quartile(text)
+    specs_for_wc = _load_journal_specs()
+    spec_for_wc = specs_for_wc.get(quartile_for_wc, specs_for_wc.get(quartile_for_wc.lower(), {}))
+    wc_min_spec = spec_for_wc.get("word_count", {}).get("min", 0) if spec_for_wc else 0
+    wc_max_spec = spec_for_wc.get("word_count", {}).get("max", 0) if spec_for_wc else 0
 
-    if pct < 30:
-        issues.append({"severity": "WARN", "check": "word_count",
-                        "msg": f"Word count: {words}/{target} ({pct:.0f}%) -- very incomplete"})
-    elif pct < 80:
+    if wc_min_spec and wc_max_spec:
+        # Journal specs available — use as primary (ERROR severity)
+        if words < wc_min_spec:
+            issues.append({"severity": "ERROR", "check": "word_count",
+                            "msg": f"Word count {words} < spec min {wc_min_spec} for {quartile_for_wc}"})
+        elif words > wc_max_spec:
+            issues.append({"severity": "ERROR", "check": "word_count",
+                            "msg": f"Word count {words} > spec max {wc_max_spec} for {quartile_for_wc}"})
+        else:
+            issues.append({"severity": "OK", "check": "word_count",
+                            "msg": f"Word count: {words} (spec range: {wc_min_spec}-{wc_max_spec} for {quartile_for_wc})"})
+
+    # Secondary check: frontmatter target (INFO severity)
+    target_match = re.search(r"word_count_target:\s*(\d+)", text)
+    target = int(target_match.group(1)) if target_match else None
+    if target:
+        pct = (words / target) * 100
+        if pct < 30:
+            issues.append({"severity": "INFO", "check": "word_count",
+                            "msg": f"Word count: {words}/{target} ({pct:.0f}%) -- very incomplete"})
+        elif pct < 80:
+            issues.append({"severity": "INFO", "check": "word_count",
+                            "msg": f"Word count: {words}/{target} ({pct:.0f}%) -- in progress"})
+        else:
+            issues.append({"severity": "OK", "check": "word_count",
+                            "msg": f"Word count: {words}/{target} ({pct:.0f}%)"})
+    elif not wc_min_spec:
+        # No specs and no frontmatter target — fallback
         issues.append({"severity": "INFO", "check": "word_count",
-                        "msg": f"Word count: {words}/{target} ({pct:.0f}%) -- in progress"})
-    else:
-        issues.append({"severity": "OK", "check": "word_count",
-                        "msg": f"Word count: {words}/{target} ({pct:.0f}%)"})
+                        "msg": f"Word count: {words} (no spec or target available)"})
 
     # 7. IMRaD sections
     for section in IMRAD_SECTIONS:
         if section.lower() not in text.lower():
             issues.append({"severity": "WARN", "check": "structure",
                             "msg": f"Missing IMRaD section: {section}"})
+
+    # 7.5. Abstract word count (against journal_specs abstract.max_words)
+    abstract_match = re.search(
+        r"##\s*Abstract\s*\n(.*?)(?=\n##\s|\Z)", text, re.DOTALL | re.IGNORECASE
+    )
+    if abstract_match:
+        abstract_text = abstract_match.group(1).strip()
+        abstract_clean = re.sub(r"[#*|`\[\]()!<>-]", " ", abstract_text)
+        abstract_clean = re.sub(r"\$.*?\$", "MATH", abstract_clean)
+        abstract_words = len(abstract_clean.split())
+        abstract_max = (spec_for_wc.get("abstract", {}).get("max_words", 0)
+                        if spec_for_wc else 0)
+        if abstract_max and abstract_words > abstract_max:
+            issues.append({
+                "severity": "WARN", "check": "abstract_length",
+                "msg": f"Abstract has {abstract_words} words, spec max is "
+                       f"{abstract_max} for {quartile_for_wc}"
+            })
+        elif abstract_words > 0:
+            issues.append({
+                "severity": "OK", "check": "abstract_length",
+                "msg": f"Abstract word count: {abstract_words}"
+                       + (f" (max {abstract_max})" if abstract_max else "")
+            })
+
+    # 7.6. Semicolon density (max 1 per paragraph — Belico.md structural rule)
+    body_for_semi = text
+    if text.startswith("---"):
+        fm_end_semi = text.find("---", 3)
+        if fm_end_semi != -1:
+            body_for_semi = text[fm_end_semi + 3:]
+    paragraphs_semi = re.split(r'\n\s*\n', body_for_semi)
+    para_num = 0
+    for para in paragraphs_semi:
+        stripped_para = para.strip()
+        # Skip headings, empty lines, and non-prose blocks
+        if not stripped_para or stripped_para.startswith('#') or stripped_para.startswith('!'):
+            continue
+        para_num += 1
+        semicolons = stripped_para.count(';')
+        if semicolons > 1:
+            issues.append({
+                "severity": "WARN", "check": "semicolon_density",
+                "msg": f"Paragraph {para_num} has {semicolons} semicolons (max 1 per paragraph)"
+            })
 
     # 8. TODO markers
     todos = re.findall(r"\[TODO.*?\]", text, re.IGNORECASE)
@@ -496,20 +565,12 @@ def validate_draft(draft_path: Path) -> list[dict]:
             issues.append({"severity": "WARN", "check": "journal_spec",
                             "msg": f"Figures: {fig_count} < min {fig_min} for {quartile}"})
 
-        # Word count range from spec
-        wc_min = spec.get("word_count", {}).get("min", 0)
-        wc_max = spec.get("word_count", {}).get("max", 99999)
-        if words < wc_min:
-            issues.append({"severity": "WARN", "check": "journal_spec",
-                            "msg": f"Word count {words} < min {wc_min} for {quartile}"})
-        elif words > wc_max:
-            issues.append({"severity": "WARN", "check": "journal_spec",
-                            "msg": f"Word count {words} > max {wc_max} for {quartile}"})
+        # Word count range from spec — handled in check #6 (primary word count)
 
         # Required sections from spec
         for section in spec.get("required_sections", []):
             if section.lower() not in text.lower():
-                issues.append({"severity": "WARN", "check": "journal_spec",
+                issues.append({"severity": "ERROR", "check": "journal_spec",
                                 "msg": f"Missing required section for {quartile}: {section}"})
 
         # Novelty gate
@@ -560,6 +621,8 @@ def diagnose(draft_path: Path, issues: list[dict]):
         "structure": "Add missing IMRaD sections → DESIGN step",
         "completeness": "Resolve all TODO markers → IMPLEMENT step",
         "journal_spec": "Review .agent/specs/journal_specs.yaml gates → SPEC step",
+        "abstract_length": "Shorten abstract to meet journal word limit → IMPLEMENT step",
+        "semicolon_density": "Split semicolons into separate sentences → IMPLEMENT step",
     }
 
     errors_and_warns = [i for i in issues if i["severity"] in ("ERROR", "WARN")]

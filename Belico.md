@@ -269,11 +269,12 @@ El Verifier actuara como Auditor ("Data-Driven Peer Review"). Compara el draft d
 Every sentence generated for a paper draft MUST pass the "human author test": if a reviewer or AI detector flags it as machine-generated, the paper is DEAD.
 
 **BLACKLISTED phrases (instant rejection — NEVER use these):**
-- "It is worth noting", "It is important to note", "It should be noted"
+- "It is worth noting", "It is worth mentioning", "It is important to note", "It should be noted"
 - "Furthermore", "Moreover", "Additionally" as sentence starters
 - "In this study, we", "This paper presents", "This work proposes" (opener clichés)
 - "delve into", "delve deeper", "shed light on"
-- "leveraging", "utilizing", "harnessing" (use "using")
+- "leverages", "leveraging", "utilizing", "harnessing" (use "using")
+- "intricacies", "noteworthy", "straightforward"
 - "novel framework", "novel approach", "novel methodology" (unless proving novelty with evidence)
 - "comprehensive", "robust", "seamless", "cutting-edge", "state-of-the-art" (without citation)
 - "plays a crucial role", "has gained significant attention"
