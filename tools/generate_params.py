@@ -90,10 +90,13 @@ def generate_python(cfg: dict, config_hash: str) -> str:
     acq  = cfg.get("acquisition", {})
     sig  = cfg.get("signal_processing", {})
     temp = cfg.get("temporal", {})
+    grd  = cfg.get("guardrails", {})
+    des  = cfg.get("design", {})
 
-    lines = f'''# AUTO-GENERATED — No editar manualmente.
-# Fuente: config/params.yaml  |  Hash: {config_hash[:16]}
-# Regenerar: python3 tools/generate_params.py
+    lines = f'''# AUTO-GENERATED — Do not edit manually.
+# Source: config/params.yaml  |  Hash: {config_hash[:16]}
+# Regenerate: python3 tools/generate_params.py
+# For runtime YAML access (always fresh), use src/physics/models/params.py instead.
 
 CONFIG_HASH = "{config_hash}"
 
@@ -125,6 +128,21 @@ KF_R       = {_v(sig.get("kalman", {}), "measurement_noise_r", 0.01)}
 DT         = {_v(temp, "dt_simulation", 0.01)}
 MAX_JITTER = {_v(temp, "max_jitter_ms", 5)}
 BUFFER_DEPTH = {_v(temp, "buffer_depth", 10)}
+
+# Design (E.030)
+DESIGN_Z  = {_v(des, "Z", 0.45)}
+
+# Guardrails
+MAX_STRESS_RATIO       = {_v(grd, "max_stress_ratio", 0.6)}
+CONVERGENCE_TOLERANCE  = {_v(grd, "convergence_tolerance", 1e-6)}
+MAX_SLENDERNESS        = {_v(grd, "max_slenderness", 120)}
+ECCENTRICITY_RATIO     = {_v(grd, "eccentricity_ratio", 0.10)}
+MASS_PARTICIPATION_MIN = {_v(grd, "mass_participation_min", 0.90)}
+MAX_SENSOR_SIGMA       = {_v(grd, "max_sensor_outlier_sigma", 3.0)}
+ABORT_JITTER_MS        = {_v(grd, "abort_jitter_ms", 10.0)}
+ABORT_JITTER_CONSEC    = {_v(grd, "abort_jitter_consec", 3)}
+STRESS_RATIO_ABORT     = {_v(grd, "stress_ratio_abort", 0.85)}
+LORA_STALE_TIMEOUT_S   = {_v(grd, "lora_stale_timeout_s", 15.0)}
 
 # Nonlinear model status
 NONLINEAR_READY = {_nonlinear_ready(cfg)}

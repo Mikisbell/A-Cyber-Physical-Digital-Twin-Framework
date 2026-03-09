@@ -1,8 +1,9 @@
-# AUTO-GENERATED — No editar manualmente.
-# Fuente: config/params.yaml  |  Hash: bb8980cc6af0577e
-# Regenerar: python3 tools/generate_params.py
+# AUTO-GENERATED — Do not edit manually.
+# Source: config/params.yaml  |  Hash: 824d9fe1c7f101ac
+# Regenerate: python3 tools/generate_params.py
+# For runtime YAML access (always fresh), use src/physics/models/params.py instead.
 
-CONFIG_HASH = "bb8980cc6af0577e4d5f42b6bc6b165b30c03a7d8860ff6dab2e4d0354fb833d"
+CONFIG_HASH = "824d9fe1c7f101ac350b82cf19ad3ff8f1e599b5ad5235856cab0c95fd72da4c"
 
 # Material
 MATERIAL_NAME = ""
@@ -32,6 +33,21 @@ KF_R       = 0.01
 DT         = 0.01
 MAX_JITTER = 5
 BUFFER_DEPTH = 10
+
+# Design (E.030)
+DESIGN_Z  = 0.45
+
+# Guardrails
+MAX_STRESS_RATIO       = 0.6
+CONVERGENCE_TOLERANCE  = 1e-06
+MAX_SLENDERNESS        = 120
+ECCENTRICITY_RATIO     = 0.1
+MASS_PARTICIPATION_MIN = 0.9
+MAX_SENSOR_SIGMA       = 3.0
+ABORT_JITTER_MS        = 10.0
+ABORT_JITTER_CONSEC    = 3
+STRESS_RATIO_ABORT     = 0.85
+LORA_STALE_TIMEOUT_S   = 15.0
 
 # Nonlinear model status
 NONLINEAR_READY = False

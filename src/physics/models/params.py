@@ -2,7 +2,9 @@ import openseespy.opensees as ops
 import yaml
 from pathlib import Path
 
-# Carga de la SSOT (Solo lectura para simulación simple)
+# Runtime YAML access — reads params.yaml fresh on every import.
+# This file reads config/params.yaml at RUNTIME (always fresh values).
+# For static constants (firmware/test tools), see src/physics/params.py instead.
 PARAMS_PATH = Path(__file__).parent.parent.parent.parent / "config" / "params.yaml"
 
 def load_sim_params():

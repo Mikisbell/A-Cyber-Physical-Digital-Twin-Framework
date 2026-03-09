@@ -1,5 +1,7 @@
 # config/soil_params.yaml
-# Single Source of Truth — Parámetros de Amplificación de Suelo (Norma E.030-2018, Perú)
+# Site characterization SSOT (geotechnical data).
+# Structural model parameters live in config/params.yaml.
+# design.Z (seismic zone factor) lives in params.yaml, NOT here.
 # ==========================================================================================
 # Proyecto: (fill with your project name)
 # Referencia: RNE E.030 Diseño Sismorresistente (2018), Tabla 3 y Tabla 4
@@ -25,7 +27,7 @@ spectral_plateau:
 
 # Parámetros de diseño estructural
 design:
-  Z:          0.45         # Factor de zona sísmica (g)
+  Z:          0.45         # Factor de zona sísmica (g) — canonical source: config/params.yaml design.Z
   U:          1.5          # Factor de uso (Categoría A - infraestructura esencial)
   R:          6.0          # Coeficiente de reducción (pórticos de concreto armado)
   # Nota: Para materiales con ζ variable, R debería ajustarse.

@@ -1,6 +1,10 @@
 # SSOT — Single Source of Truth: Parámetros Físicos del Gemelo Digital
 # Archivo: config/params.yaml
 #
+# SSOT for structural model parameters.
+# Site characterization (Vs30, soil class) lives in config/soil_params.yaml.
+# After editing, run: python3 tools/generate_params.py
+#
 # REGLA BÉLICA: Este archivo es el ÚNICO lugar donde se definen los parámetros físicos.
 # Nunca edites directamente header.h ni params.py.
 # Ejecuta: python tools/generate_params.py para regenerar los archivos derivados.
@@ -19,6 +23,14 @@ metadata:
 # ─────────────────────────────────────────────────
 project:
   domain: "structural"
+
+# ─────────────────────────────────────────────────
+# DISEÑO SISMO-RESISTENTE (E.030)
+# ─── Factores de diseño canónicos (soil_params.yaml tiene copia para compat) ─
+# ─────────────────────────────────────────────────
+design:
+  Z: 0.45  # Seismic zone factor (E.030 Zone 4 — Peru)
+  # Source: site characterization. Override per project.
 
 # ─────────────────────────────────────────────────
 # ─────────────────────────────────────────────────
