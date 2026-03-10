@@ -237,13 +237,21 @@ IMPLEMENT no se ejecuta de golpe. Se divide en batches secuenciales:
 
 ### Pre-Batch: Style Calibration (mandatory, runs once)
 
-Before Batch 1, a sub-agent executes Style Calibration:
-1. Searches Semantic Scholar for 3-5 papers from the target venue
-2. Extracts writing patterns (voice, transitions, citation density, sentence length)
-3. Saves a Style Card to Engram
-4. All batch narrators read the Style Card before writing
+Before Batch 1, a sub-agent runs:
+```bash
+python3 tools/style_calibration.py \
+  --venue "{venue}" \
+  --year {current_year} \
+  --n 5 \
+  --paper-id {paper_id} \
+  --save-md
+```
+Keys ya configuradas en `.env`: `OPENALEX_API_KEY` (primario) + `SEMANTIC_SCHOLAR_API_KEY` (opcional).
+El script descarga 3-5 papers reales del venue, extrae patrones de escritura y guarda el Style Card:
+- En Engram: `mem_search("style: {paper_id}")` para recuperar
+- En disco: `articles/drafts/style_card_{paper_id}.md`
 
-This ensures the draft mimics the voice of real published authors, not AI-generated prose.
+Todos los batch narrators leen el Style Card antes de escribir. Esto hace que el draft imite la voz de autores reales del venue, no prosa genérica de IA.
 
 ```
 Batch 1: Methodology + Fig_methodology  → VERIFY parcial (estructura OK?)
@@ -655,6 +663,7 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | Tool | Funcion |
 |------|---------|
 | `tools/check_novelty.py` | Verifica originalidad del paper (extrae keywords del PRD + busca en OpenAlex/arXiv) |
+| `tools/style_calibration.py` | Style Calibration anti-IA: busca papers reales del venue, extrae patrones de escritura, guarda Style Card en Engram + disco (pre-IMPLEMENT obligatorio) |
 | `tools/scaffold_investigation.py` | Crea proyecto + valida params por dominio |
 | `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air) |
 | `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio |
