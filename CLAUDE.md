@@ -731,6 +731,14 @@ Cada paper draft en `articles/drafts/` debe:
 - `config/research_lines.yaml` — Research lines + active paper profile (manual reference)
 - `config/field_baseline.yaml` — Field calibration baseline (fn, site)
 - `src/firmware/` — Dominio fisico (Arduino). Consume `params.h`
+  - **Board 1 — Arduino Nano 33 BLE Sense Rev2** (capa de adquisicion — nodo denso):
+    - Sensores: BMI270 (IMU), BME688 (temp/hum/pressure/VOC), HS3003, PDM mic (acoustic emission)
+    - Rol: 100Hz → bridge.py → OpenSeesPy digital twin
+    - Firmware: `nano33_belico.ino`
+  - **Board 2 — Arduino Nicla Sense ME** (capa de inferencia edge — campo sin PC):
+    - Rol: ML inference on-board, deployment en campo, SHM autonomo
+    - Firmware: `nicla_edge_field.ino` + `nicla_edge_shm.ino`
+  - **Emulador**: `tools/arduino_emu.py` simula Nano 33 via PTY (6 modos: sano, resonance, dano_leve, dano_critico, presa, dropout)
 - `src/physics/` — Dominio digital. Consume `params.py`
   - `solver_backend.py` — Interfaz abstracta multi-dominio
   - `torture_chamber.py` — Backend structural (OpenSeesPy)
