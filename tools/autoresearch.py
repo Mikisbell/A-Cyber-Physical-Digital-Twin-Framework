@@ -114,12 +114,15 @@ def git_commit(file_path, message):
 
 
 def git_merge_and_cleanup(branch_name):
+    git_run("checkout", "--", ".", check=False)
     git_run("checkout", "main")
     git_run("merge", branch_name, "--no-edit")
     git_run("branch", "-d", branch_name)
 
 
 def git_discard_branch(branch_name):
+    # Reset any uncommitted changes before switching branches
+    git_run("checkout", "--", ".", check=False)
     git_run("checkout", "main")
     git_run("branch", "-D", branch_name, check=False)
 
@@ -489,7 +492,6 @@ def run_loop(max_experiments: int, target_room: str = None,
         if eval_result.get("status") in ("crash", "timeout", "parse_error"):
             status = eval_result["status"]
             print(f"  {status.upper()} — discarding.")
-            revert_change(proposal)
             git_discard_branch(branch_name)
             discarded_count += 1
         elif delta > min_threshold:
@@ -500,7 +502,6 @@ def run_loop(max_experiments: int, target_room: str = None,
         else:
             status = "discard"
             print(f"  DISCARD — no improvement (delta={delta:+.4f})")
-            revert_change(proposal)
             git_discard_branch(branch_name)
             discarded_count += 1
 
