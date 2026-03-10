@@ -462,6 +462,21 @@ VERIFICACION AUTOMATICA:
 
 **Gate C5:** COMPUTE_MANIFEST.json existe y `all_design_sources_exist: true` → IMPLEMENT desbloqueado. Cualquier `false` → BLOQUEAR con mensaje explicito de que falta.
 
+#### C5.5 — Estadísticos (obligatorio para Q1/Q2, recomendado Q3)
+
+Después de generar el COMPUTE_MANIFEST y **antes de IMPLEMENT**:
+
+```bash
+# Q1/Q2 — obligatorio (Gate 2 del reviewer_simulator lo exige)
+python3 tools/compute_statistics.py --quartile q1   # o q2
+# Output: data/processed/cv_results.json enriquecido con *_std + statistics_summary
+# Check: "Gate 2 check: p=X.XXXX < α=0.05 — SIGNIFICANT ✓"
+# Si p >= 0.05: aumentar N de simulaciones o escenarios de daño
+```
+
+**Para Q3:** recomendado pero no bloqueante. Agrega credibilidad sin ser requisito de Gate 2.
+**Para Conference/Q4:** no requerido.
+
 #### Engram Save obligatorio post-COMPUTE
 
 ```
@@ -481,7 +496,7 @@ Ahora que COMPUTE genero datos reales, IMPLEMENT cambia fundamentalmente:
 | Batch | Que escribe | De donde saca los datos | Gate de entrada |
 |-------|-------------|------------------------|-----------------|
 | B1: Methodology | Describe el modelo QUE CORRIO (no "se correria"). Paths reales, params reales del SSOT, OpenSeesPy version real. | `config/params.yaml`, codigo fuente de `torture_chamber.py`, `COMPUTE_MANIFEST.json` | COMPUTE C2 completado |
-| B2: Results | Reporta OUTPUTS reales de la simulacion. Figuras ploteadas desde `data/processed/`. Tablas con numeros extraidos de CSVs. | `data/processed/*.csv`, `plot_figures.py` | Archivos de datos existen |
+| B2: Results | Reporta OUTPUTS reales de la simulacion. Figuras desde `data/processed/` con `plot_figures.py --quartile {q}` (Q1/Q2: error bars obligatorias). Q3+: incluye Fig 5 benchmark comparison. Tablas con numeros de CSVs. | `data/processed/*.csv`, `plot_figures.py --quartile {q}`, `compute_statistics.py` (Q1/Q2) | Archivos de datos existen; compute_statistics.py ejecutado (Q1/Q2) |
 | B3: Discussion | Compara resultados reales vs benchmarks, vs literatura. Discute limitaciones REALES del modelo. | `data/processed/`, refs de bibliography_agent | B2 verificado |
 | B4: Abstract+Intro+Refs | Resume lo que SE HIZO y SE ENCONTRO, no lo que "se propone". | Todo lo anterior | B1-B3 verificados |
 
@@ -586,7 +601,11 @@ El orquestador (Opus) delega las tareas de generacion a sub-agentes que pueden u
 
 1. **Figuras finales** — Generar figuras reales PDF/PNG (no placeholders). Delegara Figure Agent. Cada figura debe tener datos trazables a `db/manifest.yaml`.
 2. **Compilar PDF** — `compile_paper.sh draft.md --template {ieee|conference|elsevier}`. El script ejecuta `validate_submission.py` automaticamente antes de compilar.
-3. **Reviewer Simulator** — Lanzar sub-agente con `reviewer_simulator.md`. El paper debe pasar Gate 0 (AI prose), Gate 1 (data traceability), Gate 2 (technical review). Si falla cualquier gate, corregir y re-ejecutar.
+3. **Reviewer Simulator** — Lanzar sub-agente con `reviewer_simulator.md`. El paper debe pasar:
+   - Gate 0: AI prose detection (blacklist + structural patterns)
+   - Gate 1: Data traceability (PEER RSN citado, manifest vs quartile, digital twin check)
+   - Gate 2 (Q1/Q2 HARD BLOCK): Statistical rigor — CI/error bars, N declarado, hipotesis test (Q1), effect size (Q1), convergencia. REJECT inmediato si falla.
+   Si falla cualquier gate, corregir y re-ejecutar.
 4. **Cover letter** — Si aplica, generar con `generate_cover_letter.py`.
 5. **Revision humana** — Preguntar al usuario: "El PDF esta listo para revision. Quieres revisarlo antes de ARCHIVE?"
 
@@ -674,10 +693,11 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | `tools/check_novelty.py` | Verifica originalidad del paper (extrae keywords del PRD + busca en OpenAlex/arXiv) |
 | `tools/style_calibration.py` | Style Calibration anti-IA: busca papers reales del venue, extrae patrones de escritura, guarda Style Card en Engram + disco (pre-IMPLEMENT obligatorio) |
 | `tools/scaffold_investigation.py` | Crea proyecto + valida params por dominio |
-| `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air) |
-| `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio |
+| `articles/scientific_narrator.py` | Genera draft IMRaD multi-dominio (structural/water/air). Secciones MDPI (Data Availability, Author Contributions, Conflicts of Interest) auto-generadas para Q3/Q4. Data Availability para Q1. CLI acepta `--quartile conference\|Q1\|Q2\|Q3\|Q4` |
+| `tools/plot_figures.py` | Figuras numeradas PDF+PNG por dominio. `--quartile q1\|q2` activa error bars obligatorias (yerr/fill_between/xerr). Fig 5 (benchmark_comparison) requerida para Q3+. Run: `python3 tools/plot_figures.py --domain structural --quartile q2` |
+| `tools/compute_statistics.py` | Estadísticos para Q1/Q2 (Gate 2): Mann-Whitney U, t-test, Cohen's d, bootstrap CI 95%. Escanea data/processed/*.csv, enriquece cv_results.json con *_std + statistics_summary. Run: `python3 tools/compute_statistics.py --quartile q1` |
 | `tools/generate_bibtex.py` | BibTeX desde vault (53 entradas, 12 categorias) |
-| `tools/validate_submission.py` | Pre-check: AI prose (Gate 0), marcadores, refs, figuras, word count, TODOs |
+| `tools/validate_submission.py` | Pre-check 9 gates: AI prose (Gate 0), traceability (Gate 0.5), COMPUTE (Gate 0.6), frontmatter, markers, figures, refs, word count, journal specs (normative codes Q1/Q2, multi-structure Q1) |
 | `tools/compile_paper.sh` | Pandoc+citeproc → PDF (IEEE/Elsevier/Conference/Plain) |
 | `tools/generate_cover_letter.py` | Cover letter parametrica + respuesta a reviewers |
 | `tools/research_director.py` | Orquesta campana completa: simulacion + validacion + biblio |
