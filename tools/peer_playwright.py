@@ -2,17 +2,18 @@
 """
 PEER NGA-West2 Downloader via Playwright (headless Chromium)
 =============================================================
-Uses a real browser to navigate PEER's JavaScript-heavy interface.
-This is the only reliable way to automate PEER downloads since the
-AT2 download links are rendered dynamically via React/JS.
+Hybrid approach: curl handles login (avoids bot detection on login page),
+then passes session cookies to Playwright which navigates the React SPA
+and intercepts the actual AT2 download API calls.
 
 Requirements:
     pip install playwright
-    playwright install chromium
+    playwright install chromium --with-deps
 
 Usage:
     python3 tools/peer_playwright.py --rsn 766
     python3 tools/peer_playwright.py --rsn 766 1158 4517
+    python3 tools/peer_playwright.py --rsn 766 --cookie-jar /tmp/peer_cookies.txt
 
 Credentials from .env (gitignored):
     PEER_EMAIL=your@email.com
@@ -47,12 +48,141 @@ def load_credentials() -> tuple[str, str]:
     return email, password
 
 
+def _parse_netscape_cookies(jar_path: Path) -> list[dict]:
+    """Parse curl Netscape-format cookie jar into Playwright cookie list."""
+    cookies = []
+    for line in jar_path.read_text().splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split("\t")
+        if len(parts) < 7:
+            continue
+        domain, _subdomains, path, secure, _expires, name, value = parts[:7]
+        cookies.append({
+            "name": name,
+            "value": value,
+            "domain": domain.lstrip("."),
+            "path": path,
+            "secure": secure.upper() == "TRUE",
+        })
+    return cookies
+
+
+def _curl_login(email: str, password: str, cookie_jar: Path, verbose: bool = True) -> bool:
+    """
+    Login via curl (avoids bot detection on login page).
+    Saves session cookies to cookie_jar.
+    Returns True on success.
+    """
+    import subprocess
+    import re
+    import tempfile
+    import urllib.parse
+
+    UA = (
+        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    )
+
+    def _run(url, *, data=None, referer=None):
+        cmd = [
+            "curl", "--silent", "--show-error", "--globoff",
+            "--max-time", "120",
+            "--cookie", str(cookie_jar),
+            "--cookie-jar", str(cookie_jar),
+            "--user-agent", UA,
+            "--header", "Accept-Language: en-US,en;q=0.9",
+            "--header", "Accept: text/html,application/xhtml+xml,*/*",
+            "--write-out", "\n__STATUS__:%{http_code}",
+            "--ipv4", "--location",
+        ]
+        if referer:
+            cmd += ["--referer", referer]
+        _post_file = None
+        if data:
+            body = urllib.parse.urlencode(data)
+            _post_file = Path(tempfile.mktemp(suffix=".post"))
+            _post_file.write_text(body)
+            cmd += ["--data", f"@{_post_file}",
+                    "--header", "Content-Type: application/x-www-form-urlencoded"]
+        cmd.append(url)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
+        if _post_file and _post_file.exists():
+            _post_file.unlink()
+        body_out = result.stdout
+        status = 0
+        if "__STATUS__:" in body_out:
+            parts = body_out.rsplit("__STATUS__:", 1)
+            body_out = parts[0].rstrip("\n")
+            try:
+                status = int(parts[1].strip())
+            except ValueError:
+                pass
+        if result.returncode != 0:
+            return -1, result.stderr.strip() or f"(curl exit={result.returncode})"
+        return status, body_out
+
+    sign_in_url = f"{PEER_BASE}/members/sign_in"
+    if verbose:
+        print("[PEER] curl: fetching login page…")
+    status, html = _run(sign_in_url)
+    if status not in (200, 302) or not html:
+        print(f"[PEER] curl: login page failed (HTTP {status})", file=sys.stderr)
+        return False
+
+    # Extract CSRF token
+    m = re.search(
+        r'<meta[^>]+name=["\']csrf-token["\'][^>]+content=["\']([^"\']+)["\']', html
+    )
+    if not m:
+        m = re.search(
+            r'<input[^>]+name=["\']authenticity_token["\'][^>]+value=["\']([^"\']+)["\']', html
+        )
+    csrf = m.group(1) if m else ""
+
+    spinner_match = re.search(r'name="spinner"[^>]+value="([^"]+)"', html)
+    spinner_value = spinner_match.group(1) if spinner_match else ""
+
+    if verbose:
+        print("[PEER] curl: posting credentials…")
+    status2, body2 = _run(
+        sign_in_url,
+        data={
+            "authenticity_token": csrf,
+            "member[email]": email,
+            "member[password]": password,
+            "member[remember_me]": "0",
+            "member[subtitle]": "",
+            "spinner": spinner_value,
+            "commit": "Log in",
+        },
+        referer=sign_in_url,
+    )
+
+    if status2 == -1:
+        print(f"[PEER] curl: login POST error: {body2}", file=sys.stderr)
+        return False
+    if "Invalid Email or password" in body2:
+        print("[PEER] curl: invalid credentials", file=sys.stderr)
+        return False
+
+    if verbose:
+        print("[PEER] curl: login successful — cookies saved")
+    return True
+
+
 def download_records_playwright(
     rsns: list[int],
     out_dir: Path = DEFAULT_OUT,
+    cookie_jar: Path | None = None,
     verbose: bool = True,
 ) -> dict[int, list[Path]]:
-    """Download AT2 records using Playwright headless browser."""
+    """
+    Download AT2 records using Playwright headless browser.
+    If cookie_jar is provided, injects those cookies (from curl login) instead
+    of doing Playwright-based login (which triggers bot detection).
+    """
     try:
         from playwright.sync_api import sync_playwright, TimeoutError as PWTimeout
     except ImportError:
@@ -63,45 +193,75 @@ def download_records_playwright(
         )
         sys.exit(1)
 
-    email, password = load_credentials()
     out_dir.mkdir(parents=True, exist_ok=True)
     results: dict[int, list[Path]] = {}
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        ctx = browser.new_context(accept_downloads=True)
-        page = ctx.new_page()
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-setuid-sandbox",
+                "--disable-blink-features=AutomationControlled",
+            ],
+        )
+        ctx = browser.new_context(
+            accept_downloads=True,
+            user_agent=(
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+            ),
+        )
 
-        # ----- LOGIN -----
-        if verbose:
-            print(f"[PEER] Navigating to login page… (may take 3-5 min, PEER is slow)")
-        # PEER sign_in page has very slow TLS/SSL response — needs 5min timeout
-        page.goto(f"{PEER_BASE}/members/sign_in", timeout=360_000)
-        page.fill("input#member_email", email)
-        page.fill("input#member_password", password)
-        page.click("input[name='commit']")
-        page.wait_for_load_state("networkidle", timeout=60_000)
-
-        if "sign_in" in page.url and "Invalid" in page.content():
-            print("ERROR: PEER login failed — invalid credentials", file=sys.stderr)
-            browser.close()
-            return {rsn: [] for rsn in rsns}
-
-        if verbose:
-            print(f"[PEER] Login successful (at {page.url})")
+        # Inject curl session cookies (bypasses bot-detected login page)
+        if cookie_jar and cookie_jar.exists():
+            pw_cookies = _parse_netscape_cookies(cookie_jar)
+            if pw_cookies:
+                ctx.add_cookies(pw_cookies)
+                if verbose:
+                    print(f"[PEER] Playwright: injected {len(pw_cookies)} cookies from curl jar")
+        else:
+            # Fallback: Playwright login (may be detected, but try anyway)
+            email, password = load_credentials()
+            if verbose:
+                print("[PEER] Playwright: doing browser login (may be slow, up to 6 min)…")
+            page_login = ctx.new_page()
+            page_login.goto(f"{PEER_BASE}/members/sign_in", timeout=360_000)
+            page_login.fill("input#member_email", email)
+            page_login.fill("input#member_password", password)
+            page_login.click("input[name='commit']")
+            page_login.wait_for_load_state("networkidle", timeout=60_000)
+            if "sign_in" in page_login.url:
+                print("[PEER] Playwright: login failed", file=sys.stderr)
+                browser.close()
+                return {rsn: [] for rsn in rsns}
+            page_login.close()
+            if verbose:
+                print("[PEER] Playwright: login OK")
 
         # ----- DOWNLOAD EACH RSN -----
-        # Intercept network requests to find actual AT2 download API calls
-        api_calls: list[str] = []
-        page.on("request", lambda req: api_calls.append(req.url)
-                if any(k in req.url for k in ["at2", "AT2", "download", "record", "flatfile"])
-                else None)
+        page = ctx.new_page()
+        intercepted_at2: list[str] = []
+
+        def _on_request(req):
+            url = req.url
+            if any(k in url for k in [".AT2", ".at2", "download", "flatfile"]):
+                intercepted_at2.append(url)
+
+        def _on_response(resp):
+            url = resp.url
+            cd = resp.headers.get("content-disposition", "")
+            ct = resp.headers.get("content-type", "")
+            if ".AT2" in url or ".at2" in url or "AT2" in cd or "at2" in cd.lower():
+                intercepted_at2.append(url)
+
+        page.on("request", _on_request)
+        page.on("response", _on_response)
 
         for rsn in rsns:
             rsn_files: list[Path] = []
-            api_calls.clear()
+            intercepted_at2.clear()
 
-            # Skip if already downloaded
             existing = (
                 list(out_dir.glob(f"RSN{rsn}_*.AT2"))
                 + list(out_dir.glob(f"RSN{rsn}.AT2"))
@@ -113,103 +273,154 @@ def download_records_playwright(
                 continue
 
             if verbose:
-                print(f"[PEER] RSN{rsn}: navigating…")
+                print(f"[PEER] RSN{rsn}: navigating to spectras page…")
 
             try:
-                # Use domcontentloaded (not networkidle) to avoid indefinite wait
                 page.goto(
                     f"{PEER_BASE}/spectras/new?sourceDb_flag=1&rsn={rsn}",
                     timeout=120_000,
                     wait_until="domcontentloaded",
                 )
 
-                # Wait briefly for JS to inject download links (max 15s)
-                try:
-                    page.wait_for_selector(
-                        "a[href*='.AT2'], a[href*='download'], button:has-text('Download')",
-                        timeout=15_000,
-                    )
-                except PWTimeout:
-                    pass  # links may not appear — continue anyway
+                # Wait for React to render content (max 30s)
+                # Look for download button, AT2 links, or the "Get PEER NGA" button
+                for selector in [
+                    "a[href*='.AT2']",
+                    "a[href*='download']",
+                    "button:has-text('Get PEER NGA')",
+                    "input[value*='Get PEER']",
+                    "#get-flatfile-wrapper",
+                    ".record-download",
+                    "table.records-table",
+                ]:
+                    try:
+                        page.wait_for_selector(selector, timeout=5_000)
+                        if verbose:
+                            print(f"[PEER] RSN{rsn}: found selector: {selector}")
+                        break
+                    except PWTimeout:
+                        continue
 
-                # Extract all links and buttons related to AT2 download
+                # Also wait a bit more for React to fully render
+                page.wait_for_timeout(3_000)
+
+                # Extract all AT2-related links and buttons
                 at2_links = page.evaluate("""
                     () => {
                         const links = [];
-                        document.querySelectorAll('a, button').forEach(el => {
-                            const h = (el.href || '').toLowerCase();
-                            const t = (el.textContent || '').toLowerCase();
+                        document.querySelectorAll('a, button, input[type="submit"]').forEach(el => {
+                            const h = (el.href || el.action || '').toLowerCase();
+                            const t = (el.textContent || el.value || '').toLowerCase().trim();
                             const d = (el.getAttribute('data-url') || '').toLowerCase();
+                            const onclick = (el.getAttribute('onclick') || '').toLowerCase();
                             if (h.includes('.at2') || h.includes('download') ||
-                                t.includes('.at2') || d.includes('.at2')) {
+                                t.includes('.at2') || t.includes('get peer') ||
+                                t.includes('download') || d.includes('.at2') ||
+                                onclick.includes('at2') || onclick.includes('download')) {
                                 links.push({
-                                    href: el.href || el.getAttribute('data-url') || '',
-                                    text: el.textContent.trim().slice(0, 60),
-                                    tag: el.tagName
+                                    href: el.href || el.getAttribute('data-url') || el.getAttribute('action') || '',
+                                    text: (el.textContent || el.value || '').trim().slice(0, 80),
+                                    tag: el.tagName,
+                                    onclick: el.getAttribute('onclick') || ''
                                 });
                             }
                         });
-                        return links;
+                        // Also check for React data embedded in page
+                        const scripts = Array.from(document.querySelectorAll('script:not([src])'));
+                        const at2Urls = [];
+                        scripts.forEach(s => {
+                            const text = s.textContent || '';
+                            const matches = text.match(/https?[^"']*\\.AT2[^"']*/gi) || [];
+                            at2Urls.push(...matches.slice(0, 5));
+                        });
+                        return {links, at2Urls};
                     }
                 """)
 
-                # Log all intercepted API calls
-                if api_calls:
-                    print(f"[PEER] RSN{rsn}: intercepted API calls:")
-                    for u in api_calls[:8]:
-                        print(f"  API: {u}")
-
-                if at2_links:
-                    print(f"[PEER] RSN{rsn}: found {len(at2_links)} link(s):")
-                    for lnk in at2_links[:5]:
-                        print(f"  → [{lnk['tag']}] {lnk['text']!r} href={lnk['href'][:80]}")
+                if isinstance(at2_links, dict):
+                    link_list = at2_links.get("links", [])
+                    at2_script_urls = at2_links.get("at2Urls", [])
                 else:
-                    # No links found — print page text snippet for diagnosis
-                    body_text = page.evaluate("() => document.body?.innerText?.slice(0, 500) || ''")
-                    print(f"[PEER] RSN{rsn}: no download links found. Page snippet:")
-                    print(f"  {body_text[:300]}")
+                    link_list = at2_links
+                    at2_script_urls = []
 
-                # Try downloading via found links
-                for lnk in at2_links[:3]:
-                    href = lnk.get("href", "")
-                    if not href or href == page.url:
+                if verbose:
+                    if intercepted_at2:
+                        print(f"[PEER] RSN{rsn}: intercepted {len(intercepted_at2)} AT2/download request(s):")
+                        for u in intercepted_at2[:5]:
+                            print(f"  → {u[:100]}")
+                    if link_list:
+                        print(f"[PEER] RSN{rsn}: found {len(link_list)} element(s) with download context:")
+                        for lnk in link_list[:5]:
+                            print(f"  [{lnk['tag']}] {lnk['text']!r} href={lnk.get('href','')[:80]}")
+                    if at2_script_urls:
+                        print(f"[PEER] RSN{rsn}: AT2 URLs in page scripts:")
+                        for u in at2_script_urls[:5]:
+                            print(f"  script: {u[:100]}")
+                    if not intercepted_at2 and not link_list and not at2_script_urls:
+                        body_text = page.evaluate("() => document.body?.innerText?.slice(0, 600) || ''")
+                        print(f"[PEER] RSN{rsn}: no download elements found. Page snippet:")
+                        print(f"  {body_text[:400]}")
+
+                # Priority 1: Try intercepted AT2 URLs (most reliable)
+                for at2_url in list(intercepted_at2) + at2_script_urls:
+                    if ".AT2" not in at2_url.upper():
                         continue
                     try:
                         with page.expect_download(timeout=60_000) as dl_info:
-                            page.goto(href, timeout=60_000, wait_until="domcontentloaded")
-                        download = dl_info.value
-                        fname = download.suggested_filename or f"RSN{rsn}.AT2"
+                            page.goto(at2_url, wait_until="domcontentloaded", timeout=60_000)
+                        dl = dl_info.value
+                        fname = dl.suggested_filename or f"RSN{rsn}.AT2"
                         dest = out_dir / fname
-                        download.save_as(dest)
+                        dl.save_as(dest)
                         if verbose:
-                            print(f"[PEER] RSN{rsn}: saved {fname} ({dest.stat().st_size//1024}KB)")
+                            print(f"[PEER] RSN{rsn}: saved {fname} ({dest.stat().st_size // 1024}KB)")
                         rsn_files.append(dest)
-                    except PWTimeout:
-                        pass
-                    except Exception as exc:
-                        print(f"[PEER] RSN{rsn}: link error: {exc}")
-                    if rsn_files:
                         break
+                    except Exception as exc:
+                        if verbose:
+                            print(f"[PEER] RSN{rsn}: intercepted URL error: {exc}")
 
-                # Try intercepted API calls that look like direct AT2 URLs
+                # Priority 2: Try clicking download buttons
                 if not rsn_files:
-                    for api_url in api_calls:
-                        if ".AT2" in api_url or ".at2" in api_url:
-                            try:
-                                with page.expect_download(timeout=30_000) as dl_info:
-                                    page.goto(api_url, wait_until="domcontentloaded")
-                                download = dl_info.value
-                                fname = download.suggested_filename or f"RSN{rsn}.AT2"
+                    for lnk in link_list[:4]:
+                        href = lnk.get("href", "")
+                        tag = lnk.get("tag", "")
+                        text = lnk.get("text", "").lower()
+                        if not href and "button" not in tag.lower():
+                            continue
+                        try:
+                            if href and href != page.url and ".AT2" in href.upper():
+                                with page.expect_download(timeout=60_000) as dl_info:
+                                    page.goto(href, timeout=60_000, wait_until="domcontentloaded")
+                                dl = dl_info.value
+                                fname = dl.suggested_filename or f"RSN{rsn}.AT2"
                                 dest = out_dir / fname
-                                download.save_as(dest)
+                                dl.save_as(dest)
                                 rsn_files.append(dest)
-                                print(f"[PEER] RSN{rsn}: saved via API intercept: {fname}")
+                                if verbose:
+                                    print(f"[PEER] RSN{rsn}: saved via link: {fname}")
                                 break
-                            except Exception:
-                                pass
+                            elif "get peer" in text or "download" in text:
+                                # Try clicking the button and capturing any download
+                                with page.expect_download(timeout=30_000) as dl_info:
+                                    page.click(f"text={lnk['text'][:30]}")
+                                dl = dl_info.value
+                                fname = dl.suggested_filename or f"RSN{rsn}.AT2"
+                                dest = out_dir / fname
+                                dl.save_as(dest)
+                                rsn_files.append(dest)
+                                if verbose:
+                                    print(f"[PEER] RSN{rsn}: saved via click: {fname}")
+                                break
+                        except PWTimeout:
+                            pass
+                        except Exception as exc:
+                            if verbose:
+                                print(f"[PEER] RSN{rsn}: link/click error: {exc}")
 
             except PWTimeout:
-                print(f"[PEER] RSN{rsn}: page timeout after 2 minutes")
+                print(f"[PEER] RSN{rsn}: page timeout")
             except Exception as exc:
                 print(f"[PEER] RSN{rsn}: ERROR — {exc}")
 
@@ -222,6 +433,7 @@ def download_records_playwright(
             results[rsn] = rsn_files
             time.sleep(1)
 
+        page.close()
         browser.close()
 
     return results
@@ -233,10 +445,26 @@ def main() -> None:
     )
     p.add_argument("--rsn", nargs="+", type=int, required=True)
     p.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    p.add_argument("--cookie-jar", type=Path, default=None,
+                   help="Curl Netscape cookie jar from prior login (skips Playwright login)")
     p.add_argument("--quiet", action="store_true")
     args = p.parse_args()
 
-    results = download_records_playwright(args.rsn, args.out, verbose=not args.quiet)
+    # If no cookie jar provided, do curl login first then pass cookies
+    cookie_jar = args.cookie_jar
+    if cookie_jar is None:
+        import tempfile
+        cookie_jar = Path(tempfile.mktemp(suffix="_peer_cookies.txt"))
+        email, password = load_credentials()
+        if not _curl_login(email, password, cookie_jar, verbose=not args.quiet):
+            print("ERROR: curl login failed", file=sys.stderr)
+            sys.exit(1)
+
+    results = download_records_playwright(
+        args.rsn, args.out,
+        cookie_jar=cookie_jar,
+        verbose=not args.quiet,
+    )
     print("\n=== PEER Playwright Summary ===")
     total = 0
     for rsn, files in results.items():

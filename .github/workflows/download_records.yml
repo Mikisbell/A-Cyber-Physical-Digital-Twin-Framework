@@ -3,6 +3,10 @@
 # Downloads seismic .AT2 records on-demand and commits them to the repo.
 # Triggered manually via GitHub UI (Actions tab → Download Records → Run workflow).
 #
+# Strategy:
+#   1. curl login (avoids bot detection on login page)
+#   2. Playwright + cookie injection (navigates React SPA, intercepts download URLs)
+#
 # Setup:
 #   Go to: Settings → Secrets and variables → Actions → New repository secret
 #   Add: PEER_EMAIL and PEER_PASSWORD
@@ -39,71 +43,102 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install python-dotenv
+        run: |
+          pip install python-dotenv playwright
+          playwright install chromium --with-deps
 
-      - name: Discover PEER authenticated URLs
+      - name: curl login → save cookie jar
         env:
           PEER_EMAIL: ${{ secrets.PEER_EMAIL }}
           PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
         run: |
           python3 - <<'PYEOF'
-          import os, re, sys, tempfile, subprocess, urllib.parse
+          import os, re, subprocess, sys, tempfile, urllib.parse
           from pathlib import Path
           sys.path.insert(0, '.')
-          from tools.peer_downloader import PeerSession, load_credentials, PEER_BASE, _curl
 
-          email, pw = load_credentials()
-          s = PeerSession(email, pw, verbose=True)
-          if not s.login():
-              print("Login failed — skipping URL discovery"); sys.exit(0)
+          PEER_BASE = "https://ngawest2.berkeley.edu"
+          SIGN_IN   = f"{PEER_BASE}/members/sign_in"
+          COOKIE_JAR = "/tmp/peer_cookies.txt"
+          UA = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-          print("\n=== Authenticated URL Discovery ===")
+          email    = os.environ["PEER_EMAIL"]
+          password = os.environ["PEER_PASSWORD"]
 
-          # Dump homepage after login to find authenticated nav links
-          code, html = s._get(PEER_BASE + "/")
-          print(f"Homepage: HTTP {code}, {len(html)} chars")
+          def _run(url, *, data=None, referer=None):
+              cmd = [
+                  "curl", "--silent", "--show-error", "--globoff",
+                  "--max-time", "120", "--ipv4", "--location",
+                  "--cookie", COOKIE_JAR, "--cookie-jar", COOKIE_JAR,
+                  "--user-agent", UA,
+                  "--header", "Accept: text/html,application/xhtml+xml,*/*",
+                  "--write-out", "\n__STATUS__:%{http_code}",
+              ]
+              if referer:
+                  cmd += ["--referer", referer]
+              _post_file = None
+              if data:
+                  body = urllib.parse.urlencode(data)
+                  _post_file = Path(tempfile.mktemp(suffix=".post"))
+                  _post_file.write_text(body)
+                  cmd += ["--data", f"@{_post_file}",
+                          "--header", "Content-Type: application/x-www-form-urlencoded"]
+              cmd.append(url)
+              r = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
+              if _post_file and _post_file.exists():
+                  _post_file.unlink()
+              body_out = r.stdout
+              status = 0
+              if "__STATUS__:" in body_out:
+                  parts = body_out.rsplit("__STATUS__:", 1)
+                  body_out = parts[0].rstrip("\n")
+                  try: status = int(parts[1].strip())
+                  except: pass
+              return status, body_out
 
-          # Find all navigation links
-          nav_links = re.findall(r'href=["\']([^"\']+)["\']', html)
-          print("All nav links:")
-          for lnk in set(nav_links):
-              if any(k in lnk.lower() for k in ['search','download','record','ngaw','motion','sign_out','member']):
-                  print(f"  {lnk}")
+          print("[PEER] Fetching login page…")
+          s1, html = _run(SIGN_IN)
+          print(f"[PEER] Login page: HTTP {s1}, {len(html)} chars")
 
-          # Save for artifact
-          Path('/tmp/peer_home_auth.html').write_text(html)
+          m = re.search(r'<meta[^>]+name=["\']csrf-token["\'][^>]+content=["\']([^"\']+)["\']', html)
+          csrf = m.group(1) if m else ""
+          spin = (re.search(r'name="spinner"[^>]+value="([^"]+)"', html) or type('', (), {'group': lambda _,i: ''})()).group(1) if re.search(r'name="spinner"', html) else ""
 
-          # Try common PEER download URLs
-          test_urls = [
-              "/gm_search",
-              "/gm_search/download",
-              "/ngawest2",
-              "/ground_motion",
-              "/datasets",
-              "/records",
-          ]
-          for ep in test_urls:
-              code2, body2 = s._get(PEER_BASE + ep)
-              print(f"  {ep}: HTTP {code2}, {len(body2)} chars")
+          print("[PEER] Posting credentials…")
+          s2, body2 = _run(SIGN_IN, data={
+              "authenticity_token": csrf,
+              "member[email]": email,
+              "member[password]": password,
+              "member[remember_me]": "0",
+              "member[subtitle]": "",
+              "spinner": spin,
+              "commit": "Log in",
+          }, referer=SIGN_IN)
+
+          print(f"[PEER] Login response: HTTP {s2}, {len(body2)} chars")
+
+          if "Invalid Email or password" in body2:
+              print("LOGIN FAILED — invalid credentials"); sys.exit(1)
+
+          if Path(COOKIE_JAR).exists():
+              cookies = [l for l in Path(COOKIE_JAR).read_text().splitlines() if not l.startswith("#") and l.strip()]
+              print(f"[PEER] Cookie jar saved: {len(cookies)} cookie(s)")
+          else:
+              print("[PEER] WARNING: no cookie jar created"); sys.exit(1)
+
+          print("[PEER] Login OK")
           PYEOF
 
-      - name: Upload auth HTML (diagnosis)
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: peer-auth-html
-          path: /tmp/peer_home_auth.html
-          if-no-files-found: ignore
-
-      - name: Download records from PEER NGA-West2
+      - name: Download records via Playwright (cookie injection)
         env:
           PEER_EMAIL: ${{ secrets.PEER_EMAIL }}
           PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
         run: |
           mkdir -p ${{ inputs.out_dir }}
-          python3 tools/peer_downloader.py \
+          python3 tools/peer_playwright.py \
             --rsn ${{ inputs.rsn_list }} \
-            --out ${{ inputs.out_dir }}
+            --out ${{ inputs.out_dir }} \
+            --cookie-jar /tmp/peer_cookies.txt
 
       - name: Commit downloaded records
         run: |
