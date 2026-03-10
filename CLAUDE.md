@@ -384,8 +384,14 @@ Si el paper involucra adquisicion de datos o firmware, el emulador valida el laz
 ```
 PASO 1: Seleccionar modo de emulacion segun el paper
   → python3 tools/arduino_emu.py [modo] [freq_hz]
-  → Modos disponibles: sano, resonance, dano_leve, dano_critico, presa, dropout
+  → Modos Nano 33 BLE Sense Rev2 (raw T/A/D @ 100Hz):
+      sano, resonance, dano_leve, dano_critico, presa, dropout
+  → Modos Nicla Sense ME (edge AI — FN/PK/ST/CONF cada 2.56s):
+      nicla_sano, nicla_dano, nicla_critico
   → El modo debe corresponder a los escenarios del paper
+  → MIGRACIÓN A HARDWARE REAL: cero cambios de código — solo cambia la fuente serial.
+    Nano 33 real: bridge.py --port /dev/ttyUSB0 (mismo formato T/A/D)
+    Nicla real:   flash TinyML (Edge Impulse) → mismo formato FN/PK/ST/CONF
 
 PASO 2: Correr bridge.py contra el emulador
   → bash tools/run_battle.sh (o run_battle_freq.sh para barrido)
@@ -692,7 +698,7 @@ El dominio activo se define en `config/params.yaml` → `project.domain`.
 | `tools/synthetic_fft_audit.py` | Validacion aislada del algoritmo FFT |
 | `tools/generate_degradation.py` | Generador de datos sinteticos de degradacion (Wiener process + estacionalidad) |
 | `tools/generate_params.py` | Propaga SSOT: params.yaml → params.h (C++) + params.py (Python) |
-| `tools/arduino_emu.py` | Emulador Arduino USB via PTY (6 modos: sano, resonancia, dano, presa, dropout) |
+| `tools/arduino_emu.py` | Emulador Arduino via PTY. Nano 33 (6 modos raw T/A/D): sano, resonance, dano_leve, dano_critico, presa, dropout. Nicla Sense ME (3 modos edge FN/PK/ST/CONF): nicla_sano, nicla_dano, nicla_critico |
 | `tools/baseline_calibration.py` | Calibrador baseline: estadisticas 3-sigma sobre paquetes LoRa |
 | `tools/lora_emu.py` | Emulador LoRa via PTY (6 modos: sano, lag_attack, dano, paradoja, peer) |
 | `tools/bim_exporter.py` | Exportador JSON Speckle-compatible con heatmap de riesgo |
@@ -738,7 +744,10 @@ Cada paper draft en `articles/drafts/` debe:
   - **Board 2 — Arduino Nicla Sense ME** (capa de inferencia edge — campo sin PC):
     - Rol: ML inference on-board, deployment en campo, SHM autonomo
     - Firmware: `nicla_edge_field.ino` + `nicla_edge_shm.ino`
-  - **Emulador**: `tools/arduino_emu.py` simula Nano 33 via PTY (6 modos: sano, resonance, dano_leve, dano_critico, presa, dropout)
+  - **Emulador**: `tools/arduino_emu.py` — PTY serial virtual, bridge.py no distingue emulador de hardware real
+    - Nano 33 BLE Sense Rev2 (6 modos, raw T/A/D @ 100Hz): sano, resonance, dano_leve, dano_critico, presa, dropout
+    - Nicla Sense ME (3 modos, edge AI FN/PK/ST/CONF cada 2.56s): nicla_sano, nicla_dano, nicla_critico
+    - **Migración a hardware real = cero cambios de código** — solo cambia fuente serial (PTY → /dev/ttyUSB0)
 - `src/physics/` — Dominio digital. Consume `params.py`
   - `solver_backend.py` — Interfaz abstracta multi-dominio
   - `torture_chamber.py` — Backend structural (OpenSeesPy)
