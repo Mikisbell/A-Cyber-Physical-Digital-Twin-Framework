@@ -1,0 +1,94 @@
+# AutoResearch Rooms Configuration
+# Each room defines: what to improve, how to measure, what's sacred
+
+rooms:
+  validator:
+    name: "Submission Validator"
+    description: "Improve validate_submission.py detection accuracy"
+    editable:
+      - tools/validate_submission.py
+    sacred:
+      - tests/fixtures/  # NEVER modify test papers
+      - tools/autoresearch.py  # NEVER modify the conductor
+    metric: "precision_recall"
+    evaluation:
+      command: "python3 tests/test_validate_submission.py --score"
+      timeout_seconds: 120
+      score_key: "composite_score"  # higher = better
+    baseline_score: null  # set on first run
+    max_consecutive_failures: 5
+    priority: 1  # highest priority (most measurable)
+
+  prompts:
+    name: "Sub-Agent Prompts"
+    description: "Improve sub-agent prompt clarity and effectiveness"
+    editable:
+      - .agent/prompts/verifier.md
+      - .agent/prompts/physical_critic.md
+      - .agent/prompts/bibliography_agent.md
+      - .agent/prompts/figure_agent.md
+      - .agent/prompts/reviewer_simulator.md
+    sacred:
+      - tests/fixtures/
+      - tools/autoresearch.py
+    metric: "prompt_compliance"
+    evaluation:
+      command: "python3 tests/test_prompt_quality.py --score"
+      timeout_seconds: 180
+      score_key: "compliance_score"
+    baseline_score: null
+    max_consecutive_failures: 5
+    priority: 2
+
+  skills:
+    name: "Skills Documentation"
+    description: "Improve skill clarity and completeness"
+    editable:
+      - .agent/skills/paper_production.md
+      - .agent/skills/signal_processing.md
+      - .agent/skills/literature_review.md
+      - .agent/skills/cfd_domain.md
+      - .agent/skills/wind_domain.md
+      - .agent/skills/norms_codes.md
+    sacred:
+      - tests/fixtures/
+      - tools/autoresearch.py
+      - CLAUDE.md  # skills should not contradict CLAUDE.md
+    metric: "skill_coverage"
+    evaluation:
+      command: "python3 tests/test_skill_quality.py --score"
+      timeout_seconds: 120
+      score_key: "coverage_score"
+    baseline_score: null
+    max_consecutive_failures: 5
+    priority: 3
+
+  simulation:
+    name: "Simulation Code"
+    description: "Improve numerical accuracy and robustness"
+    editable:
+      - src/physics/torture_chamber.py
+      - src/physics/spectral_engine.py
+      - src/physics/cross_validation.py
+    sacred:
+      - tests/fixtures/
+      - config/params.yaml
+      - tools/autoresearch.py
+    metric: "numerical_accuracy"
+    evaluation:
+      command: "python3 tests/test_simulation.py --score"
+      timeout_seconds: 300
+      score_key: "accuracy_score"
+    baseline_score: null
+    max_consecutive_failures: 3
+    priority: 4
+
+# Global settings
+settings:
+  model: "claude-sonnet-4-20250514"  # fast + cheap for proposals
+  max_experiments_per_run: 10
+  experiment_timeout_seconds: 600  # 10 min max per experiment
+  results_file: ".agent/autoresearch/results.tsv"
+  branch_prefix: "autoresearch"
+  prefer_deletions: true  # Karpathy principle: simpler = better
+  min_improvement_threshold: 0.001  # minimum score delta to keep

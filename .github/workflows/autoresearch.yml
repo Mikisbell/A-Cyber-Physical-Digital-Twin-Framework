@@ -1,0 +1,83 @@
+# AutoResearch Self-Improvement Loop
+# Runs nightly to discover and integrate improvements into the stack.
+# Can also be triggered manually with custom parameters.
+
+name: AutoResearch Self-Improvement
+
+on:
+  schedule:
+    # Run at 2am UTC daily
+    - cron: "0 2 * * *"
+
+  workflow_dispatch:
+    inputs:
+      experiments:
+        description: "Number of experiments to run"
+        required: false
+        default: "10"
+      room:
+        description: "Which room to target (all, validator, prompts, skills, simulation)"
+        required: false
+        default: "all"
+
+# Only one autoresearch run at a time; let running jobs finish
+concurrency:
+  group: autoresearch
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  autoresearch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+    steps:
+      # Full history needed for git operations (diff, merge, push)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install anthropic pyyaml
+
+      - name: Run autoresearch
+        run: |
+          python tools/autoresearch.py \
+            --experiments ${{ inputs.experiments || 10 }} \
+            --room ${{ inputs.room || 'all' }}
+
+      # Commit results.tsv even if no improvements were kept (tracking history)
+      - name: Commit and push results
+        run: |
+          git config user.name "AutoResearch Bot"
+          git config user.email "autoresearch-bot@users.noreply.github.com"
+
+          # Stage results tracking file unconditionally
+          git add -f .agent/autoresearch/results.tsv 2>/dev/null || true
+
+          # Stage only files that autoresearch is allowed to modify
+          git add tools/validate_submission.py .agent/prompts/ .agent/skills/ src/physics/ 2>/dev/null || true
+
+          # Check if there are staged or unstaged changes to commit
+          needs_push=false
+          if ! git diff --quiet || ! git diff --cached --quiet; then
+            needs_push=true
+          fi
+
+          if [ "$needs_push" = true ]; then
+            git commit -m "autoresearch: nightly self-improvement run $(date -u +%Y-%m-%d)"
+            git push origin main
+          else
+            echo "No changes to push"
+          fi
