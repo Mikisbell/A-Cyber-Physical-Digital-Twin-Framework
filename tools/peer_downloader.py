@@ -95,7 +95,7 @@ def _curl(
     """
     cmd = [
         "curl",
-        "--silent",
+        "--silent", "--show-error",   # silent progress but show errors
         "--max-time", "120",
         "--cookie", str(cookie_jar),
         "--cookie-jar", str(cookie_jar),
@@ -111,15 +111,24 @@ def _curl(
         cmd += ["--referer", referer]
     if output:
         cmd += ["--output", str(output)]
+    # Write POST body to a temp file to avoid shell-escaping issues
+    # with CSRF tokens (contain +, =, /) and field names with [ ]
+    _post_file = None
     if data:
-        for k, v in data.items():
-            cmd += ["--data-urlencode", f"{k}={v}"]
+        import urllib.parse
+        body = urllib.parse.urlencode(data)
+        _post_file = Path(tempfile.mktemp(suffix=".post"))
+        _post_file.write_text(body)
+        cmd += ["--data", f"@{_post_file}",
+                "--header", "Content-Type: application/x-www-form-urlencoded"]
     cmd.append(url)
 
     if verbose:
         print(f"  [curl] {'POST' if data else 'GET'} {url}")
 
     result = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
+    if _post_file and _post_file.exists():
+        _post_file.unlink()
 
     body = result.stdout
     status = 0
@@ -132,8 +141,9 @@ def _curl(
             status = 0
 
     if result.returncode != 0 and not output:
-        # curl error (not HTTP error)
-        return -1, result.stderr.strip()
+        # curl error (not HTTP error) — include exit code for diagnosis
+        err = result.stderr.strip() or f"(no stderr, curl exit={result.returncode})"
+        return -1, err
 
     if output:
         return status, str(output)
