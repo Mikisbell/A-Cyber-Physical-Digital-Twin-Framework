@@ -178,7 +178,7 @@ def _call_llm(prompt: str, model: str) -> str:
         response = LLM_CLIENT.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=2000,
+            max_completion_tokens=2000,
         )
         return response.choices[0].message.content.strip()
     else:
