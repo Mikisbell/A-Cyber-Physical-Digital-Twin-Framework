@@ -49,23 +49,38 @@ def load_credentials() -> tuple[str, str]:
 
 
 def _parse_netscape_cookies(jar_path: Path) -> list[dict]:
-    """Parse curl Netscape-format cookie jar into Playwright cookie list."""
+    """Parse curl Netscape-format cookie jar into Playwright cookie list.
+
+    HttpOnly cookies are stored by curl with a '#HttpOnly_' prefix (e.g.
+    '#HttpOnly_ngawest2.berkeley.edu\\tFALSE\\t/\\tTRUE\\t0\\t_session\\tabc').
+    We must NOT skip those lines — only skip real comment lines (plain '#...').
+    """
     cookies = []
     for line in jar_path.read_text().splitlines():
         line = line.strip()
-        if not line or line.startswith("#"):
+        if not line:
             continue
+        # HttpOnly cookies use '#HttpOnly_' prefix in curl's Netscape format
+        httponly = False
+        if line.startswith("#HttpOnly_"):
+            httponly = True
+            line = line[len("#HttpOnly_"):]
+        elif line.startswith("#"):
+            continue  # real comment — skip
         parts = line.split("\t")
         if len(parts) < 7:
             continue
         domain, _subdomains, path, secure, _expires, name, value = parts[:7]
-        cookies.append({
+        cookie: dict = {
             "name": name,
             "value": value,
             "domain": domain.lstrip("."),
             "path": path,
             "secure": secure.upper() == "TRUE",
-        })
+        }
+        if httponly:
+            cookie["httpOnly"] = True
+        cookies.append(cookie)
     return cookies
 
 
@@ -172,27 +187,26 @@ def _curl_login(email: str, password: str, cookie_jar: Path, verbose: bool = Tru
         print("[PEER] curl: login POST done — checking cookie jar")
         if cookie_jar.exists():
             raw = cookie_jar.read_text()
-            lines = [l for l in raw.splitlines() if l.strip() and not l.startswith("#")]
-            print(f"[PEER] curl: cookie jar has {len(lines)} non-comment line(s)")
-            for line in lines[:5]:
-                parts_c = line.split("\t")
-                name = parts_c[5] if len(parts_c) >= 6 else "?"
-                domain = parts_c[0] if parts_c else "?"
-                print(f"  cookie: name={name!r} domain={domain!r}")
+            all_lines = raw.splitlines()
+            print(f"[PEER] curl: cookie jar has {len(all_lines)} total line(s)")
+            # Print ALL lines (first 15) to see what's there
+            for i, line in enumerate(all_lines[:15]):
+                print(f"  jar[{i}]: {line[:120]!r}")
+            data_lines = [l for l in all_lines if l.strip() and not l.startswith("#")]
+            print(f"[PEER] curl: {len(data_lines)} non-comment line(s)")
         else:
             print("[PEER] curl: cookie jar file does NOT exist!")
 
-    # Verify auth by hitting a protected page (members/edit = profile, redirects to sign_in if not logged in)
+    # Verify auth by hitting a protected page
     status_verify, body_verify = _run(f"{PEER_BASE}/members/edit")
     if verbose:
         print(f"[PEER] curl: auth check GET /members/edit → HTTP {status_verify}, {len(body_verify)} chars")
-        if "sign_in" in body_verify[:3000].lower():
-            print("[PEER] curl: WARN — auth check shows sign_in → login may have FAILED")
-        elif "edit" in body_verify[:3000].lower() or "profile" in body_verify[:3000].lower():
-            print("[PEER] curl: CONFIRMED authenticated (edit page returned)")
-        else:
-            snippet = body_verify[:300].replace('\n', ' ')
-            print(f"[PEER] curl: body snippet: {snippet}")
+        snippet = body_verify[:400].replace('\n', ' ').strip()
+        print(f"[PEER] curl: edit body: {snippet[:300]}")
+        if "You need to sign in" in body_verify or "sign_in" in body_verify[:500]:
+            print("[PEER] curl: WARN — NOT authenticated (shows login page)")
+        elif status_verify == 200:
+            print("[PEER] curl: status 200 for /members/edit → checking if authenticated...")
     return True
 
 
