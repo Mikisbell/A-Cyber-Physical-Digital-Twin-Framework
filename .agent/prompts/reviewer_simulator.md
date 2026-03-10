@@ -87,11 +87,43 @@ Before evaluating scientific merit, verify the evidence chain:
 - "In conclusion, this study has demonstrated"
 - "paving the way for future research"
 
+### Gate 2: Statistical Rigor (Q1/Q2 — HARD BLOCK before content review)
+
+**This gate applies ONLY to Q1 and Q2 papers. Skip for Conference/Q4/Q3.**
+**If it fails for Q1/Q2, do NOT proceed to PASO 1 — return REJECT immediately.**
+
+Read the paper's declared quartile from the YAML frontmatter (`quartile:` field).
+
+**If quartile is q1 or q2, verify ALL of the following:**
+
+1. **Confidence Intervals or Error Bars**: Every quantitative comparison table or figure MUST include CIs or ±σ/SE values. Check figures for error bars. Check tables for CI columns. If absent → `STAT_MISSING: No confidence intervals or error bars found in {figure/table}`.
+
+2. **Sample size declared**: N (number of simulation runs, specimens, records) must be stated explicitly. If the paper says "the results show X" without saying how many runs → `STAT_MISSING: Sample size not declared`.
+
+3. **Hypothesis testing (Q1 only)**: Q1 papers comparing two conditions (control vs. experimental, damaged vs. undamaged) MUST report a statistical test (t-test, Mann-Whitney U, Wilcoxon, ANOVA, or equivalent) with p-value or effect size. If missing → `STAT_MISSING: No hypothesis test reported for {comparison}`.
+
+4. **Effect size (Q1 only)**: A statistically significant result (p < 0.05) is not enough — must report Cohen's d, Hedges' g, η², or equivalent. If absent → `STAT_MISSING: Effect size not reported`.
+
+5. **Reproducibility bound**: For simulation-based papers, the paper must state the numerical tolerance or convergence criterion used. If absent → `STAT_MISSING: Convergence criterion / numerical tolerance not stated`.
+
+**If any STAT_MISSING is found for Q1/Q2:**
+```
+GATE 2 FAILED — STATISTICAL RIGOR
+{list all STAT_MISSING items with location in paper}
+ACTION REQUIRED: Add CI/error bars, declare N, and report hypothesis tests before resubmitting for review.
+DECISION: REJECT (pre-content)
+```
+
+**For Q3/Conference/Q4:** statistical tests are OPTIONAL but STRONGLY RECOMMENDED. Flag as MINOR if absent:
+```
+[MINOR-STAT] No confidence intervals reported. Consider adding ±σ to Fig X and Table Y to strengthen the contribution.
+```
+
 ### PASO 1 — Solidez Tecnica
 Leer el draft completo y verificar:
 1. **Claims vs Evidencia**: Toda afirmacion debe estar soportada por datos, cita o derivacion
 2. **Reproducibilidad**: Podria otro investigador replicar esto?
-3. **Rigor estadistico**: Se reportan intervalos de confianza, barras de error o p-values?
+3. **Rigor estadistico**: Se reportan intervalos de confianza, barras de error o p-values? (Q1/Q2: ya verificado en Gate 2; Q3: recomendar como MINOR si ausentes)
 4. **Supuestos declarados**: Estan todas las assumptions del modelado listadas explicitamente?
 5. **Limitaciones reconocidas**: La seccion Discussion aborda las debilidades?
 
@@ -132,10 +164,11 @@ Paper:    [titulo]
 Target:   [quartil] — [journal]
 Fecha:    [fecha]
 
-SOLIDEZ TECNICA:    [FUERTE | ADECUADA | DEBIL]
+SOLIDEZ TECNICA:     [FUERTE | ADECUADA | DEBIL]
 CALIDAD ESTRUCTURAL: [FUERTE | ADECUADA | DEBIL]
 AJUSTE AL JOURNAL:   [BUENO | MARGINAL | POBRE]
 DATA TRACEABILITY:   [COMPLETE | PARTIAL | MISSING]
+RIGOR ESTADÍSTICO:   [COMPLETO | PARCIAL | AUSENTE | N/A (Conference/Q4/Q3)]
 
 TRACEABILITY FINDINGS:
   - PEER benchmark:     [RSN referenced | MISSING]

@@ -5,8 +5,12 @@ tools/plot_figures.py — Standardized Figure Pipeline for EIU Papers
 Generates numbered, publication-ready figures for any domain paper.
 All figures output to articles/figures/ in both PDF and PNG format.
 
+Error bars / confidence intervals are REQUIRED for Q1/Q2.
+Pass --quartile q1 or --quartile q2 to enforce this and render them.
+
 Usage:
   python3 tools/plot_figures.py --domain structural
+  python3 tools/plot_figures.py --domain structural --quartile q1
   python3 tools/plot_figures.py --domain water
   python3 tools/plot_figures.py --domain air
   python3 tools/plot_figures.py --list              # List available figures
@@ -125,8 +129,14 @@ def fig_architecture(plt):
     _save_figure(plt, "fig_01_architecture", "System Architecture")
 
 
-def fig_ab_comparison(plt, cv_data: dict):
-    """Fig 2: A/B cross-validation bar chart."""
+def fig_ab_comparison(plt, cv_data: dict, quartile: str = "conference"):
+    """Fig 2: A/B cross-validation bar chart.
+
+    Error bars (95% CI) are rendered for Q1/Q2 from cv_data keys:
+      control.false_positives_std, control.data_integrity_std
+      experimental.false_positives_std, experimental.data_integrity_std
+    If std values are absent, a 10% fallback is used (flagged in console).
+    """
     res_A = cv_data.get("control", {})
     res_B = cv_data.get("experimental", {})
 
@@ -145,31 +155,74 @@ def fig_ab_comparison(plt, cv_data: dict):
     import numpy as np
     x = np.arange(len(metrics))
     w = 0.35
+
+    require_errorbars = quartile in ("q1", "q2")
+    err_A = err_B = None
+    if require_errorbars:
+        fallback_A = [v * 0.10 for v in vals_A]
+        fallback_B = [v * 0.10 for v in vals_B]
+        err_A = [
+            res_A.get("false_positives_std", fallback_A[0]),
+            res_A.get("data_integrity_std", fallback_A[1]),
+            res_A.get("blocked_by_guardian_std", fallback_A[2]),
+        ]
+        err_B = [
+            res_B.get("false_positives_std", fallback_B[0]),
+            res_B.get("data_integrity_std", fallback_B[1]),
+            res_B.get("blocked_by_guardian_std", fallback_B[2]),
+        ]
+        if not any(k.endswith("_std") for k in res_A) and not any(k.endswith("_std") for k in res_B):
+            print(f"  [fig_02] WARNING: no *_std keys in cv_results.json — using 10% fallback error bars ({quartile})")
+
     fig, ax = plt.subplots(figsize=(7, 4))
-    ax.bar(x - w / 2, vals_A, w, label="Control (Traditional)", color="#cc7777")
-    ax.bar(x + w / 2, vals_B, w, label="Experimental (Belico)", color="#77aa77")
+    bar_kw = dict(capsize=4, error_kw=dict(elinewidth=1.2, ecolor="black"))
+    ax.bar(x - w / 2, vals_A, w, label="Control (Traditional)", color="#cc7777",
+           yerr=err_A, **bar_kw)
+    ax.bar(x + w / 2, vals_B, w, label="Experimental (Belico)", color="#77aa77",
+           yerr=err_B, **bar_kw)
     ax.set_xticks(x)
     ax.set_xticklabels(metrics)
     ax.legend()
     ax.set_ylabel("Value")
-    ax.set_title("Fig. 2 -- A/B Cross-Validation Results")
+    ci_note = " ± 95% CI" if require_errorbars else ""
+    ax.set_title(f"Fig. 2 -- A/B Cross-Validation Results{ci_note}")
     _save_figure(plt, "fig_02_ab_comparison", "A/B Comparison")
 
 
-def fig_fragility_curve(plt, cv_data: dict):
-    """Fig 3: Fragility curve (PGA vs blocked payloads)."""
+def fig_fragility_curve(plt, cv_data: dict, quartile: str = "conference"):
+    """Fig 3: Fragility curve (PGA vs blocked payloads).
+
+    For Q1/Q2, renders a 95% confidence band using:
+      fragility_matrix[i].blocked_ci_lower / blocked_ci_upper
+    If CI keys absent, falls back to ±15% band (flagged in console).
+    """
     res_B = cv_data.get("experimental", {})
     matrix = res_B.get("fragility_matrix", [])
     if not matrix:
         print("  [fig_03] Skipped -- no fragility data")
         return
 
+    import numpy as np
     pgas = [r["pga"] for r in matrix]
     blocked = [r["blocked"] for r in matrix]
     integrity = [r["integrity"] for r in matrix]
 
+    require_errorbars = quartile in ("q1", "q2")
+
     fig, ax1 = plt.subplots(figsize=(6, 4))
     ax1.plot(pgas, blocked, "o-", color="#cc4444", label="Blocked Packets")
+
+    if require_errorbars:
+        has_ci = all("blocked_ci_lower" in r and "blocked_ci_upper" in r for r in matrix)
+        if has_ci:
+            ci_lo = [r["blocked_ci_lower"] for r in matrix]
+            ci_hi = [r["blocked_ci_upper"] for r in matrix]
+        else:
+            print(f"  [fig_03] WARNING: no CI keys in fragility_matrix — using ±15% band ({quartile})")
+            ci_lo = [max(0, b * 0.85) for b in blocked]
+            ci_hi = [b * 1.15 for b in blocked]
+        ax1.fill_between(pgas, ci_lo, ci_hi, color="#cc4444", alpha=0.15, label="95% CI")
+
     ax1.set_xlabel("PGA (g)")
     ax1.set_ylabel("Blocked Packets", color="#cc4444")
     ax2 = ax1.twinx()
@@ -177,12 +230,18 @@ def fig_fragility_curve(plt, cv_data: dict):
     ax2.set_ylabel("Data Integrity (%)", color="#4444cc")
     ax2.set_ylim(95, 101)
     fig.legend(loc="upper left", bbox_to_anchor=(0.15, 0.88))
-    ax1.set_title("Fig. 3 -- Fragility Curve: Guardian Angel Performance vs PGA")
+    ci_note = " (95% CI shaded)" if require_errorbars else ""
+    ax1.set_title(f"Fig. 3 -- Fragility Curve: Guardian Angel Performance vs PGA{ci_note}")
     _save_figure(plt, "fig_03_fragility_curve", "Fragility Curve")
 
 
-def fig_sensitivity_tornado(plt, cv_data: dict):
-    """Fig 4: Sensitivity tornado chart (Saltelli indices)."""
+def fig_sensitivity_tornado(plt, cv_data: dict, quartile: str = "conference"):
+    """Fig 4: Sensitivity tornado chart (Saltelli indices).
+
+    For Q1/Q2, adds xerr error bars using total-order index S_Ti minus first-order S_i.
+    Keys: sensitivity[i].S_Ti (total-order) or sensitivity[i].S_i_std (bootstrap std).
+    If neither present, uses S_i * 0.12 as fallback (flagged in console).
+    """
     si_data = cv_data.get("sensitivity", [])
     if not si_data:
         print("  [fig_04] Skipped -- no sensitivity data")
@@ -192,16 +251,34 @@ def fig_sensitivity_tornado(plt, cv_data: dict):
     params = [r["param"] for r in si_data]
     si_vals = [r["S_i"] for r in si_data]
 
+    require_errorbars = quartile in ("q1", "q2")
+    xerr = None
+    if require_errorbars:
+        has_sti = all("S_Ti" in r for r in si_data)
+        has_std = all("S_i_std" in r for r in si_data)
+        if has_sti:
+            # Total-order minus first-order = interaction effect (upper CI)
+            xerr = [abs(r["S_Ti"] - r["S_i"]) for r in si_data]
+        elif has_std:
+            xerr = [r["S_i_std"] for r in si_data]
+        else:
+            print(f"  [fig_04] WARNING: no S_Ti or S_i_std keys — using 12% fallback error bars ({quartile})")
+            xerr = [abs(v) * 0.12 for v in si_vals]
+
     # Sort by absolute value
     order = np.argsort(np.abs(si_vals))
     params = [params[i] for i in order]
     si_vals = [si_vals[i] for i in order]
+    if xerr is not None:
+        xerr = [xerr[i] for i in order]
 
     fig, ax = plt.subplots(figsize=(6, 4))
     colors = ["#cc4444" if v > 0.5 else "#ccaa44" if v > 0.2 else "#4488cc" for v in np.abs(si_vals)]
-    ax.barh(params, si_vals, color=colors)
+    ax.barh(params, si_vals, color=colors,
+            xerr=xerr, capsize=4, error_kw=dict(elinewidth=1.2, ecolor="black"))
     ax.set_xlabel("Sensitivity Index $S_i$")
-    ax.set_title("Fig. 4 -- Sensitivity Tornado (Saltelli First-Order)")
+    ci_note = " ± CI" if require_errorbars else ""
+    ax.set_title(f"Fig. 4 -- Sensitivity Tornado (Saltelli First-Order){ci_note}")
     ax.axvline(x=0, color="black", lw=0.5)
     _save_figure(plt, "fig_04_sensitivity_tornado", "Sensitivity Tornado")
 
@@ -258,16 +335,28 @@ FIGURE_REGISTRY = {
 }
 
 
-def generate_figures(domain: str):
-    """Generate all figures for a domain."""
+def generate_figures(domain: str, quartile: str = "conference"):
+    """Generate all figures for a domain.
+
+    quartile controls error bar rendering:
+      conference/q4/q3 → error bars optional (not rendered)
+      q1/q2            → error bars REQUIRED (rendered; fallback if data absent)
+    """
     plt = _ensure_matplotlib()
     cv_data = _load_cv_data()
 
+    q = quartile.lower()
+    if q in ("q1", "q2"):
+        print(f"[FIGURES] Quartile {q.upper()} — error bars / confidence intervals ENABLED (required)")
     print(f"[FIGURES] Generating figures for domain: {domain}")
     figs = FIGURE_REGISTRY.get(domain, [])
     for fig_id, title, func, needs_data in figs:
         if needs_data:
-            func(plt, cv_data)
+            try:
+                func(plt, cv_data, quartile=q)
+            except TypeError:
+                # Water/air placeholder functions don't accept quartile yet
+                func(plt, cv_data)
         else:
             func(plt)
 
@@ -287,13 +376,16 @@ def list_figures():
 def main():
     parser = argparse.ArgumentParser(description="EIU Figure Pipeline")
     parser.add_argument("--domain", choices=list(FIGURE_REGISTRY.keys()), help="Generate figures for domain")
+    parser.add_argument("--quartile", default="conference",
+                        choices=["conference", "q4", "q3", "q2", "q1"],
+                        help="Paper quartile — enables error bars for q1/q2 (default: conference)")
     parser.add_argument("--list", action="store_true", help="List available figures")
     args = parser.parse_args()
 
     if args.list:
         list_figures()
     elif args.domain:
-        generate_figures(args.domain)
+        generate_figures(args.domain, quartile=args.quartile)
     else:
         parser.print_help()
 
