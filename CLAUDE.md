@@ -252,6 +252,14 @@ Batch 4: Abstract + Intro + Refs         → VERIFY completo (validate_submissio
 Cada batch debe pasar su verificacion parcial antes de avanzar al siguiente.
 Si un batch falla, se corrige **ese batch**, no se avanza.
 
+### Reglas Anti-Scope-Creep (NO NEGOCIABLE)
+
+1. **Un paper a la vez.** NO iniciar EXPLORE de un paper nuevo hasta que el paper activo pase ARCHIVE. El pipeline es secuencial por paper: termina uno, empieza otro.
+2. **Scope inmutable.** El scope definido en PROPOSE (quartil, etapas, contribucion) es INMUTABLE durante IMPLEMENT y VERIFY. Si durante la escritura surge una idea para otro paper o extension, guardarla en Engram (`mem_save("idea: ...")`) pero NO agregarla al TODO del paper activo.
+3. **TODO limpio.** El TodoWrite del paper activo solo contiene tareas del pipeline SDD actual (IMPLEMENT batches, VERIFY, ARCHIVE, PUBLISH). Prohibido agregar tareas de papers futuros, pipelines Q3/Q1, o ideas especulativas.
+4. **Figuras y compilacion ANTES de cerrar.** Antes de ARCHIVE, el paper debe tener: figuras reales generadas (no placeholders), PDF compilado, y Reviewer Simulator ejecutado. Estos NO son opcionales.
+5. **Escalera obligatoria.** La ruta es Conference → Q3 → Q2 → Q1. Cada paper hereda del anterior. NO saltar niveles. NO planificar Q3 mientras Conference no esta en ARCHIVE.
+
 Cada batch debe actualizar `db/manifest.yaml` → `traceability` con la cadena:
 claim del paper → figura → archivo de datos → fuente (RSN/campo/benchmark).
 Usar `python3 tools/validate_submission.py --suggest-trace` para generar sugerencias.

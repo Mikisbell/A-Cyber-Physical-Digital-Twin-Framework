@@ -187,6 +187,8 @@ Todo vive aquí: belico-stack/ ────────────────�
 4. **Un commit = un estado coherente.** Firmware, simulación y artículo avanzan juntos o no avanzan.
 5. **Los datos crudos son sagrados.** Solo el sensor escribe en `data/raw/`. El agente no escribe ahí.
 6. **Ningun parametro vive en dos sitios.** Si `stiffness_k` existe en `config/params.yaml`, tanto `src/firmware/` como `src/physics/` lo referencian; nunca lo duplican.
+7. **Un paper a la vez.** NO iniciar un paper nuevo hasta que el activo pase ARCHIVE. El scope de PROPOSE es inmutable durante IMPLEMENT/VERIFY. Ideas para papers futuros van a Engram, NO al TODO activo.
+8. **Escalera obligatoria.** Conference → Q3 → Q2 → Q1. Cada paper hereda del anterior. No se salta niveles ni se planifica el siguiente hasta cerrar el actual.
 
 ---
 

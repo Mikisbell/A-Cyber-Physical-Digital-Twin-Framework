@@ -249,3 +249,6 @@ Generic prose = AI prose. If a sentence could appear in any paper from any field
 - Running compile_paper.sh before validate_submission.py passes
 - Forgetting `<!-- AI_Assist -->` markers on AI-generated paragraphs
 - Leaving `[TODO]` markers in a draft marked as `review`
+- **Adding future paper tasks to current TODO** (scope creep — ideas go to Engram, not TodoWrite)
+- **Starting a new EXPLORE before current paper reaches ARCHIVE** (one paper at a time)
+- **Planning Q3/Q2/Q1 while Conference paper is still in IMPLEMENT** (finish first, plan later)
