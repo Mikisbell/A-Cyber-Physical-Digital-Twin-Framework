@@ -23,16 +23,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 try:
-    import anthropic
-except ImportError:
-    print("ERROR: anthropic SDK not installed. Run: pip install anthropic")
-    sys.exit(1)
-
-try:
     import yaml
 except ImportError:
     print("ERROR: pyyaml not installed. Run: pip install pyyaml")
     sys.exit(1)
+
+# LLM provider: GitHub Models (free with GITHUB_TOKEN) or Anthropic (fallback)
+LLM_PROVIDER = None  # set in main()
+LLM_CLIENT = None
 
 # ---------------------------------------------------------------------------
 # Paths
@@ -172,9 +170,29 @@ def run_evaluation(room_cfg: dict) -> dict:
 # ---------------------------------------------------------------------------
 # LLM proposal
 # ---------------------------------------------------------------------------
-def propose_change(client, model: str, room_name: str, room_cfg: dict,
+def _call_llm(prompt: str, model: str) -> str:
+    """Call LLM (GitHub Models or Anthropic) and return text response."""
+    global LLM_PROVIDER, LLM_CLIENT
+
+    if LLM_PROVIDER == "github":
+        response = LLM_CLIENT.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2000,
+        )
+        return response.choices[0].message.content.strip()
+    else:
+        response = LLM_CLIENT.messages.create(
+            model=model,
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        return response.content[0].text.strip()
+
+
+def propose_change(model: str, room_name: str, room_cfg: dict,
                    history: list) -> dict:
-    """Ask Claude to propose a change. Returns {file, old_content, new_content, description}."""
+    """Ask LLM to propose a change. Returns {file, old_content, new_content, description}."""
     editable_files = room_cfg["editable"]
 
     # Pick the first editable file (or rotate based on history)
@@ -253,14 +271,8 @@ If you cannot propose a useful change, respond:
   "replace": ""
 }}"""
 
-    response = client.messages.create(
-        model=model,
-        max_tokens=2000,
-        messages=[{"role": "user", "content": prompt}]
-    )
+    text = _call_llm(prompt, model)
 
-    # Parse response
-    text = response.content[0].text.strip()
     # Extract JSON from response (may have markdown code fences)
     if "```json" in text:
         text = text.split("```json")[1].split("```")[0].strip()
@@ -337,11 +349,15 @@ def run_loop(max_experiments: int, target_room: str = None,
              dry_run: bool = False):
     """Main autoresearch loop."""
     rooms, settings = load_rooms_config()
-    model = settings.get("model", "claude-sonnet-4-20250514")
     min_threshold = settings.get("min_improvement_threshold", 0.001)
 
+    # Pick model based on provider
+    if LLM_PROVIDER == "github":
+        model = settings.get("github_model", "openai/gpt-4o-mini")
+    else:
+        model = settings.get("model", "claude-sonnet-4-20250514")
+
     init_results_file()
-    client = anthropic.Anthropic()
 
     # Verify we're on main
     current_branch = git_current_branch()
@@ -386,7 +402,7 @@ def run_loop(max_experiments: int, target_room: str = None,
 
         # 2. Propose change
         print("  Proposing change...")
-        proposal = propose_change(client, model, room_name, room_cfg,
+        proposal = propose_change(model, room_name, room_cfg,
                                   room_history)
 
         if "error" in proposal:
@@ -511,6 +527,43 @@ def run_loop(max_experiments: int, target_room: str = None,
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+def _init_llm_client():
+    """Initialize LLM client. Priority: GITHUB_TOKEN > ANTHROPIC_API_KEY."""
+    global LLM_PROVIDER, LLM_CLIENT
+
+    github_token = os.environ.get("GITHUB_TOKEN")
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY")
+
+    if github_token:
+        try:
+            from openai import OpenAI
+            LLM_CLIENT = OpenAI(
+                base_url="https://models.inference.ai.azure.com",
+                api_key=github_token,
+            )
+            LLM_PROVIDER = "github"
+            print("  LLM: GitHub Models (free with GITHUB_TOKEN)")
+            return
+        except ImportError:
+            print("WARNING: openai SDK not installed for GitHub Models.")
+            print("  pip install openai")
+
+    if anthropic_key:
+        try:
+            import anthropic
+            LLM_CLIENT = anthropic.Anthropic()
+            LLM_PROVIDER = "anthropic"
+            print("  LLM: Anthropic API")
+            return
+        except ImportError:
+            print("WARNING: anthropic SDK not installed.")
+            print("  pip install anthropic")
+
+    print("ERROR: No LLM provider available.")
+    print("  Set GITHUB_TOKEN (free) or ANTHROPIC_API_KEY")
+    sys.exit(1)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="AutoResearch: Self-improving paper factory"
@@ -523,11 +576,7 @@ def main():
                         help="Propose changes without applying")
     args = parser.parse_args()
 
-    # Verify API key
-    if not os.environ.get("ANTHROPIC_API_KEY"):
-        print("ERROR: ANTHROPIC_API_KEY not set.")
-        print("  export ANTHROPIC_API_KEY=sk-ant-...")
-        sys.exit(1)
+    _init_llm_client()
 
     kept, discarded = run_loop(
         max_experiments=args.experiments,

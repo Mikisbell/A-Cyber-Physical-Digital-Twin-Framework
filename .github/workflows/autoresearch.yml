@@ -34,7 +34,8 @@ jobs:
     timeout-minutes: 30
 
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      # GitHub Models: free with Education account, uses GITHUB_TOKEN (auto-provided)
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       # Full history needed for git operations (diff, merge, push)
@@ -49,7 +50,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: pip install anthropic pyyaml
+        run: pip install openai pyyaml
 
       - name: Run autoresearch
         run: |
