@@ -74,12 +74,13 @@ def download_records_playwright(
 
         # ----- LOGIN -----
         if verbose:
-            print(f"[PEER] Navigating to login page…")
-        page.goto(f"{PEER_BASE}/members/sign_in", timeout=90_000)
+            print(f"[PEER] Navigating to login page… (may take 3-5 min, PEER is slow)")
+        # PEER sign_in page has very slow TLS/SSL response — needs 5min timeout
+        page.goto(f"{PEER_BASE}/members/sign_in", timeout=360_000)
         page.fill("input#member_email", email)
         page.fill("input#member_password", password)
         page.click("input[name='commit']")
-        page.wait_for_load_state("networkidle", timeout=30_000)
+        page.wait_for_load_state("networkidle", timeout=60_000)
 
         if "sign_in" in page.url and "Invalid" in page.content():
             print("ERROR: PEER login failed — invalid credentials", file=sys.stderr)
