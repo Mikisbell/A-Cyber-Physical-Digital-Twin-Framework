@@ -1,1 +1,4 @@
 timestamp	room	experiment	file_changed	score	baseline	delta	status	description
+2026-03-10T16:01:27	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Simplify RSN detection by removing unnecessary re.IGNORECASE flag in the regex pattern.
+2026-03-10T16:01:30	validator	2	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove ambiguous wording in AI detection phrases to improve precision
+2026-03-10T16:01:32	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove redundant check for 'AI_Assist markers' which may falsely increase false positives.
