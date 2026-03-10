@@ -399,8 +399,12 @@ def validate_draft(draft_path: Path) -> list[dict]:
             import json as _json
             with open(compute_manifest_path) as _f:
                 manifest_data = _json.load(_f)
+            is_demo = manifest_data.get("is_template_demo", False)
             all_sources_exist = manifest_data.get("all_design_sources_exist", False)
             simulations_run = manifest_data.get("simulations_run", 0)
+            emulation_ran = manifest_data.get("emulation_ran", False)
+            guardian_validated = manifest_data.get("guardian_validated", False)
+
             if not all_sources_exist:
                 issues.append({
                     "severity": "ERROR",
@@ -416,11 +420,39 @@ def validate_draft(draft_path: Path) -> list[dict]:
                     "check": "compute_gate",
                     "msg": "COMPUTE_MANIFEST.json shows 0 simulations run. No real data produced."
                 })
+            elif not is_demo and not emulation_ran:
+                # All digital-twin projects require Arduino/LoRa emulation (C3).
+                # The template demo is exempt; real project clones are not.
+                issues.append({
+                    "severity": "ERROR",
+                    "check": "compute_gate",
+                    "msg": (
+                        "BLOQUEADO: emulation_ran=false in COMPUTE_MANIFEST.json. "
+                        "All digital-twin projects must run Arduino/LoRa emulation (C3). "
+                        "Run: python3 tools/arduino_emu.py [mode] && bash tools/run_battle.sh"
+                    )
+                })
+            elif not is_demo and not guardian_validated:
+                issues.append({
+                    "severity": "ERROR",
+                    "check": "compute_gate",
+                    "msg": (
+                        "BLOQUEADO: guardian_validated=false in COMPUTE_MANIFEST.json. "
+                        "Guardian Angel (S1-S4 gates) must be validated before submission. "
+                        "Run: bash tools/run_guardian_test.sh"
+                    )
+                })
             else:
+                emu_note = " (template demo — emulation exempt)" if is_demo else ""
                 issues.append({
                     "severity": "OK",
                     "check": "compute_gate",
-                    "msg": f"COMPUTE gate passed: {simulations_run} simulations, all data sources verified."
+                    "msg": (
+                        f"COMPUTE gate passed: {simulations_run} simulations, "
+                        f"emulation={'OK' if (emulation_ran or is_demo) else 'SKIP'}, "
+                        f"guardian={'OK' if (guardian_validated or is_demo) else 'SKIP'}"
+                        f"{emu_note}"
+                    )
                 })
         except Exception as _e:
             issues.append({
