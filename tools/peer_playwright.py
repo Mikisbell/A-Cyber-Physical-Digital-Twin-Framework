@@ -88,7 +88,8 @@ def _curl_login(email: str, password: str, cookie_jar: Path, verbose: bool = Tru
     def _run(url, *, data=None, referer=None):
         cmd = [
             "curl", "--silent", "--show-error", "--globoff",
-            "--max-time", "120",
+            "--max-time", "360",   # PEER sign_in SSL/TLS can take 3-5 min
+            "--connect-timeout", "60",
             "--cookie", str(cookie_jar),
             "--cookie-jar", str(cookie_jar),
             "--user-agent", UA,
@@ -107,7 +108,7 @@ def _curl_login(email: str, password: str, cookie_jar: Path, verbose: bool = Tru
             cmd += ["--data", f"@{_post_file}",
                     "--header", "Content-Type: application/x-www-form-urlencoded"]
         cmd.append(url)
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=400)
         if _post_file and _post_file.exists():
             _post_file.unlink()
         body_out = result.stdout
