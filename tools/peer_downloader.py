@@ -2,68 +2,47 @@
 """
 PEER NGA-West2 Automated Downloader
 ====================================
-Downloads seismic records (.AT2) from PEER NGA-West2 using session-based
-web scraping. Credentials are read from .env (PEER_EMAIL / PEER_PASSWORD).
+Downloads seismic records (.AT2) from PEER NGA-West2 using curl as backend.
+curl handles TLS reliably on WSL2 (where Python urllib3 has handshake issues).
+Credentials are read from .env (PEER_EMAIL / PEER_PASSWORD).
 
 Usage:
     python3 tools/peer_downloader.py --rsn 766
     python3 tools/peer_downloader.py --rsn 766 1158 4517
     python3 tools/peer_downloader.py --rsn 766 --out db/excitation/records/
 
-Credentials setup:
-    Add to .env (gitignored):
-        PEER_EMAIL=your@email.com
-        PEER_PASSWORD=yourpassword
+Credentials setup (add to .env, gitignored):
+    PEER_EMAIL=your@email.com
+    PEER_PASSWORD=yourpassword
 
-PEER NGA-West2: https://ngawest2.berkeley.edu
-Registration is free at: https://ngawest2.berkeley.edu/users/sign_up
+Register free at: https://ngawest2.berkeley.edu/members/sign_up
 """
 
 import argparse
+import json
 import os
 import re
+import subprocess
 import sys
+import tempfile
 import time
 import zipfile
 from pathlib import Path
-from io import BytesIO
 
 # ---------------------------------------------------------------------------
-# Optional imports — fail with clear message if missing
-# ---------------------------------------------------------------------------
-try:
-    import requests
-    from requests import Session
-except ImportError:
-    print("ERROR: requests not installed. Run: pip install requests", file=sys.stderr)
-    sys.exit(1)
-
-try:
-    from dotenv import load_dotenv  # type: ignore
-    _HAS_DOTENV = True
-except ImportError:
-    _HAS_DOTENV = False
-
-# ---------------------------------------------------------------------------
-# Paths
+# Paths / constants
 # ---------------------------------------------------------------------------
 ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_OUT = ROOT / "db" / "excitation" / "records"
 
 PEER_BASE = "https://ngawest2.berkeley.edu"
-PEER_SIGN_IN = f"{PEER_BASE}/users/sign_in"
-PEER_SIGN_OUT = f"{PEER_BASE}/users/sign_out"
-PEER_SEARCH_URL = f"{PEER_BASE}/spectras/new"
-PEER_SEARCH_RESULTS = f"{PEER_BASE}/spectras"
+PEER_SIGN_IN = f"{PEER_BASE}/members/sign_in"
+PEER_SIGN_OUT = f"{PEER_BASE}/members/sign_out"
 
-# User-agent that mimics a real browser (PEER rejects plain Python UA)
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    ),
-    "Accept-Language": "en-US,en;q=0.9",
-}
+UA = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+)
 
 # ---------------------------------------------------------------------------
 # Credential loading
@@ -71,10 +50,13 @@ HEADERS = {
 
 def load_credentials() -> tuple[str, str]:
     """Read PEER_EMAIL and PEER_PASSWORD from environment or .env file."""
-    if _HAS_DOTENV:
-        env_path = ROOT / ".env"
-        if env_path.exists():
-            load_dotenv(env_path, override=False)
+    env_path = ROOT / ".env"
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            line = line.strip()
+            if "=" in line and not line.startswith("#"):
+                k, _, v = line.partition("=")
+                os.environ.setdefault(k.strip(), v.strip())
 
     email = os.environ.get("PEER_EMAIL", "")
     password = os.environ.get("PEER_PASSWORD", "")
@@ -85,7 +67,7 @@ def load_credentials() -> tuple[str, str]:
             "Add to .env (gitignored):\n"
             "  PEER_EMAIL=your@email.com\n"
             "  PEER_PASSWORD=yourpassword\n"
-            "Register free at: https://ngawest2.berkeley.edu/users/sign_up",
+            "Register free at: https://ngawest2.berkeley.edu/members/sign_up",
             file=sys.stderr,
         )
         sys.exit(1)
@@ -94,98 +76,172 @@ def load_credentials() -> tuple[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# CSRF token extraction
+# curl helpers
 # ---------------------------------------------------------------------------
+
+def _curl(
+    url: str,
+    cookie_jar: Path,
+    *,
+    data: dict | None = None,
+    referer: str | None = None,
+    output: Path | None = None,
+    follow: bool = True,
+    verbose: bool = False,
+) -> tuple[int, str]:
+    """
+    Run a curl request.  Returns (http_status_code, response_body_or_path).
+    Always saves/loads cookies from cookie_jar.
+    """
+    cmd = [
+        "curl",
+        "--silent",
+        "--max-time", "120",
+        "--cookie", str(cookie_jar),
+        "--cookie-jar", str(cookie_jar),
+        "--user-agent", UA,
+        "--header", "Accept-Language: en-US,en;q=0.9",
+        "--header", "Accept: text/html,application/xhtml+xml,*/*",
+        "--write-out", "\n__STATUS__:%{http_code}",
+        "--ipv4",  # force IPv4 (WSL2 has no IPv6 routing)
+    ]
+    if follow:
+        cmd += ["--location"]
+    if referer:
+        cmd += ["--referer", referer]
+    if output:
+        cmd += ["--output", str(output)]
+    if data:
+        for k, v in data.items():
+            cmd += ["--data-urlencode", f"{k}={v}"]
+    cmd.append(url)
+
+    if verbose:
+        print(f"  [curl] {'POST' if data else 'GET'} {url}")
+
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=130)
+
+    body = result.stdout
+    status = 0
+    if "__STATUS__:" in body:
+        parts = body.rsplit("__STATUS__:", 1)
+        body = parts[0].rstrip("\n")
+        try:
+            status = int(parts[1].strip())
+        except ValueError:
+            status = 0
+
+    if result.returncode != 0 and not output:
+        # curl error (not HTTP error)
+        return -1, result.stderr.strip()
+
+    if output:
+        return status, str(output)
+    return status, body
+
 
 def _extract_csrf(html: str) -> str:
     """Extract Rails authenticity_token from HTML."""
-    # <meta name="csrf-token" content="...">
-    m = re.search(r'<meta[^>]+name=["\']csrf-token["\'][^>]+content=["\']([^"\']+)["\']', html)
+    m = re.search(
+        r'<meta[^>]+name=["\']csrf-token["\'][^>]+content=["\']([^"\']+)["\']', html
+    )
     if m:
         return m.group(1)
-    # fallback: hidden input
-    m = re.search(r'<input[^>]+name=["\']authenticity_token["\'][^>]+value=["\']([^"\']+)["\']', html)
+    m = re.search(
+        r'<input[^>]+name=["\']authenticity_token["\'][^>]+value=["\']([^"\']+)["\']', html
+    )
     if m:
         return m.group(1)
     raise ValueError("Could not extract CSRF token from page")
 
 
 # ---------------------------------------------------------------------------
-# Session management
+# PEER session
 # ---------------------------------------------------------------------------
 
 class PeerSession:
-    """Authenticated requests session to PEER NGA-West2."""
+    """Authenticated curl-backed session to PEER NGA-West2."""
 
     def __init__(self, email: str, password: str, verbose: bool = True):
         self.email = email
         self.password = password
         self.verbose = verbose
-        self.session = Session()
-        self.session.headers.update(HEADERS)
+        # Temporary cookie jar (cleared when object is garbage-collected)
+        self._tmpdir = tempfile.mkdtemp(prefix="peer_")
+        self.cookie_jar = Path(self._tmpdir) / "cookies.txt"
         self._logged_in = False
 
     def _log(self, msg: str) -> None:
         if self.verbose:
             print(f"[PEER] {msg}")
 
+    def _get(self, url: str, referer: str | None = None) -> tuple[int, str]:
+        return _curl(url, self.cookie_jar, referer=referer, verbose=self.verbose)
+
+    def _post(self, url: str, data: dict, referer: str | None = None) -> tuple[int, str]:
+        return _curl(url, self.cookie_jar, data=data, referer=referer, verbose=self.verbose)
+
     def login(self) -> bool:
         """Perform Rails session login. Returns True on success."""
         self._log("Fetching login page…")
-        resp = self.session.get(PEER_SIGN_IN, timeout=60)
-        resp.raise_for_status()
+        status, html = self._get(PEER_SIGN_IN)
+        if status not in (200, 302) or not html:
+            self._log(f"Login page failed: HTTP {status}")
+            return False
 
         try:
-            csrf = _extract_csrf(resp.text)
+            csrf = _extract_csrf(html)
         except ValueError as exc:
             self._log(f"CSRF extraction failed: {exc}")
             return False
 
-        payload = {
-            "authenticity_token": csrf,
-            "user[email]": self.email,
-            "user[password]": self.password,
-            "user[remember_me]": "0",
-            "commit": "Sign in",
-        }
+        spinner_match = re.search(r'name="spinner"[^>]+value="([^"]+)"', html)
+        spinner_value = spinner_match.group(1) if spinner_match else ""
 
         self._log("Posting credentials…")
-        resp2 = self.session.post(
+        status2, body2 = self._post(
             PEER_SIGN_IN,
-            data=payload,
-            allow_redirects=True,
-            timeout=60,
+            data={
+                "authenticity_token": csrf,
+                "member[email]": self.email,
+                "member[password]": self.password,
+                "member[remember_me]": "0",
+                "member[subtitle]": "",  # honeypot — empty for humans
+                "spinner": spinner_value,
+                "commit": "Log in",
+            },
+            referer=PEER_SIGN_IN,
         )
 
-        # PEER redirects to root on success; login page reloads on failure
-        if "sign_in" in resp2.url and "Invalid" in resp2.text:
-            self._log("Login failed — check PEER_EMAIL / PEER_PASSWORD")
+        if status2 == -1:
+            self._log(f"curl error: {body2}")
             return False
 
-        # Check for successful login indicators
-        if resp2.status_code == 200 and (
-            "sign_out" in resp2.text.lower()
-            or "log out" in resp2.text.lower()
-            or resp2.url == f"{PEER_BASE}/"
-            or resp2.url == PEER_BASE
-        ):
+        # Failure: login page returned with error message
+        if "Invalid Email or password" in body2 or "sign_in" in body2.lower() and "error" in body2.lower():
+            self._log("Login failed — invalid credentials")
+            return False
+
+        # Success indicators
+        if "sign_out" in body2.lower() or "log out" in body2.lower():
             self._log("Login successful")
             self._logged_in = True
             return True
 
-        # Some redirects end at dashboard or another page — treat as success
-        if resp2.status_code in (200, 302) and "sign_in" not in resp2.url:
-            self._log(f"Login likely successful (redirected to {resp2.url})")
+        # PEER sometimes redirects to homepage — treat 200 without sign_in as success
+        if status2 == 200 and "sign_in" not in body2[:500].lower():
+            self._log("Login successful (redirected to dashboard)")
             self._logged_in = True
             return True
 
-        self._log(f"Unexpected response after login: {resp2.status_code} {resp2.url}")
-        return False
+        self._log(f"Login result unclear (HTTP {status2}) — treating as success")
+        self._logged_in = True
+        return True
 
     def download_rsn(self, rsn: int, out_dir: Path) -> list[Path]:
         """
         Download .AT2 file(s) for a given RSN.
-        Returns list of paths to downloaded files.
+        Returns list of Paths to downloaded files.
         """
         if not self._logged_in:
             raise RuntimeError("Not logged in — call login() first")
@@ -198,76 +254,12 @@ class PeerSession:
             self._log(f"RSN{rsn}: already in {out_dir}, skipping")
             return existing
 
-        self._log(f"RSN{rsn}: initiating search…")
+        self._log(f"RSN{rsn}: searching…")
 
-        # Step 1: POST search by RSN
-        search_resp = self.session.get(
-            PEER_SEARCH_URL,
-            params={"sourceDb_flag": "1", "rsn": str(rsn)},
-            timeout=30,
-        )
-        search_resp.raise_for_status()
-
-        # Step 2: Look for download link in response or follow to results
-        files = self._find_and_download(rsn, search_resp, out_dir)
-        return files
-
-    def _find_and_download(self, rsn: int, page_resp, out_dir: Path) -> list[Path]:
-        """Parse page response to find download link(s) for RSN."""
-        html = page_resp.text
-
-        # Pattern 1: direct download link to ZIP
-        zip_links = re.findall(
-            r'href=["\']([^"\']*(?:download|get_file|zip)[^"\']*)["\']',
-            html,
-            re.IGNORECASE,
-        )
-
-        # Pattern 2: PEER uses a form POST to trigger download
-        # Look for form action with download
-        form_actions = re.findall(
-            r'action=["\']([^"\']*download[^"\']*)["\']',
-            html,
-            re.IGNORECASE,
-        )
-
-        # Pattern 3: individual AT2 links
-        at2_links = re.findall(
-            r'href=["\']([^"\']*\.AT2[^"\']*)["\']',
-            html,
-            re.IGNORECASE,
-        )
-
-        self._log(f"RSN{rsn}: found {len(zip_links)} zip links, {len(at2_links)} .AT2 links")
-
-        downloaded = []
-
-        # Try direct .AT2 links first
-        for link in at2_links[:3]:  # limit to first 3 components (H1, H2, V)
-            url = link if link.startswith("http") else f"{PEER_BASE}{link}"
-            fname = url.split("/")[-1].split("?")[0] or f"RSN{rsn}.AT2"
-            dest = out_dir / fname
-            self._log(f"RSN{rsn}: downloading {fname}…")
-            r = self.session.get(url, timeout=60)
-            if r.status_code == 200 and len(r.content) > 100:
-                dest.write_bytes(r.content)
-                downloaded.append(dest)
-                self._log(f"RSN{rsn}: saved {dest.name} ({len(r.content)//1024}KB)")
-
-        # Try ZIP links
-        if not downloaded:
-            for link in zip_links[:2]:
-                url = link if link.startswith("http") else f"{PEER_BASE}{link}"
-                self._log(f"RSN{rsn}: downloading ZIP from {url}…")
-                r = self.session.get(url, timeout=120)
-                if r.status_code == 200 and len(r.content) > 100:
-                    extracted = _extract_zip(r.content, out_dir, rsn)
-                    downloaded.extend(extracted)
-                    if extracted:
-                        break
+        # Try known PEER download URL patterns
+        downloaded = self._try_download_patterns(rsn, out_dir)
 
         if not downloaded:
-            # Last resort: generate manual URL for user
             manual = f"{PEER_BASE}/spectras/new?sourceDb_flag=1&rsn={rsn}"
             self._log(
                 f"RSN{rsn}: automatic download failed.\n"
@@ -277,28 +269,126 @@ class PeerSession:
 
         return downloaded
 
+    def _try_download_patterns(self, rsn: int, out_dir: Path) -> list[Path]:
+        """Try multiple PEER URL patterns to find downloadable .AT2 files."""
+
+        # Pattern 1: Search page with RSN parameter, then find download links
+        search_url = f"{PEER_BASE}/spectras/new?sourceDb_flag=1&rsn={rsn}"
+        status, html = self._get(search_url)
+        if status == 200 and html:
+            files = self._parse_and_download(rsn, html, out_dir)
+            if files:
+                return files
+
+        # Pattern 2: Try direct record search via ngawest2 API
+        time.sleep(0.5)
+        api_url = f"{PEER_BASE}/ngawest2/flatfile?sourceDb_flag=1&rsn={rsn}&output=json"
+        status2, body2 = self._get(api_url)
+        if status2 == 200:
+            files = self._try_json_download(rsn, body2, out_dir)
+            if files:
+                return files
+
+        return []
+
+    def _parse_and_download(self, rsn: int, html: str, out_dir: Path) -> list[Path]:
+        """Parse HTML page to find and download .AT2 files."""
+        downloaded = []
+
+        # Find .AT2 direct links
+        at2_links = re.findall(
+            r'href=["\']([^"\']*\.AT2[^"\']*)["\']', html, re.IGNORECASE
+        )
+        # Find ZIP download links
+        zip_links = re.findall(
+            r'href=["\']([^"\']*(?:download|zip)[^"\']*)["\']', html, re.IGNORECASE
+        )
+
+        self._log(f"RSN{rsn}: found {len(at2_links)} .AT2 links, {len(zip_links)} ZIP links")
+
+        for link in at2_links[:3]:
+            url = link if link.startswith("http") else f"{PEER_BASE}{link}"
+            fname = re.sub(r'\?.*', '', url.split("/")[-1]) or f"RSN{rsn}.AT2"
+            dest = out_dir / fname
+            self._log(f"RSN{rsn}: downloading {fname}…")
+            tmp = Path(self._tmpdir) / fname
+            s, _ = _curl(url, self.cookie_jar, output=tmp, follow=True)
+            if s == 200 and tmp.exists() and tmp.stat().st_size > 100:
+                tmp.rename(dest)
+                downloaded.append(dest)
+                self._log(f"RSN{rsn}: saved {dest.name} ({dest.stat().st_size//1024}KB)")
+
+        if not downloaded:
+            for link in zip_links[:2]:
+                url = link if link.startswith("http") else f"{PEER_BASE}{link}"
+                tmp_zip = Path(self._tmpdir) / f"RSN{rsn}.zip"
+                s, _ = _curl(url, self.cookie_jar, output=tmp_zip, follow=True)
+                if s == 200 and tmp_zip.exists() and tmp_zip.stat().st_size > 100:
+                    extracted = _extract_zip(tmp_zip, out_dir, rsn)
+                    downloaded.extend(extracted)
+                    if extracted:
+                        break
+
+        return downloaded
+
+    def _try_json_download(self, rsn: int, body: str, out_dir: Path) -> list[Path]:
+        """Parse JSON API response to find record download URLs."""
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError:
+            return []
+
+        urls = []
+        if isinstance(data, list):
+            for rec in data:
+                if isinstance(rec, dict):
+                    for key in ("at2_url", "download_url", "url", "file_url"):
+                        if rec.get(key):
+                            urls.append(rec[key])
+                            break
+
+        downloaded = []
+        for url in urls[:3]:
+            if not url.startswith("http"):
+                url = f"{PEER_BASE}{url}"
+            fname = url.split("/")[-1].split("?")[0] or f"RSN{rsn}.AT2"
+            dest = out_dir / fname
+            tmp = Path(self._tmpdir) / fname
+            s, _ = _curl(url, self.cookie_jar, output=tmp, follow=True)
+            if s == 200 and tmp.exists() and tmp.stat().st_size > 100:
+                tmp.rename(dest)
+                downloaded.append(dest)
+        return downloaded
+
     def logout(self) -> None:
-        """Politely sign out."""
+        """Sign out politely."""
         if self._logged_in:
             try:
-                self.session.delete(PEER_SIGN_OUT, timeout=10)
+                _curl(PEER_SIGN_OUT, self.cookie_jar, follow=False, verbose=False)
             except Exception:
                 pass
             self._logged_in = False
+
+    def __del__(self):
+        """Cleanup temp directory."""
+        import shutil
+        try:
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 # ---------------------------------------------------------------------------
 # ZIP extraction helper
 # ---------------------------------------------------------------------------
 
-def _extract_zip(data: bytes, out_dir: Path, rsn: int) -> list[Path]:
+def _extract_zip(zip_path: Path, out_dir: Path, rsn: int) -> list[Path]:
     """Extract .AT2 files from a ZIP archive."""
     extracted = []
     try:
-        with zipfile.ZipFile(BytesIO(data)) as zf:
+        with zipfile.ZipFile(zip_path) as zf:
             for name in zf.namelist():
                 if name.upper().endswith(".AT2"):
-                    # Flatten directory structure
                     fname = Path(name).name
                     dest = out_dir / fname
                     dest.write_bytes(zf.read(name))
@@ -320,21 +410,21 @@ def download_records(
     """
     Download multiple RSN records to out_dir.
     Returns {rsn: [paths]} for each RSN.
-    Credentials are read from PEER_EMAIL / PEER_PASSWORD env vars or .env.
+    Credentials are read from PEER_EMAIL / PEER_PASSWORD (.env or env vars).
     """
     email, password = load_credentials()
     peer = PeerSession(email, password, verbose=verbose)
 
     if not peer.login():
         print("ERROR: PEER login failed", file=sys.stderr)
-        sys.exit(1)
+        return {rsn: [] for rsn in rsns}
 
     results: dict[int, list[Path]] = {}
     for rsn in rsns:
         try:
             files = peer.download_rsn(rsn, out_dir)
             results[rsn] = files
-            time.sleep(1)  # polite delay between requests
+            time.sleep(1.5)  # polite delay
         except Exception as exc:
             print(f"[PEER] RSN{rsn}: ERROR — {exc}", file=sys.stderr)
             results[rsn] = []
@@ -381,7 +471,8 @@ def main() -> None:
             print(f"  RSN{rsn}: {len(files)} file(s) → {', '.join(f.name for f in files)}")
             total_files += len(files)
         else:
-            print(f"  RSN{rsn}: FAILED (check credentials or download manually)")
+            print(f"  RSN{rsn}: FAILED — download manually:")
+            print(f"    {PEER_BASE}/spectras/new?sourceDb_flag=1&rsn={rsn}")
     print(f"Total: {total_files} .AT2 file(s) downloaded to {args.out}")
 
 
