@@ -68,7 +68,9 @@ jobs:
           git add -f .agent/autoresearch/results.tsv 2>/dev/null || true
 
           # Stage only files that autoresearch is allowed to modify
-          git add tools/validate_submission.py .agent/prompts/ .agent/skills/ src/physics/ 2>/dev/null || true
+          git add tools/validate_submission.py .agent/prompts/ .agent/skills/ src/physics/ \
+            .agent/specs/journal_specs.yaml articles/scientific_narrator.py \
+            tools/generate_params.py tools/check_novelty.py 2>/dev/null || true
 
           # Check if there are staged or unstaged changes to commit
           needs_push=false

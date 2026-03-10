@@ -83,6 +83,47 @@ rooms:
     max_consecutive_failures: 3
     priority: 4
 
+  quartile_gates:
+    name: "Quartile Quality Gates"
+    description: "Improve per-quartile validation (Conference/Q4/Q3/Q2/Q1 specs enforcement)"
+    editable:
+      - tools/validate_submission.py
+      - .agent/specs/journal_specs.yaml
+    sacred:
+      - tests/fixtures/
+      - tools/autoresearch.py
+    metric: "quartile_accuracy"
+    evaluation:
+      command: "python3 tests/test_quartile_gates.py --score"
+      timeout_seconds: 120
+      score_key: "composite_score"
+    baseline_score: 0.40  # 2026-03-10: spec bug crashes all, 0 quartile checks pass
+    max_consecutive_failures: 5
+    priority: 5
+
+  tool_chain:
+    name: "Tool Chain Connectivity"
+    description: "Improve import chain, SSOT propagation, CLI interfaces, data flow"
+    editable:
+      - tools/validate_submission.py
+      - tools/generate_params.py
+      - tools/check_novelty.py
+      - articles/scientific_narrator.py
+      - src/physics/spectral_engine.py
+      - src/physics/cross_validation.py
+    sacred:
+      - tests/fixtures/
+      - config/params.yaml
+      - tools/autoresearch.py
+    metric: "chain_connectivity"
+    evaluation:
+      command: "python3 tests/test_tool_chain.py --score"
+      timeout_seconds: 120
+      score_key: "chain_score"
+    baseline_score: 0.94  # 2026-03-10: 2 CLI help failures (validate_submission, arduino_emu)
+    max_consecutive_failures: 5
+    priority: 6
+
 # Global settings
 settings:
   model: "claude-sonnet-4-20250514"  # Anthropic fallback
