@@ -11,6 +11,7 @@ Usage:
 
 import json
 import sys
+import traceback
 import unittest
 from pathlib import Path
 
@@ -51,6 +52,7 @@ def _run_all_fixtures() -> dict:
     tp = tn = fp = fn = 0
     ai_prose_detected = False
     data_gaps_detected = False
+    crashes = []
 
     for fixture_path, meta in EXPECTATIONS.items():
         if not fixture_path.exists():
@@ -60,8 +62,9 @@ def _run_all_fixtures() -> dict:
 
         try:
             issues = validate_draft(fixture_path)
-        except Exception:
+        except Exception as e:
             # If validator crashes, count the fixture as not evaluated
+            crashes.append(f"{meta['label']}: {type(e).__name__}: {e}")
             if meta["should_fail"]:
                 fn += 1  # bad paper not flagged (crash)
             else:
@@ -93,7 +96,7 @@ def _run_all_fixtures() -> dict:
     total = tp + tn + fp + fn
     composite = (tp + tn) / total if total > 0 else 0.0
 
-    return {
+    result = {
         "composite_score": round(composite, 4),
         "details": {
             "true_positives": tp,
@@ -105,6 +108,9 @@ def _run_all_fixtures() -> dict:
             "total_fixtures": len(EXPECTATIONS),
         },
     }
+    if crashes:
+        result["details"]["crashes"] = crashes
+    return result
 
 
 # -- Pytest / unittest tests --------------------------------------------------
@@ -175,6 +181,9 @@ class TestValidateSubmission(unittest.TestCase):
 if __name__ == "__main__":
     if "--score" in sys.argv:
         result = _run_all_fixtures()
+        # Print crashes to stderr so autoresearch can see them
+        for crash in result.get("details", {}).get("crashes", []):
+            print(f"CRASH: {crash}", file=sys.stderr)
         print(json.dumps(result, indent=2))
         sys.exit(0 if result["composite_score"] >= 0.66 else 1)
     else:
