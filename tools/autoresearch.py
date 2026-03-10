@@ -239,12 +239,34 @@ def propose_change(model: str, room_name: str, room_cfg: dict,
         return {"error": f"File not found: {target_file}"}
     current_content = file_path.read_text()
 
-    # Truncate if too long (keep first/last 100 lines)
+    # Truncate if too long — keep first/last lines + area around errors
     lines = current_content.split("\n")
-    if len(lines) > 250:
-        current_content = "\n".join(
-            lines[:125] + ["", "... (truncated) ...", ""] + lines[-125:]
-        )
+    if len(lines) > 300:
+        # Add line numbers to help LLM reference exact locations
+        numbered = [f"{i+1}: {line}" for i, line in enumerate(lines)]
+        # Keep first 80, last 80, and any lines near crash mentions
+        keep_indices = set(range(80)) | set(range(len(lines)-80, len(lines)))
+
+        # If eval has crash info, try to find relevant line numbers
+        if eval_result:
+            for crash in eval_result.get("details", {}).get("crashes", []):
+                # Search for the variable name mentioned in the error
+                err_parts = crash.split("'")
+                if len(err_parts) >= 2:
+                    var_name = err_parts[1]
+                    for idx, line in enumerate(lines):
+                        if var_name in line:
+                            keep_indices.update(range(max(0, idx-5), min(len(lines), idx+5)))
+
+        sorted_indices = sorted(keep_indices)
+        result_lines = []
+        prev = -1
+        for idx in sorted_indices:
+            if prev >= 0 and idx > prev + 1:
+                result_lines.append(f"... ({idx - prev - 1} lines omitted) ...")
+            result_lines.append(numbered[idx])
+            prev = idx
+        current_content = "\n".join(result_lines)
 
     # Format history
     history_text = "No previous experiments." if not history else ""
