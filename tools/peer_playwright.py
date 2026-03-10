@@ -168,7 +168,18 @@ def _curl_login(email: str, password: str, cookie_jar: Path, verbose: bool = Tru
         return False
 
     if verbose:
-        print("[PEER] curl: login successful — cookies saved")
+        print("[PEER] curl: login POST done — checking cookie jar")
+        if cookie_jar.exists():
+            raw = cookie_jar.read_text()
+            lines = [l for l in raw.splitlines() if l.strip() and not l.startswith("#")]
+            print(f"[PEER] curl: cookie jar has {len(lines)} non-comment line(s)")
+            for line in lines[:5]:
+                parts = line.split("\t")
+                name = parts[5] if len(parts) >= 6 else "?"
+                domain = parts[0] if parts else "?"
+                print(f"  cookie: name={name!r} domain={domain!r}")
+        else:
+            print("[PEER] curl: cookie jar file does NOT exist!")
     return True
 
 
