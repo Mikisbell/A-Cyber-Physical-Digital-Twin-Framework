@@ -226,30 +226,76 @@ def download_records_playwright(
     except ImportError:
         print(
             "ERROR: playwright not installed.\n"
-            "  pip install playwright && playwright install chromium",
+            "  pip install playwright && playwright install chromium firefox",
             file=sys.stderr,
         )
         sys.exit(1)
 
+    try:
+        from playwright_stealth import stealth_sync as _stealth_sync
+        _has_stealth = True
+    except ImportError:
+        _stealth_sync = None
+        _has_stealth = False
+        if verbose:
+            print("[PEER] playwright-stealth not installed — running without stealth patches")
+
     out_dir.mkdir(parents=True, exist_ok=True)
     results: dict[int, list[Path]] = {}
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True,
-            args=[
+    # Try Chromium first (with stealth), then Firefox (different TLS fingerprint)
+    BROWSERS_TO_TRY = [
+        ("chromium", {
+            "headless": True,
+            "args": [
                 "--no-sandbox",
                 "--disable-setuid-sandbox",
                 "--disable-blink-features=AutomationControlled",
+                "--disable-features=IsolateOrigins,site-per-process",
             ],
+        }),
+        ("firefox", {"headless": True}),
+    ]
+
+    def _make_context(browser, is_firefox: bool):
+        ua = (
+            "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0"
+            if is_firefox else
+            "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
+            "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         )
-        ctx = browser.new_context(
+        return browser.new_context(
             accept_downloads=True,
-            user_agent=(
-                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
-                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-            ),
+            user_agent=ua,
+            locale="en-US",
+            extra_http_headers={
+                "Accept-Language": "en-US,en;q=0.9",
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            },
         )
+
+    with sync_playwright() as p:
+        browser = None
+        ctx = None
+        is_firefox = False
+        for browser_name, launch_kwargs in BROWSERS_TO_TRY:
+            try:
+                browser_type = getattr(p, browser_name)
+                browser = browser_type.launch(**launch_kwargs)
+                is_firefox = (browser_name == "firefox")
+                if verbose:
+                    print(f"[PEER] Playwright: launched {browser_name}")
+                break
+            except Exception as exc:
+                if verbose:
+                    print(f"[PEER] Playwright: {browser_name} launch failed — {exc}")
+                continue
+
+        if browser is None:
+            print("[PEER] Playwright: no browser could be launched", file=sys.stderr)
+            return {rsn: [] for rsn in rsns}
+
+        ctx = _make_context(browser, is_firefox)
 
         # Inject curl session cookies (bypasses bot-detected login page)
         if cookie_jar and cookie_jar.exists():
@@ -286,7 +332,15 @@ def download_records_playwright(
 
         # ----- DOWNLOAD EACH RSN -----
         page = ctx.new_page()
+
+        # Apply stealth patches (makes headless Chrome look like real browser)
+        if _has_stealth and not is_firefox:
+            _stealth_sync(page)
+            if verbose:
+                print("[PEER] Playwright: stealth patches applied")
+
         intercepted_at2: list[str] = []
+        connection_reset_count = 0
 
         def _on_request(req):
             url = req.url
@@ -296,7 +350,6 @@ def download_records_playwright(
         def _on_response(resp):
             url = resp.url
             cd = resp.headers.get("content-disposition", "")
-            ct = resp.headers.get("content-type", "")
             if ".AT2" in url or ".at2" in url or "AT2" in cd or "at2" in cd.lower():
                 intercepted_at2.append(url)
 
@@ -467,7 +520,42 @@ def download_records_playwright(
             except PWTimeout:
                 print(f"[PEER] RSN{rsn}: page timeout")
             except Exception as exc:
+                err_str = str(exc)
                 print(f"[PEER] RSN{rsn}: ERROR — {exc}")
+                # If Chromium is blocked by PEER, switch to Firefox for all remaining RSNs
+                if "ERR_CONNECTION_RESET" in err_str and not is_firefox:
+                    if verbose:
+                        print("[PEER] Playwright: Chromium blocked — switching to Firefox for remaining RSNs")
+                    try:
+                        page.close()
+                        browser.close()
+                        browser = p.firefox.launch(headless=True)
+                        is_firefox = True
+                        ctx = _make_context(browser, is_firefox)
+                        if cookie_jar and cookie_jar.exists():
+                            pw_cookies = _parse_netscape_cookies(cookie_jar)
+                            if pw_cookies:
+                                ctx.add_cookies(pw_cookies)
+                                if verbose:
+                                    print(f"[PEER] Playwright: re-injected {len(pw_cookies)} cookie(s) into Firefox")
+                        page = ctx.new_page()
+                        page.on("request", _on_request)
+                        page.on("response", _on_response)
+                        if verbose:
+                            print("[PEER] Playwright: Firefox browser ready — retrying")
+                        # retry current RSN with Firefox
+                        page.goto(
+                            f"{PEER_BASE}/spectras/new?sourceDb_flag=1&rsn={rsn}",
+                            timeout=120_000,
+                            wait_until="domcontentloaded",
+                        )
+                        page.wait_for_timeout(5_000)
+                        body_text = page.evaluate("() => document.body?.innerText?.slice(0, 800) || ''")
+                        if verbose:
+                            print(f"[PEER] RSN{rsn} (Firefox): page loaded — snippet: {body_text[:300]}")
+                    except Exception as ff_exc:
+                        if verbose:
+                            print(f"[PEER] RSN{rsn}: Firefox also failed — {ff_exc}")
 
             if not rsn_files:
                 print(

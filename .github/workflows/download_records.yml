@@ -44,8 +44,8 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install python-dotenv playwright
-          playwright install chromium --with-deps
+          pip install python-dotenv playwright playwright-stealth
+          playwright install chromium firefox --with-deps
 
       - name: Download records via Playwright (curl login + cookie injection)
         env:
