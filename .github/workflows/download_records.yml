@@ -47,69 +47,16 @@ jobs:
           pip install python-dotenv playwright
           playwright install chromium --with-deps
 
-      - name: curl login → diagnose headers + save cookie jar
-        env:
-          PEER_EMAIL: ${{ secrets.PEER_EMAIL }}
-          PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
-        run: |
-          PEER_BASE="https://ngawest2.berkeley.edu"
-          SIGN_IN="${PEER_BASE}/members/sign_in"
-          COOKIE_JAR="/tmp/peer_cookies.txt"
-          HEADER_DUMP="/tmp/peer_login_headers.txt"
-          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-
-          echo "[PEER] Step 1: GET login page (collect CSRF + initial cookies)"
-          HTML=$(curl --silent --show-error --globoff --max-time 120 --ipv4 \
-            --cookie "$COOKIE_JAR" --cookie-jar "$COOKIE_JAR" \
-            --user-agent "$UA" \
-            --header "Accept: text/html,application/xhtml+xml,*/*" \
-            "$SIGN_IN")
-          echo "[PEER] Login page: $(echo "$HTML" | wc -c) chars"
-
-          # Extract CSRF token
-          CSRF=$(echo "$HTML" | grep -o 'csrf-token[^>]*content="[^"]*"' | grep -o 'content="[^"]*"' | cut -d'"' -f2)
-          echo "[PEER] CSRF found: $(echo "$CSRF" | wc -c) chars"
-
-          # Extract spinner value
-          SPINNER=$(echo "$HTML" | grep -o 'name="spinner"[^>]*value="[^"]*"' | grep -o 'value="[^"]*"' | cut -d'"' -f2)
-          echo "[PEER] Spinner: '${SPINNER:0:10}...'"
-
-          echo "[PEER] Step 2: POST credentials (watching Set-Cookie headers)"
-          POST_BODY="authenticity_token=$(python3 -c "import urllib.parse,os; print(urllib.parse.quote_plus(os.environ.get('CSRF','')))" 2>/dev/null || echo "$CSRF")&member%5Bemail%5D=${PEER_EMAIL}&member%5Bpassword%5D=${PEER_PASSWORD}&member%5Bremember_me%5D=0&member%5Bsubtitle%5D=&spinner=${SPINNER}&commit=Log+in"
-
-          # POST WITHOUT --location first to see the raw redirect + Set-Cookie headers
-          curl --silent --show-error --globoff --max-time 120 --ipv4 \
-            --cookie "$COOKIE_JAR" --cookie-jar "$COOKIE_JAR" \
-            --user-agent "$UA" \
-            --header "Accept: text/html,application/xhtml+xml,*/*" \
-            --header "Content-Type: application/x-www-form-urlencoded" \
-            --header "Referer: $SIGN_IN" \
-            --dump-header "$HEADER_DUMP" \
-            --data "$POST_BODY" \
-            "$SIGN_IN" > /tmp/peer_login_body.html
-
-          echo "=== RESPONSE HEADERS (from POST to sign_in) ==="
-          cat "$HEADER_DUMP"
-          echo "=== END HEADERS ==="
-
-          echo "[PEER] Cookie jar contents (names only, no values):"
-          if [ -f "$COOKIE_JAR" ]; then
-            grep -v "^#" "$COOKIE_JAR" | grep -v "^$" | awk '{print "  cookie:", $6}' || echo "  (empty)"
-          fi
-
-          echo "[PEER] Login body snippet (first 300 chars):"
-          head -c 300 /tmp/peer_login_body.html
-
-      - name: Download records via Playwright (cookie injection)
+      - name: Download records via Playwright (curl login + cookie injection)
         env:
           PEER_EMAIL: ${{ secrets.PEER_EMAIL }}
           PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
         run: |
           mkdir -p ${{ inputs.out_dir }}
+          # peer_playwright.py: if no --cookie-jar, does curl login internally then injects cookies
           python3 tools/peer_playwright.py \
             --rsn ${{ inputs.rsn_list }} \
-            --out ${{ inputs.out_dir }} \
-            --cookie-jar /tmp/peer_cookies.txt
+            --out ${{ inputs.out_dir }}
 
       - name: Commit downloaded records
         run: |

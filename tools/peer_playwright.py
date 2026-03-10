@@ -216,28 +216,35 @@ def download_records_playwright(
         # Inject curl session cookies (bypasses bot-detected login page)
         if cookie_jar and cookie_jar.exists():
             pw_cookies = _parse_netscape_cookies(cookie_jar)
+            if verbose:
+                print(f"[PEER] Playwright: parsed {len(pw_cookies)} cookies from jar")
+                for c in pw_cookies:
+                    print(f"  cookie: {c['name']} (domain={c['domain']})")
             if pw_cookies:
                 ctx.add_cookies(pw_cookies)
+                # Verify cookies are loaded
+                loaded = ctx.cookies()
                 if verbose:
-                    print(f"[PEER] Playwright: injected {len(pw_cookies)} cookies from curl jar")
+                    print(f"[PEER] Playwright: context has {len(loaded)} cookie(s) after injection")
         else:
             # Fallback: Playwright login (may be detected, but try anyway)
             email, password = load_credentials()
             if verbose:
-                print("[PEER] Playwright: doing browser login (may be slow, up to 6 min)…")
+                print("[PEER] Playwright: doing browser login…")
             page_login = ctx.new_page()
             page_login.goto(f"{PEER_BASE}/members/sign_in", timeout=360_000)
             page_login.fill("input#member_email", email)
             page_login.fill("input#member_password", password)
             page_login.click("input[name='commit']")
             page_login.wait_for_load_state("networkidle", timeout=60_000)
-            if "sign_in" in page_login.url:
-                print("[PEER] Playwright: login failed", file=sys.stderr)
-                browser.close()
-                return {rsn: [] for rsn in rsns}
+            login_cookies = ctx.cookies()
+            if verbose:
+                print(f"[PEER] Playwright: {len(login_cookies)} cookie(s) after login form")
+                for c in login_cookies:
+                    print(f"  cookie: {c['name']} = {c['value'][:20]}...")
             page_login.close()
             if verbose:
-                print("[PEER] Playwright: login OK")
+                print("[PEER] Playwright: login page done")
 
         # ----- DOWNLOAD EACH RSN -----
         page = ctx.new_page()
