@@ -191,7 +191,7 @@ def _call_llm(prompt: str, model: str) -> str:
 
 
 def propose_change(model: str, room_name: str, room_cfg: dict,
-                   history: list) -> dict:
+                   history: list, eval_result: dict = None) -> dict:
     """Ask LLM to propose a change. Returns {file, old_content, new_content, description}."""
     editable_files = room_cfg["editable"]
 
@@ -233,12 +233,25 @@ def propose_change(model: str, room_name: str, room_cfg: dict,
             f"delta={r.get('delta', '?')} | {r.get('description', '?')}\n"
         )
 
+    # Format eval diagnostics
+    eval_diag = ""
+    if eval_result:
+        status = eval_result.get("status", "ok")
+        error = eval_result.get("error", "")
+        score = eval_result.get("composite_score", 0.0)
+        details = eval_result.get("details", {})
+        eval_diag = f"""EVALUATION RESULT (score={score:.4f}, status={status}):
+{f'ERROR OUTPUT: {error[:500]}' if error else 'No errors.'}
+{f'DETAILS: {json.dumps(details, indent=2)[:500]}' if details else ''}
+"""
+
     prompt = f"""You are the AutoResearch agent improving belico-stack.
 
 ROOM: {room_name} — {room_cfg.get('description', '')}
 TARGET FILE: {target_file}
 METRIC: {room_cfg.get('metric', 'composite_score')} (higher = better)
 
+{eval_diag}
 RECENT EXPERIMENTS FOR THIS ROOM:
 {history_text}
 
@@ -403,7 +416,7 @@ def run_loop(max_experiments: int, target_room: str = None,
         # 2. Propose change
         print("  Proposing change...")
         proposal = propose_change(model, room_name, room_cfg,
-                                  room_history)
+                                  room_history, baseline_result)
 
         if "error" in proposal:
             print(f"  Proposal error: {proposal['error']}")
@@ -583,7 +596,8 @@ def main():
         target_room=args.room,
         dry_run=args.dry_run
     )
-    sys.exit(0 if kept > 0 else 1)
+    # Exit 0 always — the workflow commit step handles "no changes" gracefully
+    sys.exit(0)
 
 
 if __name__ == "__main__":
