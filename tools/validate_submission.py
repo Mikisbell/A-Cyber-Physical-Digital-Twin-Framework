@@ -7,6 +7,7 @@ Checks that a draft meets all requirements before submission to a journal.
 Checks:
   0. AI prose detection (blacklisted phrases, structural patterns)
   0.5. Data traceability (manifest.yaml vs quartile requirements)
+  0.6. COMPUTE gate (COMPUTE_MANIFEST.json required)
   1. YAML frontmatter present and complete
   2. AI_Assist markers in all AI-generated sections
   3. HV (Human Validation) markers with initials
@@ -15,7 +16,10 @@ Checks:
   6. Word count within target range
   7. Required IMRaD sections present
   8. No TODO markers remaining
-  9. Journal specs quality gates (from .agent/specs/journal_specs.yaml)
+  9. Journal specs quality gates (from .agent/specs/journal_specs.yaml):
+     - Reference count, figure count, required sections, novelty gate
+     - Normative framework: Q1 min 2 intl codes (ERROR), Q2 min 1 (WARN)
+     - Multi-structure: Q1 requires min 2 structures/specimens (ERROR)
 
 Usage:
   python3 tools/validate_submission.py articles/drafts/paper_Q2_xxx.md
@@ -664,6 +668,81 @@ def validate_draft(draft_path: Path) -> list[dict]:
             issues.append({"severity": "WARN", "check": "journal_spec",
                             "msg": f"{quartile} requires explicit novelty statement"})
 
+        # ── Normative framework enforcement (Q1: min 2 intl codes, Q2: min 1) ──
+        # From journal_specs.yaml normative_framework.minimum_international_codes
+        min_codes = (spec.get("normative_framework", {}) or {}).get("minimum_international_codes", 0)
+        if min_codes and min_codes > 0:
+            # Known international codes — search text (case-insensitive)
+            intl_code_patterns = [
+                (r"\bEurocode\s*8\b",     "Eurocode 8"),
+                (r"\bEN\s*1998\b",         "Eurocode 8 (EN 1998)"),
+                (r"\bASCE\s*7[-\s]\d+",   "ASCE 7"),
+                (r"\bACI\s*318",           "ACI 318"),
+                (r"\bfib\s+Model\s+Code", "fib Model Code"),
+                (r"\bISO\s*13822",         "ISO 13822"),
+                (r"\bIBC\s*20\d\d",        "IBC"),
+                (r"\bECCS\b",              "ECCS"),
+            ]
+            cited_codes = [name for pat, name in intl_code_patterns
+                           if re.search(pat, text, re.IGNORECASE)]
+            n_found = len(cited_codes)
+            if n_found < min_codes:
+                sev = "ERROR" if quartile.lower() == "q1" else "WARN"
+                issues.append({
+                    "severity": sev,
+                    "check": "normative_framework",
+                    "msg": (
+                        f"{quartile} requires min {min_codes} international normative code(s), "
+                        f"found {n_found} ({', '.join(cited_codes) or 'none'}). "
+                        f"Add references to: Eurocode 8, ASCE 7-22, ACI 318-19, or fib Model Code."
+                    )
+                })
+            else:
+                issues.append({
+                    "severity": "OK",
+                    "check": "normative_framework",
+                    "msg": (
+                        f"Normative framework: {n_found} international code(s) found "
+                        f"({', '.join(cited_codes)}) — meets min {min_codes} for {quartile}"
+                    )
+                })
+
+        # ── Multi-structure check (Q1: min 2 structures/specimens) ──
+        # Q1 data_requirements: "min 2 structures or test specimens"
+        if quartile.lower() == "q1":
+            data_reqs = spec.get("data_requirements", [])
+            needs_multi = any("2 struct" in r.lower() or "2 spec" in r.lower()
+                              for r in data_reqs)
+            if needs_multi:
+                # Look for explicit multi-structure mentions in text
+                multi_patterns = [
+                    r"\btwo\s+(?:RC\s+)?(?:frame|building|structure|specimen|bridge|dam)\b",
+                    r"\b2\s+(?:RC\s+)?(?:frame|building|structure|specimen|bridge|dam)\b",
+                    r"\bstructure[s]?\s*(?:A|1)\b.*?\bstructure[s]?\s*(?:B|2)\b",
+                    r"\bbuilding\s+(?:A|1)\b.*?\bbuilding\s+(?:B|2)\b",
+                    r"\bspecimen\s+(?:A|1)\b.*?\bspecimen\s+(?:B|2)\b",
+                    r"\bCase\s+(?:A|1)\b.*?\bCase\s+(?:B|2)\b",
+                ]
+                found_multi = any(re.search(p, text, re.IGNORECASE | re.DOTALL)
+                                  for p in multi_patterns)
+                if not found_multi:
+                    issues.append({
+                        "severity": "ERROR",
+                        "check": "multi_structure",
+                        "msg": (
+                            "Q1 requires min 2 structures or test specimens with independent data. "
+                            "Paper appears to present only 1 case study. "
+                            "Add a second structure (different height, material, or soil class) "
+                            "or explicitly label cases as 'Structure A/B' or 'Case 1/2'."
+                        )
+                    })
+                else:
+                    issues.append({
+                        "severity": "OK",
+                        "check": "multi_structure",
+                        "msg": "Multi-structure requirement met (2+ structures/cases detected)"
+                    })
+
     return issues
 
 
@@ -709,6 +788,8 @@ def diagnose(draft_path: Path, issues: list[dict]):
         "journal_spec": "Review .agent/specs/journal_specs.yaml gates → SPEC step",
         "abstract_length": "Shorten abstract to meet journal word limit → IMPLEMENT step",
         "semicolon_density": "Split semicolons into separate sentences → IMPLEMENT step",
+        "normative_framework": "Cite Eurocode 8, ASCE 7-22, ACI 318-19 in Methodology/Introduction → IMPLEMENT",
+        "multi_structure": "Add second structure/specimen (Case A/B or Structure 1/2) → DESIGN step",
     }
 
     errors_and_warns = [i for i in issues if i["severity"] in ("ERROR", "WARN")]
