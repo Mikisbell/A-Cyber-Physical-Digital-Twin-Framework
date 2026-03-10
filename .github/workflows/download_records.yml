@@ -39,9 +39,61 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
+        run: pip install python-dotenv
+
+      - name: Discover PEER authenticated URLs
+        env:
+          PEER_EMAIL: ${{ secrets.PEER_EMAIL }}
+          PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
         run: |
-          pip install playwright python-dotenv
-          playwright install chromium --with-deps
+          python3 - <<'PYEOF'
+          import os, re, sys, tempfile, subprocess, urllib.parse
+          from pathlib import Path
+          sys.path.insert(0, '.')
+          from tools.peer_downloader import PeerSession, load_credentials, PEER_BASE, _curl
+
+          email, pw = load_credentials()
+          s = PeerSession(email, pw, verbose=True)
+          if not s.login():
+              print("Login failed — skipping URL discovery"); sys.exit(0)
+
+          print("\n=== Authenticated URL Discovery ===")
+
+          # Dump homepage after login to find authenticated nav links
+          code, html = s._get(PEER_BASE + "/")
+          print(f"Homepage: HTTP {code}, {len(html)} chars")
+
+          # Find all navigation links
+          nav_links = re.findall(r'href=["\']([^"\']+)["\']', html)
+          print("All nav links:")
+          for lnk in set(nav_links):
+              if any(k in lnk.lower() for k in ['search','download','record','ngaw','motion','sign_out','member']):
+                  print(f"  {lnk}")
+
+          # Save for artifact
+          Path('/tmp/peer_home_auth.html').write_text(html)
+
+          # Try common PEER download URLs
+          test_urls = [
+              "/gm_search",
+              "/gm_search/download",
+              "/ngawest2",
+              "/ground_motion",
+              "/datasets",
+              "/records",
+          ]
+          for ep in test_urls:
+              code2, body2 = s._get(PEER_BASE + ep)
+              print(f"  {ep}: HTTP {code2}, {len(body2)} chars")
+          PYEOF
+
+      - name: Upload auth HTML (diagnosis)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: peer-auth-html
+          path: /tmp/peer_home_auth.html
+          if-no-files-found: ignore
 
       - name: Download records from PEER NGA-West2
         env:
@@ -49,7 +101,7 @@ jobs:
           PEER_PASSWORD: ${{ secrets.PEER_PASSWORD }}
         run: |
           mkdir -p ${{ inputs.out_dir }}
-          python3 tools/peer_playwright.py \
+          python3 tools/peer_downloader.py \
             --rsn ${{ inputs.rsn_list }} \
             --out ${{ inputs.out_dir }}
 
