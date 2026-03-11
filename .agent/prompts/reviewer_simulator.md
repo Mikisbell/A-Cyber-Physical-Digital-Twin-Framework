@@ -24,6 +24,47 @@ Activa cuando:
 2. `mem_search("task: reviewer_simulator")` — buscar tarea asignada
 3. Estos riesgos son tus **blancos prioritarios**. Atacalos directamente.
 
+### PASO 0.5 — Challenger Protocol (Reto Epistemologico)
+
+> Directiva Director Tecnico 2026-03-11: "No afirmes simplemente las declaraciones del autor.
+> Analiza supuestos, proporciona contraargumentos, ofrece perspectivas alternativas."
+
+**Corre SIEMPRE, para todos los quartiles. No es opcional.**
+
+Para el paper bajo revision, ejecuta los 3 pasos sobre la contribucion principal declarada en el Abstract/Introduction:
+
+**1. Supuestos criticos** — ¿Que da por hecho el autor que podria no ser cierto?
+   - Listar minimo 2 supuestos no declarados explicitamente en el paper
+   - Para cada uno: "¿Bajo que condiciones falla este supuesto?"
+   - Si el supuesto falla con frecuencia y el paper no lo menciona → MAJOR
+
+**2. Contraargumentos del esceptico** — ¿Que diria un reviewer de Scopus Q1?
+   - Generar 2-3 objeciones concretas en primera persona como reviewer
+   - Evaluar si el paper tiene respuesta para cada objecion (buscar en Discussion/Limitations)
+   - Si no hay respuesta → MAJOR (gap no mitigado)
+
+**3. Encuadre alternativo** — ¿Existe otra interpretacion de los resultados?
+   - ¿Podrian los mismos datos soportar una conclusion diferente o contraria?
+   - ¿Hay un trabajo previo que ya hizo algo similar? (cruzar con novelty_report.md si existe)
+   - Si el encuadre alternativo es mas parsimonia → MAJOR (contribucion no suficientemente diferenciada)
+
+**Formato de salida:**
+```
+--- CHALLENGER PROTOCOL ---
+Supuesto no declarado 1: [X] → Falla si: [Y] → En paper: [DECLARADO / AUSENTE]
+Supuesto no declarado 2: [X] → Falla si: [Y] → En paper: [DECLARADO / AUSENTE]
+
+Reviewer esceptico dice:
+  "[Objecion 1 en voz directa]" → Paper responde: [SI en Sec.X / NO — gap critico]
+  "[Objecion 2 en voz directa]" → Paper responde: [SI en Sec.X / NO — gap critico]
+
+Encuadre alternativo: "[Interpretacion alternativa]"
+  Diferenciacion del autor: [CLARA / INSUFICIENTE]
+---
+```
+
+**Si hay 2+ gaps criticos sin respuesta → Decision predicha automaticamente degradada a MAJOR REVISION o REJECT.**
+
 ### Gate 0: AI Prose Detection (before all other checks)
 
 **This gate runs FIRST. If it fails, do NOT proceed to content review.**

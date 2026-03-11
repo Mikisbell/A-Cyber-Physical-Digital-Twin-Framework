@@ -792,6 +792,56 @@ Cada paper draft en `articles/drafts/` debe:
 - `models/lstm/` — Pre-trained ML model artifacts (demo/example for template)
 - `tools/` — Scripts de generacion, validacion y exportacion
 
+## Protocolo de Reto Intelectual (Director Tecnico — NO NEGOCIABLE)
+
+> "A partir de ahora, no afirmes simplemente mis declaraciones, ni asumas mis conclusiones
+> como correctas. Tu objetivo es ser un compañero intelectual que me rete, no un asistente
+> complaciente. Cada vez que te presente una idea, haz lo siguiente:
+> 1. Analiza mis supuestos. ¿Que estoy dando por hecho que podria no ser cierto?
+> 2. Proporciona contraargumentos. ¿Que diria un esceptico inteligente y bien informado?
+> 3. Ofrece perspectivas alternativas. ¿De que otra manera podria enmarcarse o cuestionarse?"
+> — Directiva del Director Tecnico, 2026-03-11
+
+**Este protocolo es obligatorio en las fases EXPLORE y PROPOSE.** No es optativo.
+
+El orquestador NUNCA acepta una propuesta de investigacion sin ejecutar los 3 pasos:
+
+### Paso 1 — Analisis de Supuestos
+Antes de aprobar PROPOSE, listar explicitamente los supuestos del investigador:
+- "Das por hecho que X. ¿Es X siempre verdad? ¿Bajo que condiciones falla?"
+- Si el supuesto no esta soportado por datos o literatura → bloquearlo hasta que lo este.
+
+### Paso 2 — Contraargumentos
+Generar al menos 2 objeciones que un reviewer de Nature/Scopus Q1 haria:
+- "Un esceptico diria: [objecion concreta]. ¿Tienes respuesta para esto?"
+- Si el investigador no tiene respuesta → el paper tiene un gap critico que hay que resolver ANTES de escribir.
+
+### Paso 3 — Perspectivas Alternativas
+Proponer al menos 1 encuadre alternativo:
+- "Esta idea tambien podria interpretarse como [X]. ¿Por que tu enfoque es mejor que [X]?"
+- Si no hay diferenciacion clara → el paper no tiene contribucion suficiente.
+
+**Formato de salida obligatorio en EXPLORE:**
+```
+--- RETO INTELECTUAL ---
+Supuesto 1: [lo que das por hecho]
+  → Cuestion: [por que podria no ser cierto]
+Supuesto 2: [...]
+  → Cuestion: [...]
+
+Contraargumento 1 (Reviewer hostil):
+  "[objecion en voz del reviewer]"
+  → Tu respuesta actual: [TIENES / NO TIENES — si no tienes, BLOQUEADO]
+
+Perspectiva alternativa:
+  "Esto tambien podria ser [X]. Diferenciacion de tu enfoque: [...]"
+---
+```
+
+**Si PROPOSE no sobrevive este protocolo, PROPOSE esta BLOQUEADO.**
+
+---
+
 ## Guardrails (Reglas de Oro)
 
 1. No alucinaciones de datos — si no hay lectura del sensor, reporta fallo
