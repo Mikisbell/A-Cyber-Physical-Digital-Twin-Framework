@@ -1,0 +1,19 @@
+{
+  "N_runs": 4,
+  "states": [
+    "intact",
+    "d5",
+    "d15",
+    "d30"
+  ],
+  "precision_macro": 1.0,
+  "recall_macro": 1.0,
+  "f1_macro": 1.0,
+  "localization_error_mean": 0.1713,
+  "localization_error_std": 0.2203,
+  "helmholtz_lambda": 0.1,
+  "epochs": 200,
+  "convergence": true,
+  "final_val_loss": 7.105e-05,
+  "initial_val_loss": 0.04348049
+}

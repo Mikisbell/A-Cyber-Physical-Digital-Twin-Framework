@@ -1,0 +1,31 @@
+{
+  "RL1_jitter": {
+    "violations": 0,
+    "large_gaps_over_20ms": 1,
+    "threshold_ms": 10.0,
+    "consecutive_limit": 3,
+    "abort_triggered": false,
+    "status": "PASS"
+  },
+  "RL2_stress": {
+    "activations": 0,
+    "threshold_g": 0.8,
+    "note": "accel_g proxy used (no sigma_pa in CSV); full sigma check requires live bridge.py run",
+    "status": "INFO"
+  },
+  "RL3_convergence": {
+    "nan_count": 0,
+    "inf_count": 0,
+    "status": "PASS"
+  },
+  "gates_S1_S4": {
+    "status": "skipped",
+    "note": "S-1/S-2/S-3 physical consistency checks (fn jump, temp anomaly, \u0394T) require bridge.py live run via run_guardian_test.sh. Not applicable to post-hoc CSV analysis \u2014 validated separately."
+  },
+  "overall": "PASS",
+  "samples_analyzed": 3007,
+  "modes_tested": [
+    "dano_critico",
+    "dano_leve"
+  ]
+}

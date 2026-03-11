@@ -1,0 +1,30 @@
+{
+  "runs": 4,
+  "states": [
+    "intact",
+    "d5",
+    "d15",
+    "d30"
+  ],
+  "dt": 0.01,
+  "n_steps": 3007,
+  "excitation_source": "telemetry_hil.csv",
+  "convergence": {
+    "intact": true,
+    "d5": true,
+    "d15": true,
+    "d30": true
+  },
+  "peak_disp": {
+    "intact": 0.212477,
+    "d5": 0.220583,
+    "d15": 0.185613,
+    "d30": 0.11677
+  },
+  "peak_force": {
+    "intact": 1062.3833,
+    "d5": 1047.7705,
+    "d15": 788.8574,
+    "d30": 408.6938
+  }
+}

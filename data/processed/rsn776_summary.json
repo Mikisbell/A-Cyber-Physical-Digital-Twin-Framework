@@ -1,0 +1,53 @@
+{
+  "record": "RSN776_LOMAP_HSP000.AT2",
+  "event": "Loma Prieta 1989",
+  "station": "Hollister South & Pine",
+  "PGA_g": 0.36993,
+  "duration_s": 59.99,
+  "NPTS": 11999,
+  "DT": 0.005,
+  "simulations": {
+    "intact": {
+      "k_N_m": 5000.0,
+      "fn_hz": 0.3559,
+      "peak_disp_m": 0.389417,
+      "peak_force_N": 1947.0834,
+      "converged": true,
+      "n_steps": 11999
+    },
+    "d5": {
+      "k_N_m": 4750.0,
+      "fn_hz": 0.3469,
+      "peak_disp_m": 0.393337,
+      "peak_force_N": 1868.3493,
+      "converged": true,
+      "n_steps": 11999
+    },
+    "d15": {
+      "k_N_m": 4250.0,
+      "fn_hz": 0.3281,
+      "peak_disp_m": 0.398898,
+      "peak_force_N": 1695.3145,
+      "converged": true,
+      "n_steps": 11999
+    },
+    "d30": {
+      "k_N_m": 3500.0,
+      "fn_hz": 0.2978,
+      "peak_disp_m": 0.398706,
+      "peak_force_N": 1395.4724,
+      "converged": true,
+      "n_steps": 11999
+    }
+  },
+  "comparison_vs_HIL": {
+    "intact_ratio": 1.8327,
+    "d5_ratio": 1.7832,
+    "d15_ratio": 2.1491,
+    "d30_ratio": 3.4145,
+    "hil_excitation": "telemetry_hil.csv",
+    "hil_dt_s": 0.01,
+    "rsn776_dt_s": 0.005,
+    "note": "RSN776 PGA=0.3699g (real seismic) vs HIL emulator (synthetic 100Hz telemetry). Different excitation amplitudes explain ratio."
+  }
+}

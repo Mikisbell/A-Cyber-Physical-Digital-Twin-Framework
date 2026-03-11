@@ -1,0 +1,17 @@
+{
+  "venue": "EWSHM",
+  "year": 2026,
+  "voice": "passive",
+  "avg_sentence_len": 25.6,
+  "citation_density": 1.0,
+  "intro_openers": [
+    "In naval engineering, particular attention has been given to containerships, as these structures are constantly exposed to potential damage during service hours and since they are essential for large-scale transportation",
+    "In practical applications, the prediction of the explosive mass of an underwater explosion represents a crucial aspect for defining extreme scenarios and for assessing damage, implementing defensive and security strategies, and ensuring the structural integrity of marine structures",
+    "Unidirectional ultrasonic guided waves (UGWs) play a crucial role in the nondestructive testing and evaluation (NDT&E) domains, offering unique advantages in detecting material defects, evaluating structural integrity, and improving the accuracy of thickness measurements"
+  ],
+  "transition_words": [
+    "moreover",
+    "furthermore"
+  ],
+  "paper_id": "cpdt-hil-v2"
+}

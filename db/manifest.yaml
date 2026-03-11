@@ -1,38 +1,26 @@
-paper_id: icr_shm_ae_conference
+paper_id: cpdt-hil-v2
 domain: structural
 quartile: conference
 excitation:
-  source: NGA-West2
+  source: HIL emulation (arduino_emu.py — Arduino Nano 33 BLE Sense Rev2)
   flatfile: ''
   selection_criteria:
-    magnitude_Mw:
-    - 6.0
-    - 8.5
-    distance_Rjb_km:
-    - 0
-    - 200
-    Vs30_ms:
-    - 180
-    - 760
-    mechanism: ''
-    target_spectrum: CMS
-  records_needed:
-  - 4517
-  - 766
-  - 1602
+    type: hardware-in-the-loop
+    modes:
+    - dano_leve   # k-10%, fn drops ~5%
+    - dano_critico  # k-40%, fn drops ~22.5%
+    frequency_hz: 100
+    protocol: BELICO_SYNC_2026
+    ssot_hash: 824d9fe1
+  records_needed: []
   records_present:
-  - filename: PISCO_2007_ICA_EW.AT2
+  - filename: data/processed/telemetry_hil.csv
     valid: true
-    npts: 30000
-    dt: 0.005
-  - filename: RSN766_LOMAP_CAP000.AT2
-    valid: true
-    npts: 3000
+    npts: 3007
     dt: 0.01
-  - filename: SYNTHETIC_NOISE_EXTREME.AT2
-    valid: true
-    npts: 10000
-    dt: 0.002
+    columns: [timestamp_ms, accel_g, disp, mode]
+    modes_captured: [dano_leve, dano_critico]
+    samples_per_mode: [1504, 1503]
   status: complete
   last_updated: '2026-03-10 00:00:00'
 benchmarks:
@@ -42,15 +30,40 @@ benchmarks:
   local_path: ''
   status: pending
 calibration:
-- name: ''
-  source: ''
-  role: ''
-  local_path: ''
-  status: pending
+- name: SSOT params.yaml
+  source: config/params.yaml
+  role: structural model parameters (m, k, xi, integrator)
+  local_path: config/params.yaml
+  status: complete
+- name: RSN776 Loma Prieta 1989 — Hollister South & Pine
+  source: PEER NGA-West2 (RSN776)
+  role: reference calibration record (not primary excitation — HIL emulator is primary)
+  local_path: db/excitation/records/RSN776_LOMAP_HSP000.AT2
+  npts: 11999
+  dt: 0.005
+  components: [HSP000, HSP090, HSP-UP]
+  status: complete
 validation:
-- name: ''
-  protocol: articles/field_data_campaign.md
-  min_duration_min: 30
-  local_path: ''
-  status: pending
-traceability: []
+- name: OpenSeesPy simulation runs
+  protocol: C2 — 4 damage states (intact, d5, d15, d30)
+  min_duration_min: 0
+  local_path: data/processed/simulation_summary.json
+  status: complete
+traceability:
+- claim: "Framework processes HIL telemetry at 100 Hz"
+  figure: Fig. 2
+  data_file: data/processed/telemetry_hil.csv
+  source: arduino_emu.py HIL emulation
+- claim: "Helmholtz-Informed Learning achieves F1=1.000 and localization error 0.17±0.22%"
+  figure: Fig. 3
+  table: Table 1
+  data_file: data/processed/cv_results.json
+  source: C4 Helmholtz training
+- claim: "Loss converges from 0.0435 to 0.000071 over 200 epochs"
+  figure: Fig. 3
+  data_file: data/processed/training_history.csv
+  source: C4 Helmholtz training
+- claim: "Damage identification across 4 states (intact, 5%, 15%, 30%)"
+  figure: Fig. 4
+  data_file: data/processed/damage_predictions.csv
+  source: C4 inference pipeline
