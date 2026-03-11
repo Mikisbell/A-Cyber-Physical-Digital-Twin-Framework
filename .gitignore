@@ -213,6 +213,7 @@ logs_*.txt
 
 # Base de datos local
 data/engram.db
+.agent/memory/engram.db
 
 # Datasets sinteticos gigantes
 data/synthetic/*.csv
