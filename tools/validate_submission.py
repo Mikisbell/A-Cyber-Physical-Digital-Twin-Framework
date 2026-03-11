@@ -576,6 +576,28 @@ def validate_draft(draft_path: Path) -> list[dict]:
                         f"{emu_note}"
                     )
                 })
+                # 0.61. COMPUTE_MANIFEST paper_id vs db/manifest.yaml paper_id
+                # If they differ, COMPUTE_MANIFEST is stale (generated before manifest was updated).
+                _cm_paper_id = manifest_data.get("paper_id", "")
+                _db_manifest_path = ROOT / "db" / "manifest.yaml"
+                if _cm_paper_id and _db_manifest_path.exists() and HAS_YAML:
+                    try:
+                        with open(_db_manifest_path, encoding="utf-8") as _fdb:
+                            _db_data = yaml.safe_load(_fdb) or {}
+                        _db_pid = _db_data.get("paper_id", "")
+                        if _db_pid and _cm_paper_id != _db_pid:
+                            issues.append({
+                                "severity": "WARN",
+                                "check": "compute_manifest_stale",
+                                "msg": (
+                                    f"STALE COMPUTE_MANIFEST: paper_id='{_cm_paper_id}' in "
+                                    f"COMPUTE_MANIFEST.json does not match db/manifest.yaml "
+                                    f"paper_id='{_db_pid}'. Regenerate with: "
+                                    f"python3 tools/generate_compute_manifest.py"
+                                )
+                            })
+                    except Exception:
+                        pass
         except Exception as _e:
             issues.append({
                 "severity": "WARN",
@@ -1165,6 +1187,7 @@ def diagnose(draft_path: Path, issues: list[dict]):
         "style_gate": "Run style_calibration.py before writing batches → Pre-Batch step",
         "stats_citation": "Cite p-values from cv_results.json in Results section (e.g., 'Mann-Whitney U test yielded p < 0.05') → IMPLEMENT step",
         "peer_rsn_gate": "Reference the PEER records used (e.g., 'RSN766 Loma Prieta') in Section 3 (Methodology)",
+        "compute_manifest_stale": "Regenerate COMPUTE_MANIFEST → run: python3 tools/generate_compute_manifest.py",
         "manifest_mismatch": "Update db/manifest.yaml → set paper_id to match current paper",
         "manifest_ghost": "Download missing .AT2 files to db/excitation/records/ or set valid: false in manifest",
         "pipeline_state": "Set 'status: archived' in the other paper's frontmatter, then re-run → ARCHIVE step",
