@@ -10,6 +10,8 @@ Checks:
   0.6. COMPUTE gate (COMPUTE_MANIFEST.json required)
   0.7. Style calibration gate (style_card.json required for Q1/Q2)
   0.8. Statistics Citation Gate (cv_results.json p-values must appear in draft for Q1/Q2)
+  0.85. Manifest paper_id consistency (db/manifest.yaml paper_id must match draft paper_id)
+  0.87. Manifest ghost files (records declared valid:true must exist on disk)
   0.9. PEER RSN Gate (manifest.yaml excitation records must be mentioned in draft)
   1. YAML frontmatter present and complete
   2. AI_Assist markers in all AI-generated sections
@@ -706,6 +708,67 @@ def validate_draft(draft_path: Path) -> list[dict]:
             })
     # cv_results.json absent → skip silently (no issue appended)
 
+    # 0.85. Manifest paper_id consistency — manifest paper_id must match draft paper_id
+    _manifest_path_consistency = ROOT / "db" / "manifest.yaml"
+    if _manifest_path_consistency.exists() and HAS_YAML:
+        try:
+            with open(_manifest_path_consistency, encoding="utf-8") as _fmc:
+                _manifest_consistency = yaml.safe_load(_fmc) or {}
+            _manifest_pid = str(_manifest_consistency.get("paper_id", "")).strip()
+            if _manifest_pid:
+                # Extract draft paper_id from frontmatter (fallback to title)
+                _draft_fm_text = _extract_frontmatter(text)
+                _draft_pid = _extract_fm_field(_draft_fm_text, "paper_id").strip()
+                if not _draft_pid:
+                    _draft_pid = _extract_fm_field(_draft_fm_text, "title").strip()
+                if _draft_pid and _manifest_pid != _draft_pid:
+                    issues.append({
+                        "severity": "WARN",
+                        "check": "manifest_mismatch",
+                        "msg": (
+                            f"MANIFEST_MISMATCH: db/manifest.yaml paper_id='{_manifest_pid}' "
+                            f"does not match draft paper_id='{_draft_pid}'. "
+                            f"Update manifest.yaml before submission."
+                        ),
+                    })
+            # If manifest has no paper_id → skip silently
+        except Exception:
+            pass  # Unreadable manifest → skip silently
+
+    # 0.87. Manifest declared files exist on disk — valid:true records must be present
+    _manifest_path_ghost = ROOT / "db" / "manifest.yaml"
+    if _manifest_path_ghost.exists() and HAS_YAML:
+        try:
+            with open(_manifest_path_ghost, encoding="utf-8") as _fmg:
+                _manifest_ghost = yaml.safe_load(_fmg) or {}
+            _exc_ghost = _manifest_ghost.get("excitation", {})
+            _records_ghost = (
+                _exc_ghost.get("records_present", [])
+                if isinstance(_exc_ghost, dict)
+                else []
+            )
+            _records_dir = ROOT / "db" / "excitation" / "records"
+            for _rec in _records_ghost:
+                if isinstance(_rec, dict):
+                    _fname_ghost = _rec.get("filename", "")
+                    _valid_ghost = _rec.get("valid", False)
+                else:
+                    _fname_ghost = str(_rec)
+                    _valid_ghost = False  # plain string entries have no valid flag
+                if _fname_ghost and _valid_ghost:
+                    if not (_records_dir / _fname_ghost).exists():
+                        issues.append({
+                            "severity": "WARN",
+                            "check": "manifest_ghost",
+                            "msg": (
+                                f"MANIFEST_GHOST: '{_fname_ghost}' declared as valid:true "
+                                f"in manifest but file not found on disk. "
+                                f"Download from PEER or set valid: false."
+                            ),
+                        })
+        except Exception:
+            pass  # Unreadable manifest → skip silently
+
     # 0.9. PEER RSN Gate — excitation records declared in manifest must be cited in draft
     manifest_path_rsn = ROOT / "db" / "manifest.yaml"
     if manifest_path_rsn.exists():
@@ -1102,6 +1165,8 @@ def diagnose(draft_path: Path, issues: list[dict]):
         "style_gate": "Run style_calibration.py before writing batches → Pre-Batch step",
         "stats_citation": "Cite p-values from cv_results.json in Results section (e.g., 'Mann-Whitney U test yielded p < 0.05') → IMPLEMENT step",
         "peer_rsn_gate": "Reference the PEER records used (e.g., 'RSN766 Loma Prieta') in Section 3 (Methodology)",
+        "manifest_mismatch": "Update db/manifest.yaml → set paper_id to match current paper",
+        "manifest_ghost": "Download missing .AT2 files to db/excitation/records/ or set valid: false in manifest",
         "pipeline_state": "Set 'status: archived' in the other paper's frontmatter, then re-run → ARCHIVE step",
     }
 
