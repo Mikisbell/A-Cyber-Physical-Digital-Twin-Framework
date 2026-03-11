@@ -10,6 +10,7 @@ Checks:
   0.6. COMPUTE gate (COMPUTE_MANIFEST.json required)
   0.7. Style calibration gate (style_card.json required for Q1/Q2)
   0.8. Statistics Citation Gate (cv_results.json p-values must appear in draft for Q1/Q2)
+  0.9. PEER RSN Gate (manifest.yaml excitation records must be mentioned in draft)
   1. YAML frontmatter present and complete
   2. AI_Assist markers in all AI-generated sections
   3. HV (Human Validation) markers with initials
@@ -705,6 +706,74 @@ def validate_draft(draft_path: Path) -> list[dict]:
             })
     # cv_results.json absent → skip silently (no issue appended)
 
+    # 0.9. PEER RSN Gate — excitation records declared in manifest must be cited in draft
+    manifest_path_rsn = ROOT / "db" / "manifest.yaml"
+    if manifest_path_rsn.exists():
+        manifest_rsn: dict = {}
+        if HAS_YAML:
+            try:
+                with open(manifest_path_rsn, encoding="utf-8") as _frsn:
+                    manifest_rsn = yaml.safe_load(_frsn) or {}
+            except Exception:
+                manifest_rsn = {}
+
+        excitation_rsn = manifest_rsn.get("excitation", {})
+        records_present_rsn = (
+            excitation_rsn.get("records_present", [])
+            if isinstance(excitation_rsn, dict)
+            else []
+        )
+
+        if records_present_rsn:
+            # Patterns that indicate the draft references PEER excitation records
+            peer_rsn_patterns = [
+                r"RSN\s*\d+",                                       # RSN766, RSN 766
+                r"\bLoma\s+Prieta\b",
+                r"\bPisco\b",
+                r"\bNorthridge\b",
+                r"\bChi.Chi\b",
+                r"\bKobe\b",
+                r"\bEl\s+Centro\b",
+                r"\bPEER\s+NGA\b",
+                r"\bNGA.West2\b",
+                r"\bNGA.Sub\b",
+            ]
+            draft_cites_rsn = any(
+                re.search(pat, text, re.IGNORECASE) for pat in peer_rsn_patterns
+            )
+
+            if not draft_cites_rsn:
+                n_records = len(records_present_rsn)
+                rsn_msg = (
+                    f"PEER_RSN_MISSING: manifest.yaml declares {n_records} excitation "
+                    f"record(s) but draft does not reference any RSN or seismic event. "
+                    f"Add references to PEER records used."
+                )
+                rsn_quartile = _extract_quartile(text).lower()
+                if rsn_quartile in ("q1", "q2", "q3"):
+                    issues.append({
+                        "severity": "ERROR",
+                        "check": "peer_rsn_gate",
+                        "msg": rsn_msg,
+                    })
+                else:
+                    # Conference / Q4 → WARN
+                    issues.append({
+                        "severity": "WARN",
+                        "check": "peer_rsn_gate",
+                        "msg": rsn_msg,
+                    })
+            else:
+                issues.append({
+                    "severity": "OK",
+                    "check": "peer_rsn_gate",
+                    "msg": (
+                        f"PEER RSN gate passed: draft references seismic records "
+                        f"({len(records_present_rsn)} declared in manifest)"
+                    ),
+                })
+    # manifest absent or no records_present → skip silently
+
     # 1. YAML frontmatter
     if not text.startswith("---"):
         issues.append({"severity": "ERROR", "check": "frontmatter",
@@ -1032,6 +1101,7 @@ def diagnose(draft_path: Path, issues: list[dict]):
         "multi_structure": "Add second structure/specimen (Case A/B or Structure 1/2) → DESIGN step",
         "style_gate": "Run style_calibration.py before writing batches → Pre-Batch step",
         "stats_citation": "Cite p-values from cv_results.json in Results section (e.g., 'Mann-Whitney U test yielded p < 0.05') → IMPLEMENT step",
+        "peer_rsn_gate": "Reference the PEER records used (e.g., 'RSN766 Loma Prieta') in Section 3 (Methodology)",
         "pipeline_state": "Set 'status: archived' in the other paper's frontmatter, then re-run → ARCHIVE step",
     }
 
