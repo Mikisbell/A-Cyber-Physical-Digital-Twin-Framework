@@ -22,3 +22,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-12T04:21:49	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to reduce false positives.
 2026-03-12T04:21:51	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to improve case-sensitive precision.
 2026-03-12T04:21:53	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN regex to improve case-sensitive detection accuracy
+2026-03-13T04:20:03	prompts	1	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify explanatory text in Regla de Oro del Verifier for clarity
+2026-03-13T04:20:29	prompts	2	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify rule for reading parameters from firmware to reduce cognitive load and ensure clarity
+2026-03-13T04:20:31	prompts	3	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify the rule for immediate blocking when SSOT hash doesn't match
+2026-03-13T04:20:33	prompts	4	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify rule in the identity and role section by removing redundant emphasis sentence
+2026-03-13T04:20:34	prompts	5	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify and clarify the report header format
+2026-03-13T04:20:36	prompts	6	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the communication of the result's provenance in step 8
+2026-03-13T04:20:37	prompts	7	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify redundant warning criteria in `PASO 7 — Verificación "Shadow Play" (Sensor Drift)` to make it more concise
+2026-03-13T04:20:40	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify failure reporting in PASO 4 — Coherencia Firmware ↔ Simulación
+2026-03-13T04:20:41	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify redundant instructions for step 0 Hash SSOT to improve clarity
+2026-03-13T04:20:44	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify rule about max stress levels to eliminate potential confusion
