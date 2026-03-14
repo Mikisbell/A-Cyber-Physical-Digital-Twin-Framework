@@ -32,3 +32,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-13T04:20:40	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify failure reporting in PASO 4 — Coherencia Firmware ↔ Simulación
 2026-03-13T04:20:41	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify redundant instructions for step 0 Hash SSOT to improve clarity
 2026-03-13T04:20:44	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify rule about max stress levels to eliminate potential confusion
+2026-03-14T04:18:09	skills	1	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove repeated redundancy in BAD and GOOD examples section for conciseness
+2026-03-14T04:18:43	skills	2	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove repetitive and redundant phrasing in 'Structural Rules' to improve clarity
+2026-03-14T04:18:45	skills	3	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify tone guidelines to improve clarity by removing redundant points
+2026-03-14T04:18:47	skills	4	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify the rule about skipping 'EXPLORE' in anti-patterns section to avoid confusion
+2026-03-14T04:18:48	skills	5	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant phrase with no new information
+2026-03-14T04:18:50	skills	6	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	Removed repetitive guidance about ARCHIVE phase to focus on its essential purpose.
+2026-03-14T04:18:51	skills	7	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify redundancy in descriptions of skipped actions in Anti-Patterns section
+2026-03-14T04:18:53	skills	8	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify COMPUTE step requirements to emphasize the importance of real data
+2026-03-14T04:18:55	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundancy by deleting 'SPEC and DESIGN run in parallel (both depend only on EXPLORE/PROPOSE)' which is implied by the diagram
+2026-03-14T04:18:56	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify the importance of running `validate_submission.py` before `compile_paper.sh`
