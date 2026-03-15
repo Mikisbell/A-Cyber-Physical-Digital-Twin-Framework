@@ -42,3 +42,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-14T04:18:53	skills	8	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify COMPUTE step requirements to emphasize the importance of real data
 2026-03-14T04:18:55	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundancy by deleting 'SPEC and DESIGN run in parallel (both depend only on EXPLORE/PROPOSE)' which is implied by the diagram
 2026-03-14T04:18:56	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify the importance of running `validate_submission.py` before `compile_paper.sh`
+2026-03-15T04:39:13	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify reference to unit verification for Kalman output
+2026-03-15T04:39:22	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	Remove redundant phrase about uncontrolled phase lag for clarity.
+2026-03-15T04:39:23	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify critical pattern on Kalman filter usage to improve structure
+2026-03-15T04:39:24	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify redundancy in describing Kalman filter parameters and focus on clarity
+2026-03-15T04:39:26	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	remove redundancy in explanation of Q and R parameters
+2026-03-15T04:39:27	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Verifier integration step for clarity
+2026-03-15T04:39:29	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify overly technical explanation of Q and R parameters in SSOT section
+2026-03-15T04:39:30	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify anti-pattern regarding aborting on single spike for clarity and focus
+2026-03-15T04:39:31	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify redundant explanation of Kalman filter parameters Q and R
+2026-03-15T04:39:32	skills	10	.agent/skills/signal_processing.md	0	0.0	0	apply_failed	apply failed: remove redundancy by deleting detailed Kalman filter parameter description
