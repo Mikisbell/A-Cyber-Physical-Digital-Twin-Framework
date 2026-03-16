@@ -52,3 +52,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-15T04:39:30	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify anti-pattern regarding aborting on single spike for clarity and focus
 2026-03-15T04:39:31	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify redundant explanation of Kalman filter parameters Q and R
 2026-03-15T04:39:32	skills	10	.agent/skills/signal_processing.md	0	0.0	0	apply_failed	apply failed: remove redundancy by deleting detailed Kalman filter parameter description
+2026-03-16T04:46:41	skills	1	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant explanation about orchestrator generating content directly
+2026-03-16T04:46:43	skills	2	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundancy in anti-pattern description regarding skipping COMPUTE and producing essays with invented numbers
+2026-03-16T04:46:45	skills	3	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant sub-header numbering in COMPUTE section for clearer structure
+2026-03-16T04:46:46	skills	4	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant text about orchestrator delegating content generation
+2026-03-16T04:47:37	skills	5	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify overly detailed anti-pattern listing by removing redundancy about direct orchestrator behavior
+2026-03-16T04:47:38	skills	6	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant anti-pattern about skipping COMPUTE to simplify and clarify list
+2026-03-16T04:47:40	skills	7	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundancy regarding the mandatory nature of COMPUTE in paper production
+2026-03-16T04:47:41	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify explanation of orchestrator's role in SDD flow
+2026-03-16T04:47:42	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify explanation in 'COMPUTE' to improve clarity and focus
+2026-03-16T04:47:44	skills	10	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: refine structural rule about maximum semicolon usage for clarity
