@@ -62,3 +62,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-16T04:47:41	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify explanation of orchestrator's role in SDD flow
 2026-03-16T04:47:42	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify explanation in 'COMPUTE' to improve clarity and focus
 2026-03-16T04:47:44	skills	10	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: refine structural rule about maximum semicolon usage for clarity
+2026-03-17T04:25:37	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the roles of Q and R in the 'SSOT for Kalman parameters' section for improved understanding
+2026-03-17T04:25:55	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	remove redundancy in the explanation of the Verifier integration step to improve clarity
+2026-03-17T04:25:58	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Q and R to improve clarity
+2026-03-17T04:26:00	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify Verifier integration Step 7 requirements for better structure and completeness
+2026-03-17T04:26:07	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify critical pattern by clarifying when to use Kalman vs Buffer
+2026-03-17T04:26:09	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of 'SSOT for Kalman parameters' for clarity
+2026-03-17T04:26:16	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify SSOT rule to specify why hardcoding is problematic and what issues it avoids
+2026-03-17T04:26:19	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	Clarify meaning of Q and R parameters in Kalman filter
+2026-03-17T04:26:22	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the importance of Kalman integration by emphasizing phase lag impact
+2026-03-17T04:26:28	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Kalman vs Buffer pattern to improve clarity and focus
