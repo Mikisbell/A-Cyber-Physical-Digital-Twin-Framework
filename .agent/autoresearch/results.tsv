@@ -72,3 +72,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-17T04:26:19	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	Clarify meaning of Q and R parameters in Kalman filter
 2026-03-17T04:26:22	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the importance of Kalman integration by emphasizing phase lag impact
 2026-03-17T04:26:28	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Kalman vs Buffer pattern to improve clarity and focus
+2026-03-18T04:30:57	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to improve case-sensitive detection accuracy.
+2026-03-18T04:31:14	validator	2	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from AI_BLACKLISTED_PHRASES checks to improve precision
+2026-03-18T04:31:16	validator	3	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag for RSN regex to reduce false positives
+2026-03-18T04:31:19	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag in RSN detection to improve case-sensitive precision and reduce false positives
+2026-03-18T04:31:21	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN regex to reduce false positives
+2026-03-18T04:31:23	validator	6	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives
+2026-03-18T04:31:26	validator	7	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN pattern matching to potentially reduce false positives
+2026-03-18T04:32:14	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to reduce false positives based on recent failed experiments.
+2026-03-18T04:32:16	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN pattern matching to improve specificity
+2026-03-18T04:32:19	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Restrict RSN pattern matching to case-sensitive to reduce false positives.
