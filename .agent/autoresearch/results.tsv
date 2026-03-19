@@ -82,3 +82,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-18T04:32:14	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to reduce false positives based on recent failed experiments.
 2026-03-18T04:32:16	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN pattern matching to improve specificity
 2026-03-18T04:32:19	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Restrict RSN pattern matching to case-sensitive to reduce false positives.
+2026-03-19T04:29:55	prompts	1	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify `Dominio water (FEniCSx)` checklist to remove redundant detail
+2026-03-19T04:30:15	prompts	2		0	0.0	0	error	proposal error: Could not parse proposal: \n⚠️ PHYSICAL CRITIC ALERT\nModo de fallo detectado: [pandeo | torsión | i
+2026-03-19T04:30:18	prompts	3	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify 'Checklist de Fallos a Inspeccionar' section header for brevity
+2026-03-19T04:30:19	prompts	4	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify instruction on `mem_save` step for better clarity
+2026-03-19T04:30:21	prompts	5	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the activation condition related to structural modifications for clarity
+2026-03-19T04:30:23	prompts	6	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	clarify activation condition for seismic load action
+2026-03-19T04:31:14	prompts	7	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition for structural geometry changes
+2026-03-19T04:31:16	prompts	8		0	0.0	0	error	proposal error: Could not parse proposal: \n⚠️ PHYSICAL CRITIC ALERT\nModo de fallo detectado: [pandeo | torsión | i
+2026-03-19T04:31:18	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify wording for activation conditions related to border changes
+2026-03-19T04:31:20	prompts	10		0	0.0	0	error	proposal error: Could not parse proposal: \n⚠️ PHYSICAL CRITIC ALERT\nModo de fallo detectado: [pandeo | torsión | i
