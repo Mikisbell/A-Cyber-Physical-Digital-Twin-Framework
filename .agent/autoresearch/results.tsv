@@ -92,3 +92,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-19T04:31:16	prompts	8		0	0.0	0	error	proposal error: Could not parse proposal: \n⚠️ PHYSICAL CRITIC ALERT\nModo de fallo detectado: [pandeo | torsión | i
 2026-03-19T04:31:18	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify wording for activation conditions related to border changes
 2026-03-19T04:31:20	prompts	10		0	0.0	0	error	proposal error: Could not parse proposal: \n⚠️ PHYSICAL CRITIC ALERT\nModo de fallo detectado: [pandeo | torsión | i
+2026-03-21T04:12:06	prompts	1	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording in the hash integrity check to improve clarity and focus
+2026-03-21T04:12:10	prompts	2	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify and simplify hash mismatch handling in PASO 0
+2026-03-21T04:12:13	prompts	3	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the reporting structure for computational efficiency
+2026-03-21T04:13:00	prompts	4	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the `Regla de Oro del Verifier` for conciseness
+2026-03-21T04:13:02	prompts	5	.agent/prompts/verifier.md	0	0.0	0	apply_failed	apply failed: simplify guidance for SSOT_HASH failure action
+2026-03-21T04:13:05	prompts	6	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify the condition of stopping pipeline in case hashes do not match
+2026-03-21T04:13:07	prompts	7	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify the consequence of missing hash sync step in PASO 0
+2026-03-21T04:13:10	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording for SSOT_HASH check instructions to improve clarity
+2026-03-21T04:13:13	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify the error action in step 0 for hash mismatch
+2026-03-21T04:13:16	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording for clearer activation conditions
