@@ -122,3 +122,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-24T04:27:32	simulation	8	src/physics/spectral_engine.py	0.0000	0.0000	+0.0000	discard	Replace hardcoded gravitational acceleration constant with a named constant for clarity and consistency
 2026-03-24T04:27:34	simulation	9	src/physics/spectral_engine.py	0.0000	0.0000	+0.0000	discard	simplify default T_range assignment to improve readability and maintainability
 2026-03-24T04:27:37	simulation	10	src/physics/spectral_engine.py	0.0000	0.0000	+0.0000	discard	simplify default T_range assignment by directly initializing numpy array
+2026-03-25T04:27:50	skills	1	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify section to improve clarity by removing redundant detail about sub-agent prompt sizes
+2026-03-25T04:28:07	skills	2	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify that a paper without COMPUTE results in unreliable outcomes by emphasizing the importance of real data
+2026-03-25T04:28:10	skills	3	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify the distinction between 'TASKS' and 'COMPUTE' phases
+2026-03-25T04:28:12	skills	4	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify tone guideline for directness
+2026-03-25T04:28:14	skills	5	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify language explaining sequential order of sub-phases in COMPUTE to improve skill clarity
+2026-03-25T04:28:16	skills	6	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant example to improve clarity under BAD vs GOOD Examples
+2026-03-25T04:28:18	skills	7	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: simplify explanation of SDD Flow by combining relevant points and removing redundant details
+2026-03-25T04:28:21	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify SSOT reference to improve skill clarity and specificity
+2026-03-25T04:29:07	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant guidance on 'specs and design phases running in parallel'
+2026-03-25T04:29:08	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant word in TASKS section for clarity
