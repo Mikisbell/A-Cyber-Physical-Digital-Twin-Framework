@@ -132,3 +132,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-25T04:28:21	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify SSOT reference to improve skill clarity and specificity
 2026-03-25T04:29:07	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant guidance on 'specs and design phases running in parallel'
 2026-03-25T04:29:08	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant word in TASKS section for clarity
+2026-03-26T04:40:09	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to reduce false positives.
+2026-03-26T04:40:12	validator	2	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove re.IGNORECASE from RSN detection to reduce false positives
+2026-03-26T04:40:14	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove re.IGNORECASE from RSN detection to reduce false positives caused by case-insensitive matches.
+2026-03-26T04:40:15	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Restrict RSN detection to non-case-insensitive by removing re.IGNORECASE, reducing false positives.
+2026-03-26T04:40:17	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to reduce false positives
+2026-03-26T04:40:19	validator	6	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives.
+2026-03-26T04:41:13	validator	7	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives
+2026-03-26T04:41:15	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives.
+2026-03-26T04:41:17	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives
+2026-03-26T04:41:19	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag for RSN detection to reduce false positives
