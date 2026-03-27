@@ -142,3 +142,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-26T04:41:15	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives.
 2026-03-26T04:41:17	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives
 2026-03-26T04:41:19	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag for RSN detection to reduce false positives
+2026-03-27T04:40:39	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and combine explanations for Q and R parameters under SSOT for clarity
+2026-03-27T04:41:12	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify example in Kalman filter usage by explicitly naming accel_filtered argument
+2026-03-27T04:41:14	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify description of Verifier integration (STEP 7) for clarity
+2026-03-27T04:41:16	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify Kalman filter innovation sequence explanation for spike classification
+2026-03-27T04:41:18	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the consequences of using a moving-average buffer over a Kalman filter
+2026-03-27T04:41:20	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	add clarity to SSOT for Kalman parameters section by explicitly stating what SSOT means
+2026-03-27T04:41:22	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify role of Q and R parameters in SSOT section
+2026-03-27T04:41:24	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify anti-pattern about aborting on single spike by emphasizing the need for multiple observations
+2026-03-27T04:41:26	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarified the innovation sequence explanation for better precision and completeness
+2026-03-27T04:41:28	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify SSOT for Kalman parameters by explicitly defining acronym when first introduced
