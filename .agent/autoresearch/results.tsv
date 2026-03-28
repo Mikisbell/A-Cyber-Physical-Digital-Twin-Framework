@@ -152,3 +152,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-27T04:41:24	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify anti-pattern about aborting on single spike by emphasizing the need for multiple observations
 2026-03-27T04:41:26	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarified the innovation sequence explanation for better precision and completeness
 2026-03-27T04:41:28	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify SSOT for Kalman parameters by explicitly defining acronym when first introduced
+2026-03-28T04:27:40	prompts	1	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify checklist item to reduce scope for clearer focus
+2026-03-28T04:27:42	prompts	2	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation conditions for clarity
+2026-03-28T04:27:44	prompts	3	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation conditions to improve clarity
+2026-03-28T04:27:46	prompts	4	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition for modifications in geometry
+2026-03-28T04:28:31	prompts	5	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the protocol for saving results in Engram Bus step
+2026-03-28T04:28:33	prompts	6	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition wording for clarity
+2026-03-28T04:28:35	prompts	7	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition list for clarity and brevity
+2026-03-28T04:28:37	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation conditions for clarity
+2026-03-28T04:28:39	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the activation condition for edge modifications to reduce ambiguity
+2026-03-28T04:28:40	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify recommendation output format for clarity
