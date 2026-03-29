@@ -162,3 +162,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-28T04:28:37	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation conditions for clarity
 2026-03-28T04:28:39	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the activation condition for edge modifications to reduce ambiguity
 2026-03-28T04:28:40	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify recommendation output format for clarity
+2026-03-29T04:43:42	quartile_gates	1	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: remove redundant check for blacklisted AI phrases to streamline validation
+2026-03-29T04:43:45	quartile_gates	2	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Enforce per-quartile validation for Q1 sections to improve quartile_accuracy.
+2026-03-29T04:44:32	quartile_gates	3	tools/validate_submission.py	0.0000	0.6000	-0.6000	crash	Improve per-quartile validation by enforcing Q1 required sections
+2026-03-29T04:44:35	quartile_gates	4	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Remove unused exception handling for yaml import to simplify code.
+2026-03-29T04:44:38	quartile_gates	5	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Enforce Q1 section flag in quartile validation to improve accuracy.
+2026-03-29T04:44:40	quartile_gates	6	tools/validate_submission.py	0.6	0.6	0	skip	skip — no useful change found
+2026-03-29T04:44:42	quartile_gates	7	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Refine error handling to prevent false negatives by ensuring Q1 references and sections are both flagged.
+2026-03-29T04:44:45	quartile_gates	8	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Remove unnecessary variable initialization 'all_pass = True' as it's overwritten immediately in the loop
+2026-03-29T04:44:48	quartile_gates	9	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Fix missing Q1 sections check for improved validation accuracy.
+2026-03-29T04:44:50	quartile_gates	10	tools/validate_submission.py	0	0.6	0	apply_failed	apply failed: Ensure Q1 sections are validated by enforcing required sections flagging.
