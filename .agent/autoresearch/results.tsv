@@ -192,3 +192,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-03-31T04:43:52	simulation	8	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: remove unnecessary sys.path modification to simplify imports and improve robustness
 2026-03-31T04:43:54	simulation	9	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: replace hardcoded damping constant ζ=0.05 with function input
 2026-03-31T04:43:57	simulation	10	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: Remove unused import for Pathlib to simplify and improve code quality
+2026-04-01T04:53:19	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives.
+2026-04-01T04:53:22	validator	2	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove redundant re.IGNORECASE flag in RSN detection regex for minimal improvement in precision
+2026-04-01T04:54:09	validator	3	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag for RSN detection to tighten matching criteria.
+2026-04-01T04:54:11	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	remove re.IGNORECASE flag from RSN detection regex to reduce false positives
+2026-04-01T04:54:14	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives
+2026-04-01T04:54:16	validator	6	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	simplify RSN detection by removing re.IGNORECASE flag
+2026-04-01T04:54:18	validator	7	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN regex in suggest_traceability to potentially reduce false positives.
+2026-04-01T04:54:21	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives.
+2026-04-01T04:54:23	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to reduce potential false positives.
+2026-04-01T04:54:25	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove `re.IGNORECASE` from RSN regex in `suggest_traceability` to reduce false positives.
