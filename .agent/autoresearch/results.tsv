@@ -202,3 +202,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-01T04:54:21	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives.
 2026-04-01T04:54:23	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to reduce potential false positives.
 2026-04-01T04:54:25	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove `re.IGNORECASE` from RSN regex in `suggest_traceability` to reduce false positives.
+2026-04-02T04:37:14	skills	1	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify structure by numbering Critical Patterns subsections
+2026-04-02T04:37:47	skills	2	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify 'COMPUTE runs AFTER TASKS and BEFORE IMPLEMENT' section for completeness
+2026-04-02T04:37:49	skills	3	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: delete redundant heading 'Skill: Paper Production Pipeline' for improved structure
+2026-04-02T04:37:51	skills	4	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant mention of SSOT as it's already defined elsewhere
+2026-04-02T04:37:52	skills	5	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify EXPLORE phase by explicitly stating purpose
+2026-04-02T04:37:55	skills	6	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify redundancy in bad phrase examples
+2026-04-02T04:37:56	skills	7	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove duplicate numbering for Task 5.5 and give it a unique number
+2026-04-02T04:37:58	skills	8	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: combine redundant phrasing in Critical Patterns SDD Flow section for clarity
+2026-04-02T04:38:00	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify and expand COMPUTE's role to improve skill clarity
+2026-04-02T04:38:02	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify and simplify the FUNDAMENTAL RULE in SDD Flow for Papers
