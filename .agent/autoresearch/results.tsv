@@ -222,3 +222,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-03T04:38:25	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify and clarify the rule of thumb for when to block the pipeline.
 2026-04-03T04:38:27	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify activation condition to enhance clarity and effectiveness
 2026-04-03T04:38:29	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify step in PASO 0 for hash mismatch actions
+2026-04-04T04:24:57	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify SSOT instructions for clarity
+2026-04-04T04:24:59	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify description of Verifier integration STEP 7 for clarity
+2026-04-04T04:25:01	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify Verifier's role by simplifying STEP 7 explanation
+2026-04-04T04:25:03	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the distinction between normal innovation distribution and persistent bias in innovation for signal classification
+2026-04-04T04:25:47	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify 'STEP 7 — Estimator Variance' to improve completeness
+2026-04-04T04:25:49	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the purpose of Verifier in STEP 7 to improve coverage
+2026-04-04T04:25:51	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify Verifier's role in auditing by simplifying STEP 7 explanation
+2026-04-04T04:25:53	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify Anti-Pattern about aborting on a single spike to improve clarity
+2026-04-04T04:25:55	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify anti-pattern description for buffer usage
+2026-04-04T04:25:57	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify Kalman parameter explanation for clarity
