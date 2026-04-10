@@ -284,3 +284,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-09T04:42:11	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	clarify condition of activation regarding edge cases for modified geometries
 2026-04-09T04:42:13	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the Verificacion de Datos de Excitacion step for improved clarity
 2026-04-09T04:42:16	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition by removing redundant phrasing
+2026-04-10T04:53:41	prompts	1	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the wording of the rule to improve clarity
+2026-04-10T04:53:44	prompts	2	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Remove redundant phrasing in the guardrail for yielding to improve clarity.
+2026-04-10T04:53:46	prompts	3	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the explanation for PASO 0 to increase clarity and conciseness
+2026-04-10T04:53:49	prompts	4	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify the wording of PASO 0 for better clarity
+2026-04-10T04:54:33	prompts	5	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the integration check for SSOT to improve clarity by grouping the actions
+2026-04-10T04:54:36	prompts	6	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify action in case of SSOT hash mismatch in PASO 0
+2026-04-10T04:54:39	prompts	7	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify the criticality of the first step in PASO 0 for beginners
+2026-04-10T04:54:41	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the condition for PASO 0 to improve clarity
+2026-04-10T04:54:44	prompts	9	.agent/prompts/verifier.md	0	0.0	0	apply_failed	apply failed: simplify activation conditions for verifier
+2026-04-10T04:54:46	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify activation condition by removing redundant phrasing
