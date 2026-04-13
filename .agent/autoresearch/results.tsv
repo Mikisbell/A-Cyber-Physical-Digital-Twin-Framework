@@ -316,3 +316,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-12T04:54:04	prompts	10		0	0.0	0	error	proposal error: Could not parse proposal: {
   "file": ".agent/prompts/verifier.md",
   "description": "simplify Equil
+2026-04-13T05:21:35	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to improve precision.
+2026-04-13T05:21:38	validator	2	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove unnecessary re.IGNORECASE flag from RSN detection regex to reduce false positives
+2026-04-13T05:22:22	validator	3	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to reduce potential false positives.
+2026-04-13T05:22:24	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to potentially reduce false positives.
+2026-04-13T05:22:26	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to potentially reduce false positives.
+2026-04-13T05:22:28	validator	6	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	remove re.IGNORECASE from RSN detection regex to reduce potential false positives
+2026-04-13T05:22:30	validator	7	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce potential false positives
+2026-04-13T05:22:32	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to potentially reduce false positives
+2026-04-13T05:22:34	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to potentially improve precision and reduce false positives.
+2026-04-13T05:22:36	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from the RSN detection regex to prevent potential false positives.
