@@ -340,3 +340,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-14T04:52:36	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation condition related to modifications to geometry
 2026-04-14T04:52:37	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the Protocolo Engram Bus section for conciseness
 2026-04-14T04:52:40	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the activation conditions by consolidating similar triggers
+2026-04-15T04:52:18	prompts	1	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify PASO 4 to make coherence checks more concise and aligned with other steps
+2026-04-15T04:52:57	prompts	2	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify the phrasing in the Regla de Oro section for conciseness
+2026-04-15T04:52:59	prompts	3	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the rule for SSOT hash verification to improve clarity and compliance
+2026-04-15T04:53:02	prompts	4	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify and clarify the SSOT_HASH pass/fail reporting in the final report structure.
+2026-04-15T04:53:04	prompts	5	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify activation conditions for clarity
+2026-04-15T04:53:06	prompts	6	.agent/prompts/verifier.md	0	0.0	0	apply_failed	apply failed: simplify and clarify the activation conditions for readability
+2026-04-15T04:53:08	prompts	7	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the Regla de Oro to focus on the core principle
+2026-04-15T04:53:10	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify Condiciones de Activación by consolidating triggers into clearer categories
+2026-04-15T04:53:13	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the hash comparison instruction in PASO 0 for clarity
+2026-04-15T04:53:15	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify action steps for hash mismatch in PASO 0
