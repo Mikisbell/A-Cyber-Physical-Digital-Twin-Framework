@@ -360,3 +360,15 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-16T05:12:16	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the activation conditions by consolidating triggers for clarity
 2026-04-16T05:12:18	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the Condiciones de Activación by consolidating triggers for clarity
 2026-04-16T05:12:20	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the checklist for Fallo por Cortante en Nodos to improve clarity and prompt compliance
+2026-04-17T05:09:19	skills	1	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify rule about COMPUTE to explicitly state that data in the final paper must come from real simulations or empirical results
+2026-04-17T05:09:22	skills	2	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant explanation about COMPUTE phase blocking IMPLEMENT to improve clarity
+2026-04-17T05:09:24	skills	3	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant explanation about orchestrator not generating content to improve clarity
+2026-04-17T05:09:25	skills	4	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify the role of the orchestrator in the SPEC phase
+2026-04-17T05:09:28	skills	5	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundant wording in FUNDAMENTAL RULE to improve clarity and conciseness
+2026-04-17T05:09:30	skills	6	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify and simplify text in the SPEC phase instructions to improve clarity
+2026-04-17T05:09:32	skills	7	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify COMPUTE phase requirements by emphasizing its mandatory nature with simpler language
+2026-04-17T05:09:34	skills	8	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundancy in the description of skipping COMPUTE and writing results without proper data
+2026-04-17T05:09:36	skills	9		0	0.0	0	error	proposal error: Could not parse proposal: {
+  "file": ".agent/skills/paper_production.md",
+  "description": "clarify
+2026-04-17T05:09:38	skills	10	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant reference to method names in The Specificity Rule for more clarity
