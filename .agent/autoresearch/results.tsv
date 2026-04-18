@@ -372,3 +372,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
   "file": ".agent/skills/paper_production.md",
   "description": "clarify
 2026-04-17T05:09:38	skills	10	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: remove redundant reference to method names in The Specificity Rule for more clarity
+2026-04-18T04:39:51	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the SSOT explanation for Kalman parameters Q and R
+2026-04-18T04:39:53	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify instruction for SSOT for Kalman parameters
+2026-04-18T04:40:38	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify verifier integration step to improve structure
+2026-04-18T04:40:40	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify Kalman vs Buffer section for clarity and focus
+2026-04-18T04:40:42	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify redundant explanation of Kalman filter Q and R parameters
+2026-04-18T04:40:43	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify phrasing in 'SSOT for Kalman parameters' for better clarity
+2026-04-18T04:40:45	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Verifier integration for clarity
+2026-04-18T04:40:47	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the importance of SSOT for Kalman parameters by emphasizing its role in maintaining consistency and accuracy
+2026-04-18T04:40:49	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify STEP 7 description for Verifier integration
+2026-04-18T04:40:51	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify explanation of Kalman filter parameters Q and R for clarity
