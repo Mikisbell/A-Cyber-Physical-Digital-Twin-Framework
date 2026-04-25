@@ -442,3 +442,15 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-24T05:16:01	skills	8	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify task decomposition by adding a new bullet to specify input/output explicitly
 2026-04-24T05:16:04	skills	9	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify repetitive expression in EXPLORE section for conciseness
 2026-04-24T05:16:06	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify phrasing of sentence for conciseness and clarity in EXPLORE section
+2026-04-25T04:42:58	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	extend the 'When to Use' section for better coverage by adding elaboration on use cases
+2026-04-25T04:43:01	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	add explicit mention of output format for processed signal
+2026-04-25T04:43:03	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	add explicit mention of input (raw sensor data) and output (filtered data) for clarity
+2026-04-25T04:43:04	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify and expand Verifier integration step for consistency and coverage
+2026-04-25T04:43:58	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify Verifier integration by replacing STEP 7 description with more concise actionable phrasing
+2026-04-25T04:44:00	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify when to use by specifying context for debugging phase lag
+2026-04-25T04:44:01	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify when to use the skill by listing specific scenarios for Verifier usage
+2026-04-25T04:44:03	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the purpose of Q and R parameters in Kalman filter for improved comprehension
+2026-04-25T04:44:05	skills	9		0	0.0	0	error	proposal error: Could not parse proposal: {
+  "file": ".agent/skills/signal_processing.md",
+  "description": "clarif
+2026-04-25T04:44:07	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify when to use Verifier integration for Kalman experiments
