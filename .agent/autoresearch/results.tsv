@@ -454,3 +454,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
   "file": ".agent/skills/signal_processing.md",
   "description": "clarif
 2026-04-25T04:44:07	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify when to use Verifier integration for Kalman experiments
+2026-04-26T05:19:27	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce potential false positives
+2026-04-26T05:19:51	validator	2	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection to reduce false positives from case-insensitive matches.
+2026-04-26T05:19:54	validator	3	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to potentially reduce false positives.
+2026-04-26T05:19:56	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE flag from RSN detection regex to reduce false positives in suggest_traceability function.
+2026-04-26T05:19:58	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	simplify RSN detection by removing re.IGNORECASE flag to reduce potential false positives
+2026-04-26T05:20:00	validator	6	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	remove re.IGNORECASE from the RSN detection regex to reduce false positives
+2026-04-26T05:20:03	validator	7	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove re.IGNORECASE from the RSN detection regex to prevent potential false positives.
+2026-04-26T05:20:05	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove 're.IGNORECASE' from RSN detection to potentially reduce false positives.
+2026-04-26T05:20:07	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives
+2026-04-26T05:20:09	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN regex to reduce potential false positives.
