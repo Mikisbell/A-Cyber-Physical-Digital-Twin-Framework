@@ -474,3 +474,15 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-27T05:32:58	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection to reduce false positives
 2026-04-27T05:33:01	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from the RSN detection regex to reduce false positives
 2026-04-27T05:33:03	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN regex to reduce false positives
+2026-04-28T05:37:40	prompts	1	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the checklist for 'Fallos por Cortante en Nodos' for clarity
+2026-04-28T05:37:42	prompts	2	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify activation criteria for better clarity and prompt compliance
+2026-04-28T05:37:44	prompts	3		0	0.0	0	error	proposal error: Could not parse proposal: {
+  "file": ".agent/prompts/physical_critic.md",
+  "description": "simplif
+2026-04-28T05:37:46	prompts	4	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify the wording in the 'Protocolo Engram Bus' section for increased clarity
+2026-04-28T05:37:48	prompts	5	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	Simplify 'Protocolo Engram Bus (OBLIGATORIO)' to improve clarity and conciseness without changing functionality.
+2026-04-28T05:38:32	prompts	6	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify Condiciones de Activación wording for clarity
+2026-04-28T05:38:34	prompts	7	.agent/prompts/physical_critic.md	0	0.0	0	apply_failed	apply failed: simplify warning threshold for torsion risk calculation
+2026-04-28T05:38:36	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	Clarify the risk threshold for torsion by simplifying the excentricity criterion wording.
+2026-04-28T05:38:38	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify conditions for immediate pipeline abort in PASO 0
+2026-04-28T05:38:40	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify wording in 'Condiciones de Activación' for better clarity
