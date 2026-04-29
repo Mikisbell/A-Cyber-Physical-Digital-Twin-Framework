@@ -486,3 +486,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-28T05:38:36	prompts	8	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	Clarify the risk threshold for torsion by simplifying the excentricity criterion wording.
 2026-04-28T05:38:38	prompts	9	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify conditions for immediate pipeline abort in PASO 0
 2026-04-28T05:38:40	prompts	10	.agent/prompts/physical_critic.md	0.0000	0.0000	+0.0000	discard	simplify wording in 'Condiciones de Activación' for better clarity
+2026-04-29T05:33:33	prompts	1	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording in Condiciones de Activación for better clarity
+2026-04-29T05:33:37	prompts	2	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the Regla de Oro to improve clarity without losing meaning
+2026-04-29T05:33:39	prompts	3	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the wording for the rule about untraceable numerical results in COMPUTE verification
+2026-04-29T05:34:24	prompts	4	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording for PASO 0 — Integridad de Configuración (Hash SSOT) to make the instructions clearer
+2026-04-29T05:34:26	prompts	5	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	clarify immediate pipeline abort reasoning in PASO 0 instructions
+2026-04-29T05:34:28	prompts	6	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify explanation for merging untraceable data as 'INVENTADO'
+2026-04-29T05:34:31	prompts	7	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify wording in 'Condiciones de Activación' for clarity
+2026-04-29T05:34:33	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Clarify hash mismatch action by rephrasing for simplicity.
+2026-04-29T05:34:36	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the phrasing of Step 0 to improve clarity
+2026-04-29T05:34:39	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify and clarify instructions for Step 0 to reduce ambiguity.
