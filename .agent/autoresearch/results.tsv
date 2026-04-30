@@ -496,3 +496,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-29T05:34:33	prompts	8	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Clarify hash mismatch action by rephrasing for simplicity.
 2026-04-29T05:34:36	prompts	9	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	simplify the phrasing of Step 0 to improve clarity
 2026-04-29T05:34:39	prompts	10	.agent/prompts/verifier.md	0.0000	0.0000	+0.0000	discard	Simplify and clarify instructions for Step 0 to reduce ambiguity.
+2026-04-30T05:37:21	skills	1	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify the purpose of the orchestrator in the critical patterns section
+2026-04-30T05:37:24	skills	2	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify the purpose of the orchestrator and emphasize its delegation role
+2026-04-30T05:37:26	skills	3	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify language by removing redundant clause in COMPUTE section
+2026-04-30T05:37:28	skills	4	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify 'SDD Flow for Papers' structure diagram explanation
+2026-04-30T05:38:17	skills	5	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify importance of paper specificity by linking it to paper credibility
+2026-04-30T05:38:19	skills	6	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify trigger by defining purpose of validate_submission
+2026-04-30T05:38:21	skills	7	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	clarify the consequences of skipping validating submission before compiling paper
+2026-04-30T05:38:22	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundancy by combining two similar anti-patterns about skipping essential COMPUTE phase
+2026-04-30T05:38:24	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify the requirement for data in `data/processed/` during COMPUTE step
+2026-04-30T05:38:26	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the FUNDAMENTAL RULE for better understanding
