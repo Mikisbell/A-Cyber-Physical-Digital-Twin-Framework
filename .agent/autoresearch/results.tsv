@@ -506,3 +506,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-04-30T05:38:22	skills	8	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	remove redundancy by combining two similar anti-patterns about skipping essential COMPUTE phase
 2026-04-30T05:38:24	skills	9	.agent/skills/paper_production.md	0	0.0	0	apply_failed	apply failed: clarify the requirement for data in `data/processed/` during COMPUTE step
 2026-04-30T05:38:26	skills	10	.agent/skills/paper_production.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the FUNDAMENTAL RULE for better understanding
+2026-05-01T05:49:00	skills	1	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify anti-pattern regarding phase lag by explicitly linking to Kalman recommendation
+2026-05-01T05:49:02	skills	2	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify integration step for Verifier and specify its role in process
+2026-05-01T05:49:04	skills	3	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the definition of process_noise_q parameter in SSOT section
+2026-05-01T05:49:05	skills	4	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify by removing redundant explanation of 'innovation sequence' criterion for sensor noise vs structural failure
+2026-05-01T05:49:07	skills	5	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify Verifier integration step for improved structure clarity
+2026-05-01T05:49:09	skills	6	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the step where Kalman filter parameters (Q and R) are sourced
+2026-05-01T05:49:11	skills	7	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify and clarify the importance of mitigating phase lag when choosing between Kalman and buffer
+2026-05-01T05:50:03	skills	8	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify anti-pattern example by removing redundancy in buffer-related points
+2026-05-01T05:50:05	skills	9	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	simplify Verifier integration details and consolidate STEP 7 explanation for clarity
+2026-05-01T05:50:06	skills	10	.agent/skills/signal_processing.md	0.0000	0.0000	+0.0000	discard	clarify the importance of SSOT for Kalman parameters
