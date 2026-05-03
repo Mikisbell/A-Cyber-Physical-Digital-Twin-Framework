@@ -526,3 +526,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-05-02T05:19:07	simulation	8	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: remove unnecessary modification of sys.path for cleaner imports
 2026-05-02T05:19:08	simulation	9	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: remove unnecessary sys.path modification to improve code quality and simplify imports
 2026-05-02T05:19:10	simulation	10	src/physics/spectral_engine.py	0	0.0	0	apply_failed	apply failed: remove unnecessary modification of sys.path
+2026-05-03T05:37:32	validator	1	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	remove the `re.IGNORECASE` flag from RSN detection to prevent false positives
+2026-05-03T05:37:35	validator	2	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to potentially reduce false positives.
+2026-05-03T05:38:16	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove re.IGNORECASE from RSN detection to reduce potential false positives
+2026-05-03T05:38:19	validator	4	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove unnecessary re.IGNORECASE flag from RSN pattern matching to potentially reduce false positives
+2026-05-03T05:38:21	validator	5	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce false positives
+2026-05-03T05:38:24	validator	6	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Refine AI_BLACKLISTED_PHRASES to reduce false positives by removing generic terms like 'noteworthy'.
+2026-05-03T05:38:26	validator	7	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove 're.IGNORECASE' from RSN detection to reduce false positives.
+2026-05-03T05:38:28	validator	8	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	remove re.IGNORECASE from RSN detection regex to potentially reduce false positives
+2026-05-03T05:38:31	validator	9	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to reduce potential false positives
+2026-05-03T05:38:34	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove re.IGNORECASE from RSN detection regex to potentially reduce false positives.
