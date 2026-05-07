@@ -566,3 +566,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-05-06T05:37:32	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
 2026-05-06T05:37:34	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
 2026-05-06T05:37:36	validator	10	tools/validate_submission.py	0.6667	0.6667	+0.0000	discard	Remove 're.IGNORECASE' flag from the RSN detection regex to improve precision.
+2026-05-07T05:38:53	validator	1	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI_BLACKLISTED_PHRASES to potentially reduce false positives
+2026-05-07T05:38:57	validator	2	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives.
+2026-05-07T05:38:58	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-07T05:39:00	validator	4	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-07T05:39:02	validator	5	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives.
+2026-05-07T05:39:41	validator	6	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-07T05:39:43	validator	7	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives.
+2026-05-07T05:39:45	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-07T05:39:46	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-07T05:39:48	validator	10	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
