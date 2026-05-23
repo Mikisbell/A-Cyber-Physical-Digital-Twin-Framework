@@ -726,3 +726,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-05-22T06:17:36	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
 2026-05-22T06:17:37	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove overly broad AI-blacklisted phrase 'groundbreaking' to reduce false positives.
 2026-05-22T06:17:39	validator	10	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:29	validator	1	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:32	validator	2	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI blacklisted phrases to reduce false positives
+2026-05-23T05:46:34	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove overly strict AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:37	validator	4	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:39	validator	5	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI blacklisted phrases to reduce false positives
+2026-05-23T05:46:41	validator	6	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:43	validator	7	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:44	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI-blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:46	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-23T05:46:48	validator	10	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove overly restrictive blacklisted phrase 'noteworthy' to reduce false positives without significantly impacting detection.
