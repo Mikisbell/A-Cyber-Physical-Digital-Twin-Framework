@@ -786,3 +786,13 @@ timestamp	room	experiment	file_changed	score	baseline	delta	status	description
 2026-05-28T06:20:57	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove overly broad blacklisted anti-AI phrase 'noteworthy' to potentially reduce false positives
 2026-05-28T06:20:58	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
 2026-05-28T06:21:00	validator	10	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:22:55	validator	1	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad and subjective blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:22:57	validator	2	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:22:59	validator	3	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:23:01	validator	4	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad and potentially noisy blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:23:03	validator	5	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad AI blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:23:05	validator	6	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad blacklisted phrase 'noteworthy' to reduce false positives
+2026-05-29T06:23:06	validator	7	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove 'noteworthy' from AI_BLACKLISTED_PHRASES to reduce false positives
+2026-05-29T06:23:08	validator	8	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove overly broad and subjective anti-AI phrase 'noteworthy' to reduce false positives
+2026-05-29T06:23:09	validator	9	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: Remove overly broad blacklisted phrase 'noteworthy' to potentially improve detection accuracy
+2026-05-29T06:23:11	validator	10	tools/validate_submission.py	0	0.6667	0	apply_failed	apply failed: remove 'noteworthy' from AI_BLACKLISTED_PHRASES to potentially reduce false positives
